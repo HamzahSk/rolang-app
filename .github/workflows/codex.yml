@@ -267,30 +267,31 @@ jobs:
             :app:assembleDebug \
             :app:assembleDebugAndroidTest
 
-      - name: Upload Debug APK
+      - name: Decode Keystore
+        env:
+          ENCODED_STRING: ${{ secrets.SIGNING_KEY }}
+        run: |
+          echo "$ENCODED_STRING" | base64 -d > keystore.jks
+
+      - name: Create keystore.properties
+        env:
+          STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "storeFile=keystore.jks" > keystore.properties
+          echo "storePassword=$STORE_PASSWORD" >> keystore.properties
+          echo "keyAlias=$KEY_ALIAS" >> keystore.properties
+          echo "keyPassword=$KEY_PASSWORD" >> keystore.properties
+
+      - name: Build Signed Release APK (arm64-v8a)
+        run: |
+          ./gradlew --no-daemon --stacktrace :app:assembleRelease
+
+      - name: Upload Release APK (arm64-v8a)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rolang-android-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: rolang-android-release-arm64
+          path: app/build/outputs/apk/release/app-arm64-v8a-release.apk
           if-no-files-found: error
           retention-days: 14
-
-      - name: Upload Android Test APK
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: rolang-android-tests
-          path: app/build/outputs/apk/androidTest/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Test Reports
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: rolang-test-reports
-          path: |
-            app/build/reports/tests/
-            app/build/test-results/testDebugUnitTest/
-            app/build/reports/lint-results-debug.*
-          if-no-files-found: ignore
-          retention-days: 7

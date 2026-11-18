@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -6,6 +8,12 @@ plugins {
 }
 
 val generatedServerAssets = layout.buildDirectory.dir("generated/serverAssets")
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.isFile) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
 val copyServerConfig by tasks.registering(Copy::class) {
     from(rootProject.file("config.json"))
     into(generatedServerAssets)
@@ -16,6 +24,26 @@ android {
     namespace = "com.rolang.app"
     compileSdk = 35
     buildToolsVersion = "35.0.0"
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.isFile) {
+                storeFile = rootProject.file(
+                    requireNotNull(keystoreProperties.getProperty("storeFile")) {
+                        "storeFile is missing from ${keystorePropertiesFile.path}"
+                    },
+                )
+                storePassword = requireNotNull(keystoreProperties.getProperty("storePassword")) {
+                    "storePassword is missing from ${keystorePropertiesFile.path}"
+                }
+                keyAlias = requireNotNull(keystoreProperties.getProperty("keyAlias")) {
+                    "keyAlias is missing from ${keystorePropertiesFile.path}"
+                }
+                keyPassword = requireNotNull(keystoreProperties.getProperty("keyPassword")) {
+                    "keyPassword is missing from ${keystorePropertiesFile.path}"
+                }
+            }
+        }
+    }
     defaultConfig {
         applicationId = "com.rolang.app"
         minSdk = 26
@@ -23,6 +51,21 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        getByName("release") {
+            if (keystorePropertiesFile.isFile) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            isUniversalApk = false
+        }
     }
     buildFeatures { compose = true }
     compileOptions {
