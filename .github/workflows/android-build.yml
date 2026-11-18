@@ -3,14 +3,10 @@ name: Ro-Lang Android Build
 on:
   push:
     branches: [main]
-    paths:
-      - '**'
-      - '.github/workflows/android-build.yml'
+
   pull_request:
     branches: [main]
-    paths:
-      - 'rolang-app/**'
-      - '.github/workflows/android-build.yml'
+    
   workflow_dispatch:
 
 permissions:
@@ -29,7 +25,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: rolang-app
+        working-directory: .
 
     steps:
       - name: Checkout Repository
