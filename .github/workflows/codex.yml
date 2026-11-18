@@ -1,0 +1,263 @@
+name: Codex DB Fixer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "prompt.md"
+
+concurrency:
+  group: codex-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CODEX_CLI_VERSION: "0.166.0"
+  CODEX_MAX_ATTEMPTS: "5"
+  CODEX_ATTEMPT_TIMEOUT_MINUTES: "45"
+  CODEX_RETRY_BASE_SECONDS: "15"
+  CODEX_RETRY_MAX_SECONDS: "120"
+
+jobs:
+  codex-run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    env:
+      AGENTROUTER_API_KEY: ${{ secrets.AGENTROUTER_API_KEY }}
+      CODEX_BASE_SHA: ${{ github.sha }}
+
+    steps:
+      - name: Initialize runner temp paths
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "CODEX_HOME=$RUNNER_TEMP/codex-home" >> "$GITHUB_ENV"
+          echo "CODEX_RECOVERY_DIR=$RUNNER_TEMP/codex-recovery" >> "$GITHUB_ENV"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore Codex session cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.CODEX_HOME }}
+          key: codex-session-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            codex-session-${{ github.run_id }}-
+
+      - name: Restore worktree checkpoint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          checkpoint_dir="$CODEX_HOME/recovery-checkpoint"
+
+          if [[ -s "$checkpoint_dir/base-sha.txt" ]]; then
+            checkpoint_base="$(<"$checkpoint_dir/base-sha.txt")"
+            if [[ "$checkpoint_base" != "$GITHUB_SHA" ]]; then
+              echo "::error::Recovery checkpoint belongs to $checkpoint_base, not $GITHUB_SHA"
+              exit 1
+            fi
+          fi
+
+          if [[ -s "$checkpoint_dir/worktree.patch" ]]; then
+            git apply --check --binary "$checkpoint_dir/worktree.patch"
+            git apply --binary "$checkpoint_dir/worktree.patch"
+            echo "Restored tracked-file progress from the previous workflow attempt."
+          fi
+
+          if [[ -s "$checkpoint_dir/untracked-files.tar.gz" ]]; then
+            tar -xzf "$checkpoint_dir/untracked-files.tar.gz"
+            echo "Restored untracked-file progress from the previous workflow attempt."
+          fi
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version-file: .github/.java-version
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Codex CLI
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for attempt in 1 2 3; do
+            if timeout 5m npm install --global "@openai/codex@$CODEX_CLI_VERSION"; then
+              exit 0
+            fi
+            if (( attempt < 3 )); then
+              sleep $((attempt * 10))
+            fi
+          done
+          echo "::error::Unable to install Codex CLI after three attempts"
+          exit 1
+
+      - name: Configure Codex
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${AGENTROUTER_API_KEY:-}" ]]; then
+            echo "::error::Repository secret AGENTROUTER_API_KEY is required"
+            exit 1
+          fi
+
+          mkdir -p "$CODEX_HOME"
+          cat > "$CODEX_HOME/config.toml" <<'EOF'
+          model = "gpt-5.6-sol"
+          model_provider = "agentrouter"
+
+          [model_providers.agentrouter]
+          name = "AgentRouter"
+          base_url = "https://rocckyai.rockyyrec.workers.dev/v1"
+          wire_api = "responses"
+          env_key = "AGENTROUTER_API_KEY"
+          request_max_retries = 6
+          stream_max_retries = 10
+          stream_idle_timeout_ms = 300000
+          EOF
+
+      - name: Check Codex recovery support
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          codex --version
+          codex exec resume --help >/dev/null
+
+      - name: Run Codex with session recovery
+        shell: bash
+        run: bash .github/scripts/run-codex-with-recovery.sh prompt.md
+
+      - name: Collect changed files and recovery diagnostics
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$CODEX_HOME"
+          git add -A
+
+          mkdir -p output_artifact codex_diagnostics
+          : > output_artifact/deleted_files.txt
+
+          while IFS= read -r -d '' file; do
+            if [[ -e "$file" || -L "$file" ]]; then
+              mkdir -p "output_artifact/$(dirname "$file")"
+              cp -a "$file" "output_artifact/$file"
+            else
+              printf '%s\n' "$file" >> output_artifact/deleted_files.txt
+            fi
+          done < <(git diff --cached --name-only -z)
+
+          if [[ -d "$CODEX_RECOVERY_DIR" ]]; then
+            cp -a "$CODEX_RECOVERY_DIR/." codex_diagnostics/
+          fi
+          if [[ -d "$CODEX_HOME/sessions" ]]; then
+            mkdir -p codex_diagnostics/sessions
+            cp -a "$CODEX_HOME/sessions/." codex_diagnostics/sessions/
+          fi
+          if [[ -d "$CODEX_HOME/recovery-checkpoint" ]]; then
+            mkdir -p codex_diagnostics/recovery-checkpoint
+            cp -a "$CODEX_HOME/recovery-checkpoint/." codex_diagnostics/recovery-checkpoint/
+          fi
+
+      - name: Save Codex session cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CODEX_HOME }}
+          key: codex-session-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Upload Codex changes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-output-${{ github.sha }}-${{ github.run_attempt }}
+          path: output_artifact/
+          retention-days: 14
+
+      - name: Upload Codex recovery diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-recovery-${{ github.sha }}-${{ github.run_attempt }}
+          path: codex_diagnostics/
+          if-no-files-found: warn
+          retention-days: 7
+
+  build_app:
+    name: Build Modified App
+    needs: codex-run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base code
+        uses: actions/checkout@v4
+
+      - name: Download AI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-output-${{ github.sha }}-${{ github.run_attempt }}
+          path: ai_changes
+
+      - name: Apply AI changes to code
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -f ai_changes/deleted_files.txt ]]; then
+            while IFS= read -r file; do
+              [[ -n "$file" ]] && rm -f -- "$file"
+            done < ai_changes/deleted_files.txt
+            rm ai_changes/deleted_files.txt
+          fi
+
+          cp -a ai_changes/. ./
+          rm -rf ai_changes
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Decode keystore
+        env:
+          ENCODED_STRING: ${{ secrets.SIGNING_KEY }}
+        run: printf '%s' "$ENCODED_STRING" | base64 --decode > keystore.jks
+
+      - name: Create keystore.properties
+        env:
+          STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        shell: bash
+        run: |
+          {
+            printf 'storeFile=keystore.jks\n'
+            printf 'storePassword=%s\n' "$STORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Build release APK
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Upload arm64 APK artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rocat-app-arm64-release
+          path: app/build/outputs/apk/release/app-arm64-v8a-release.apk
