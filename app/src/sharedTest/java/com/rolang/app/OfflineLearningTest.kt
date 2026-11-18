@@ -36,8 +36,10 @@ class OfflineLearningTest {
         repository.initialize(context)
         repository.initialize(context)
         val stories = repository.dao.stories().first().map(Corpus::story)
-        assertEquals(9, stories.size)
-        stories.groupBy { it.family }.values.forEach { assertEquals(Level.entries.toSet(), it.map { s -> s.level }.toSet()) }
+        assertEquals(20, stories.size)
+        assertEquals((1..20).toList(), stories.sortedBy { it.order }.map { it.order })
+        assertEquals(setOf(UnitKind.LESSON, UnitKind.DIALOGUE, UnitKind.STORY), stories.map { it.kind }.toSet())
+        assertTrue(stories.all { it.level == Level.BEGINNER })
         for (story in stories) for (target in Language.entries) for (native in Language.entries) {
             for (index in story.sentences.indices) for (token in Words.tokens(story.sentence(index, target))) {
                 val detail = repository.lookup(story, index, token.text, target, native)

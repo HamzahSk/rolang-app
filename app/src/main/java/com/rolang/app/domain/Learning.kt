@@ -13,7 +13,12 @@ enum class Language(val code: String, val label: String) {
 }
 
 enum class Level(val label: String) {
-    BEGINNER("Beginner · A1–A2"), INTERMEDIATE("Intermediate · B1–B2"), ADVANCED("Advanced · C1–C2")
+    BEGINNER("Beginner · A1"), INTERMEDIATE("Intermediate · B1–B2"), ADVANCED("Advanced · C1–C2")
+}
+
+enum class PracticeMode(val label: String) {
+    RECOGNITION("Recognition"), RECALL("Tagalog → Indonesian"), REVERSE("Indonesian → Tagalog"),
+    CONTEXT("Sentence completion"), GRAMMAR("Grammar practice")
 }
 
 data class WordToken(val text: String, val start: Int, val end: Int)

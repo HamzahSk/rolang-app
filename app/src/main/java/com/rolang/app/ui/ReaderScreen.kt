@@ -1,6 +1,7 @@
 package com.rolang.app.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -16,6 +17,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -31,7 +34,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 
 private data class SelectedWord(val text: String, val paragraph: Int)
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewModel, onBack: () -> Unit) {
     val prefs = state.preferences
@@ -81,7 +84,10 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
             verticalArrangement = Arrangement.spacedBy(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             item(key = "heading") {
                 Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SectionTitle(story.title(prefs.target), "${story.category} · ${story.level.label}")
+                    Image(painterResource(illustrationResource(story.image)), null,
+                        Modifier.fillMaxWidth().height(96.dp), contentScale = ContentScale.Fit)
+                    SectionTitle(story.title(prefs.target), "Unit ${story.order} · ${story.kind.label} · ${story.category}")
+                    Text(story.summary(prefs.target), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Tap any word to explore its meaning.", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     VocabularyLegend()
@@ -106,12 +112,69 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                     }
                 }
                 Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    story.speakers.getOrNull(paragraph)?.let { speaker ->
+                        Text(speaker, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+                    }
                     Text(annotated, Modifier.fillMaxWidth().testTag("story-paragraph-$paragraph"),
                         style = TextStyle(fontFamily = FontFamily.Serif, fontSize = prefs.fontSize.sp,
                             lineHeight = (prefs.fontSize * 1.8).sp))
                     AnimatedVisibility(translated) {
                         Text(story.sentence(paragraph, prefs.native), color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+            if (story.objectives.isNotEmpty()) item(key = "objectives") {
+                Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Learning goals", style = MaterialTheme.typography.titleLarge)
+                    story.objectives.forEach { Text("• ${it.getValue(prefs.native.code)}") }
+                }
+            }
+            if (story.pronunciation[prefs.native.code]?.isNotBlank() == true) item(key = "pronunciation") {
+                Card(Modifier.widthIn(max = 680.dp).fillMaxWidth(), colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                    Column(Modifier.padding(20.dp)) {
+                        DetailSection("Pronunciation guide", story.pronunciation.getValue(prefs.native.code))
+                    }
+                }
+            }
+            itemsIndexed(story.notes, key = { index, _ -> "note:$index" }) { _, note ->
+                Card(Modifier.widthIn(max = 680.dp).fillMaxWidth(), colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+                    Column(Modifier.padding(20.dp)) { DetailSection(note.title(prefs.native), note.text(prefs.native)) }
+                }
+            }
+            if (story.focus(prefs.target).isNotEmpty()) item(key = "focus") {
+                Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Focus vocabulary", style = MaterialTheme.typography.titleLarge)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        story.focus(prefs.target).forEach { expression ->
+                            val status = state.wordStatus(story.id, expression)
+                            val style = vocabularyStyle(status, textColor)
+                            FilterChip(false, {
+                                val paragraph = story.sentences.indexOfFirst {
+                                    it.getValue(prefs.target.code).contains(expression, ignoreCase = true)
+                                }.coerceAtLeast(0)
+                                selected = SelectedWord(expression, paragraph)
+                            }, label = { Text(expression) }, colors = FilterChipDefaults.filterChipColors(
+                                containerColor = style.background, labelColor = style.color))
+                        }
+                    }
+                }
+            }
+            if (story.exercises.isNotEmpty()) item(key = "exercises-heading") {
+                Text("Check your understanding", Modifier.widthIn(max = 680.dp).fillMaxWidth(),
+                    style = MaterialTheme.typography.titleLarge)
+            }
+            itemsIndexed(story.exercises, key = { exercise, _ -> "exercise:$exercise" }) { _, exercise ->
+                var answerVisible by rememberSaveable(story.id, exercise.question(prefs.native)) { mutableStateOf(false) }
+                Card(Modifier.widthIn(max = 680.dp).fillMaxWidth()) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(exercise.question(prefs.native), style = MaterialTheme.typography.titleMedium)
+                        if (answerVisible) Text(exercise.answer(prefs.native), color = MaterialTheme.colorScheme.primary)
+                        TextButton(onClick = { answerVisible = !answerVisible }) {
+                            Text(if (answerVisible) "Hide answer" else "Show answer")
+                        }
                     }
                 }
             }
@@ -140,7 +203,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                     Text("${word.partOfSpeech} · ${prefs.target.label} → ${prefs.native.label}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 item { DetailSection("Meaning", word.meaning) }
-                item { DetailSection("In context", word.explanation) }
+                item { DetailSection("Pronunciation & context", word.explanation) }
                 item { DetailSection("Example", word.example + "\n\n" + word.exampleTranslation) }
                 item {
                     VocabularyStatusSelector(state.wordStatus(story.id, word.word)) {

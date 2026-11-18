@@ -89,6 +89,8 @@ interface LearningDao {
     fun stories(): Flow<List<StoryEntity>>
     @Query("SELECT * FROM stories")
     suspend fun allStories(): List<StoryEntity>
+    @Query("UPDATE stories SET available = 0 WHERE remote = 0 AND id NOT IN (:ids)")
+    suspend fun hideObsoleteBundledStories(ids: List<String>)
     @Query("SELECT COUNT(*) FROM stories")
     suspend fun storyCount(): Int
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -49,14 +49,7 @@ fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Lan
             LanguagePicker("Translate into", prefs.native, native)
             Text("Your vocabulary and reviews stay separate for each language pair.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Preferred reading level", style = MaterialTheme.typography.titleMedium)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Level.entries.forEach { value -> FilterChip(prefs.level == value, { level(value) }, label = { Text(value.label) }) }
-                }
-            }
-        }
+        item { InfoCard("Current course: Tagalog A1", "This release focuses on a complete beginner foundation. Higher-level course content is intentionally not included yet.") }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Reader text size", style = MaterialTheme.typography.titleMedium)

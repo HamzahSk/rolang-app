@@ -1,6 +1,7 @@
 package com.rolang.app.ui
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,7 +17,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.rolang.app.LearningState
 import com.rolang.app.data.Story
@@ -42,7 +45,7 @@ fun HomeScreen(state: LearningState, now: Long, stories: () -> Unit, review: () 
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("One story.\nA world of words.", style = MaterialTheme.typography.headlineLarge)
+                Text("Your complete\nTagalog A1 path.", style = MaterialTheme.typography.headlineLarge)
                 Text("Learning ${prefs.target.label} with ${prefs.native.label}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -52,9 +55,9 @@ fun HomeScreen(state: LearningState, now: Long, stories: () -> Unit, review: () 
                     MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceContainer))).padding(24.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("YOUR NEXT CHAPTER", style = MaterialTheme.typography.labelLarge)
-                        Text("A little reading,\na little discovery.", style = MaterialTheme.typography.titleLarge)
-                        Text("${prefs.level.label} · 3 story genres")
+                        Text("START OR CONTINUE", style = MaterialTheme.typography.labelLarge)
+                        Text("Lessons, dialogues,\nand original readings.", style = MaterialTheme.typography.titleLarge)
+                        Text("${state.stories.size} ordered A1 units · offline")
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("Explore stories", style = MaterialTheme.typography.labelLarge)
                             Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.padding(start = 8.dp).size(20.dp))
@@ -75,8 +78,8 @@ fun HomeScreen(state: LearningState, now: Long, stories: () -> Unit, review: () 
                 if (due > 0) "A quick practice helps your new words stay with you." else "Tap a word while reading and save it. Your first review starts there.",
                 if (due > 0) "Start a review" else "Find a story", if (due > 0) review else stories)
         }
-        item { SectionTitle("Made for a quiet moment", "Built-in stories · no connection needed") }
-        items(state.stories.filter { it.level == prefs.level }, key = { it.id }) { story ->
+        item { SectionTitle("Continue the course", "Progressive lessons · tap-to-translate · no connection needed") }
+        items(state.stories.filter { it.level == Level.BEGINNER }.take(6), key = { it.id }) { story ->
             StoryCard(story, state, read)
         }
     }
@@ -95,32 +98,28 @@ fun StatTile(value: String, label: String, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun StoriesScreen(state: LearningState, level: (Level) -> Unit, read: (String) -> Unit) {
-    var category by rememberSaveable { mutableStateOf("All genres") }
+    var category by rememberSaveable { mutableStateOf("All units") }
     var query by rememberSaveable { mutableStateOf("") }
     val prefs = state.preferences
-    val categories = listOf("All genres") + state.stories.map { it.category }.distinct()
+    val categories = listOf("All units") + state.stories.map { it.category }.distinct()
     val filtered = state.stories.filter { story ->
-        story.level == prefs.level && (category == "All genres" || story.category == category) &&
+        story.level == Level.BEGINNER && (category == "All units" || story.category == category) &&
             (story.title(prefs.target).contains(query, true) || story.category.contains(query, true) || story.summary(prefs.target).contains(query, true))
     }
     LazyColumn(modifier = Modifier.testTag("stories-list"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        item { SectionTitle("Your story shelf", "Read in ${prefs.target.label} · translate into ${prefs.native.label}") }
+        item { SectionTitle("Tagalog A1 curriculum", "Learn in order or revisit any unit · ${prefs.target.label} → ${prefs.native.label}") }
         item {
             OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), singleLine = true,
                 label = { Text("Search stories") }, leadingIcon = { Icon(Icons.Outlined.Search, null) })
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Reading level", style = MaterialTheme.typography.titleMedium)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Level.entries.forEach { item -> FilterChip(prefs.level == item, { level(item) }, label = { Text(item.label) }) }
-                }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     categories.forEach { value -> FilterChip(category == value, { category = value }, label = { Text(value) }) }
                 }
             }
         }
-        item { Text("${filtered.size} stories · all available offline", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
+        item { Text("${filtered.size} A1 units · all available offline", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
         if (filtered.isEmpty()) item { InfoCard("No stories found", "Try another search or genre.") }
         items(filtered, key = { it.id }) { story -> StoryCard(story, state, read) }
     }
@@ -132,12 +131,16 @@ fun StoryCard(story: Story, state: LearningState, read: (String) -> Unit) {
     Card(onClick = { read(story.id) }, modifier = Modifier.fillMaxWidth().animateContentSize(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Image(painterResource(illustrationResource(story.image)), null, Modifier.fillMaxWidth().height(132.dp),
+                contentScale = ContentScale.Fit)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(story.category.uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+                Text("${story.order}. ${story.kind.label.uppercase()} · ${story.category.uppercase()}",
+                    style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
                 Icon(when (story.family) {
-                    "river" -> Icons.Outlined.Park
-                    "letter" -> Icons.Outlined.MailOutline
-                    else -> Icons.Outlined.Storefront
+                    "travel" -> Icons.Outlined.Map
+                    "food" -> Icons.Outlined.Restaurant
+                    "family" -> Icons.Outlined.Groups
+                    else -> Icons.AutoMirrored.Outlined.MenuBook
                 }, null, tint = MaterialTheme.colorScheme.primary)
             }
             Text(story.title(state.preferences.target), style = MaterialTheme.typography.titleLarge)

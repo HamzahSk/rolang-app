@@ -111,7 +111,7 @@ class HybridLearningTest {
         server.enqueue(json(JSONObject().put("stories", JSONArray().put(detail)).put("next", JSONObject.NULL)))
         server.enqueue(json(detail))
         try { engine.synchronize(); fail("Expected incomplete dictionary rejection") } catch (_: IllegalArgumentException) { }
-        assertEquals(9, database.dao().storyCount())
+        assertEquals(20, database.dao().storyCount())
         val story = Corpus.story(database.dao().stories().first().first())
         assertTrue(repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
             Language.ENGLISH, Language.INDONESIAN).translation.isNotBlank())
@@ -191,7 +191,7 @@ class HybridLearningTest {
         try { engine.synchronize(); fail("Expected expired authentication") } catch (_: ApiException) { }
         assertNull(sessions.read())
         assertEquals(pending.operationId, database.dao().pending().single().operationId)
-        assertEquals(9, database.dao().storyCount())
+        assertEquals(20, database.dao().storyCount())
     }
 
     @Test fun switchingAccountCannotUploadThePreviousAccountsLibrary() = runBlocking {

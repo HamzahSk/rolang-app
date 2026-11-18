@@ -44,6 +44,7 @@ class RemoteReaderTest {
         var state by mutableStateOf(LearningState(ready = true))
         compose.setContent { RoLangTheme(false) { ReaderScreen(story, state, viewModel) {} } }
         fun tapFirstWord() {
+            compose.onNodeWithTag("reader-content").performScrollToNode(hasTestTag("story-paragraph-0"))
             val layouts = mutableListOf<TextLayoutResult>()
             compose.onNodeWithTag("story-paragraph-0").performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
             compose.onNodeWithTag("story-paragraph-0").performTouchInput { click(layouts.single().getBoundingBox(1).center) }

@@ -34,6 +34,9 @@ data class LearningState(
 
 data class Quiz(
     val word: VocabularyEntity,
+    val mode: PracticeMode,
+    val prompt: String,
+    val expected: String,
     val choices: List<String>,
     val typed: Boolean,
     val response: String = "",
@@ -58,7 +61,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     val busy = _busy.asStateFlow()
     private var languageGeneration = 0
     private val content = combine(preferences.preferences,
-        repository.dao.stories().map { rows -> withContext(Dispatchers.Default) { rows.map(Corpus::story) } },
+        repository.dao.stories().map { rows -> withContext(Dispatchers.Default) { rows.map(Corpus::story).sortedBy { it.order } } },
         repository.dao.vocabulary(), repository.dao.readings(), repository.dao.reviews()) { prefs, stories, words, reading, reviews ->
         LearningState(prefs, stories, words, reading, reviews)
     }
@@ -111,6 +114,8 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     } }
     suspend fun lookup(story: Story, index: Int, word: String, prefs: LearningPreferences) =
         repository.lookup(story, index, word, prefs.target, prefs.native)
+    suspend fun lookup(story: Story, word: String, prefs: LearningPreferences) =
+        repository.lookup(story, word, prefs.target, prefs.native)
     fun save(story: Story, word: WordDetail, prefs: LearningPreferences) { work {
         val saved = repository.save(story, word, prefs.target, prefs.native, System.currentTimeMillis())
         _now.value = System.currentTimeMillis()
@@ -133,20 +138,41 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         repository.reading(story, language, index, completed)
         if (completed) _message.value = "Story completed · well done"
     } }
-    fun startQuiz(typed: Boolean) {
+    fun startQuiz(mode: PracticeMode) {
         if (_busy.value) return
         val word = state.value.due(System.currentTimeMillis()).firstOrNull() ?: return
         val generation = languageGeneration
         _busy.value = true
         work {
             try {
-                val distractors = repository.dao.lexemes(word.language).map { JSONObject(it.content) }
+                val lexemes = repository.dao.lexemes(word.language).map { JSONObject(it.content) }
+                val distractors = lexemes
                     .filter { it.getString("pos") == word.partOfSpeech }
                     .map { it.getJSONObject("translations").getString(word.reference) }
                     .filter { !Words.matches(it, word.translation) }.distinct().shuffled().take(3)
+                val source = lexemes.firstOrNull { Words.key(it.getString("word")) == word.word }
+                val practice = source?.optJSONObject("practice")
+                val reference = Language.from(word.reference)
+                val contextual = word.example.replace(Regex("(?iu)(?<![\\p{L}\\p{M}])${Regex.escape(word.word)}(?![\\p{L}\\p{M}])"), "____")
+                val effective = if (mode == PracticeMode.GRAMMAR && practice == null) PracticeMode.CONTEXT else mode
+                val prompt = when (effective) {
+                    PracticeMode.RECOGNITION, PracticeMode.RECALL -> word.word
+                    PracticeMode.REVERSE -> word.translation
+                    PracticeMode.CONTEXT -> contextual
+                    PracticeMode.GRAMMAR -> practice!!.getJSONObject("prompt").getString(reference.code)
+                }
+                val expected = if (effective in setOf(PracticeMode.RECOGNITION, PracticeMode.RECALL)) word.translation else word.word
+                val choices = when (effective) {
+                    PracticeMode.RECOGNITION -> (distractors + expected).shuffled()
+                    PracticeMode.GRAMMAR -> practice?.optJSONArray("choices")?.let { array ->
+                        (0 until array.length()).map(array::getString)
+                    }.orEmpty().ifEmpty { listOf(word.word) }
+                    else -> emptyList()
+                }
                 val prefs = state.value.preferences
                 if (generation == languageGeneration && prefs.target.code == word.language && prefs.native.code == word.reference) {
-                    _quiz.value = Quiz(word, (distractors + word.translation).shuffled(), typed)
+                    _quiz.value = Quiz(word, effective, prompt, expected, choices,
+                        effective !in setOf(PracticeMode.RECOGNITION, PracticeMode.GRAMMAR))
                 }
             } finally { _busy.value = false }
         }
@@ -155,7 +181,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     fun reveal() {
         val quiz = _quiz.value ?: return
         if (!quiz.revealed && quiz.response.isNotBlank()) _quiz.value = quiz.copy(revealed = true,
-            correct = Words.matches(quiz.response, quiz.word.translation))
+            correct = Words.matches(quiz.response, quiz.expected))
     }
     fun rate(rating: Rating) {
         val question = _quiz.value ?: return

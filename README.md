@@ -42,8 +42,8 @@ when checks fail. This debug build requires no GitHub Secrets or signing keystor
 1. In **Profile**, independently choose English, Indonesian, or Filipino (Tagalog)
    as your learning and reference languages. Choose a reading level, text size,
    and light or dark appearance. Preferences survive restart.
-2. Browse **Stories** by genre, level, or search. Each of the three story families
-   has Beginner (A1–A2), Intermediate (B1–B2), and Advanced (C1–C2) versions.
+2. Browse the ordered **Tagalog A1 curriculum** or search by topic. It contains
+   lessons, realistic dialogues, and original readings, all available offline.
 3. Scroll through the entire story as continuous paragraphs in the Reading room.
    Tap any word to see its offline translation,
    contextual meaning, part of speech, explanation, and example in both languages.
@@ -168,14 +168,20 @@ on a clean installation so the UI scenario starts with its default language pair
 
 ## Content scope
 
-This initial library contains nine short story variants in three genres: everyday
-life, mystery, and nature/adventure. Difficulty bands are editorial estimates,
-not certified CEFR assessments. Built-in translations are curated contextual
-glosses; grammatical markers and multiword expressions do not have exact
-one-word equivalents, so sentence translations supply the complete meaning.
-There is no arbitrary-text translator. Further bundled stories can be authored in
-the corpus generator; remote stories can be published through the backend API.
-Both must pass complete multilingual dictionary coverage.
+The bundled library contains 20 progressive A1 units: nine structured lessons,
+six realistic dialogues, and five coherent readings. Topics cover pronunciation,
+introductions, pronouns, questions, numbers and time, family, school and everyday
+objects, verb aspect, negation, descriptions, food and shopping, directions,
+travel, daily conversation, friendship, and simple romance. Each unit includes
+complete Indonesian and English translations, focus vocabulary, grammar or usage
+notes, and comprehension checks where appropriate. Eight optimized Android vector
+illustrations provide a consistent offline visual identity.
+
+Built-in translations are curated contextual glosses; grammatical markers and
+multiword expressions do not always have exact one-word equivalents, so sentence
+translations supply the complete meaning. There is no arbitrary-text translator.
+Further bundled units can be authored in the corpus generator; remote stories can
+be published through the backend API. Both must pass multilingual coverage checks.
 
 The existing JavaScript Ro-Lang tutor under `../roccky_bot/ro-lang` is independent
 of this app.

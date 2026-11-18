@@ -18,6 +18,7 @@ class LearningFlowTest {
         compose.waitUntil(30_000) { compose.onAllNodesWithText("Explore stories").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Stories", useUnmergedTree = true).performClick()
         scrollClick("stories-list", "The morning market")
+        compose.onNodeWithTag("reader-content").performScrollToNode(hasText("Maya walks to the market in the morning."))
         val text = compose.onNodeWithText("Maya walks to the market in the morning.")
         val layouts = mutableListOf<TextLayoutResult>()
         text.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }

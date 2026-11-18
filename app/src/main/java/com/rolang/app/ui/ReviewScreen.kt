@@ -15,10 +15,10 @@ import com.rolang.app.domain.*
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, start: (Boolean) -> Unit,
+fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, start: (PracticeMode) -> Unit,
                  answer: (String) -> Unit, reveal: () -> Unit, rate: (Rating) -> Unit, exit: () -> Unit,
                  stories: () -> Unit) {
-    var typed by rememberSaveable { mutableStateOf(false) }
+    var mode by rememberSaveable { mutableStateOf(PracticeMode.RECOGNITION) }
     val due = state.due(now)
     BackHandler(quiz != null) { exit() }
     LazyColumn(modifier = Modifier.testTag("review-content"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -40,11 +40,12 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Choose your practice", style = MaterialTheme.typography.titleMedium)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(!typed, { typed = false }, label = { Text("Multiple choice") })
-                            FilterChip(typed, { typed = true }, label = { Text("Written recall") })
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PracticeMode.entries.forEach { value ->
+                                FilterChip(mode == value, { mode = value }, label = { Text(value.label) })
+                            }
                         }
-                        Button(onClick = { start(typed) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Practice next word") }
+                        Button(onClick = { start(mode) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Practice next word") }
                     }
                 }
             }
@@ -53,8 +54,8 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
             item {
                 Card(modifier = Modifier.testTag("quiz-question"), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("TRANSLATE INTO ${Language.from(quiz.word.reference).label.uppercase()}", style = MaterialTheme.typography.labelLarge)
-                        Text(quiz.word.word, style = MaterialTheme.typography.headlineLarge)
+                        Text(quiz.mode.label.uppercase(), style = MaterialTheme.typography.labelLarge)
+                        Text(quiz.prompt, style = MaterialTheme.typography.headlineMedium)
                         VocabularyStatusLabel(quiz.word.learningStatus())
                         Text("${quiz.word.partOfSpeech} · ${quiz.word.storyTitle}")
                     }
@@ -69,7 +70,7 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
                 item { Button(onClick = reveal, enabled = quiz.response.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Check answer") } }
             } else {
                 item { InfoCard(if (quiz.correct) "You remembered it" else "A word worth another look",
-                    "${quiz.word.word} → ${quiz.word.translation}\n\n${quiz.word.example}\n\n${quiz.word.exampleTranslation}") }
+                    "Answer: ${quiz.expected}\n\n${quiz.word.word} → ${quiz.word.translation}\n\n${quiz.word.example}\n\n${quiz.word.exampleTranslation}") }
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(if (quiz.correct) "How did that feel?" else "Practice it again in 10 minutes.", style = MaterialTheme.typography.titleMedium)

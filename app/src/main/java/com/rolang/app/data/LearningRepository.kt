@@ -10,11 +10,10 @@ class LearningRepository(private val database: LearningDatabase) {
     val dao = database.dao()
     suspend fun initialize(context: Context) = withContext(Dispatchers.IO) {
         database.withTransaction {
-            if (dao.storyCount() == 0) {
-                val (stories, words) = Corpus.load(context)
-                dao.seedLexicon(words)
-                dao.seedStories(stories)
-            }
+            val (stories, words) = Corpus.load(context)
+            dao.hideObsoleteBundledStories(stories.map { it.id })
+            dao.seedLexicon(words)
+            dao.seedStories(stories)
         }
     }
     suspend fun lookup(story: Story, sentence: Int, word: String, target: Language, native: Language): WordDetail {
@@ -22,6 +21,13 @@ class LearningRepository(private val database: LearningDatabase) {
         val lexeme = cached?.let { LexemeEntity(it.language, it.word, it.content) }
             ?: checkNotNull(dao.lexeme(target.code, Words.key(word))) { "Translation missing from local cache" }
         return Corpus.detail(lexeme, word, native, story.sentence(sentence, target), story.sentence(sentence, native))
+    }
+    suspend fun lookup(story: Story, word: String, target: Language, native: Language): WordDetail {
+        val key = Words.key(word)
+        val index = story.sentences.indexOfFirst { sentence ->
+            sentence.getValue(target.code).lowercase().contains(key)
+        }.coerceAtLeast(0)
+        return lookup(story, index, word, target, native)
     }
     suspend fun save(story: Story, detail: WordDetail, target: Language, native: Language, now: Long): Boolean =
         database.withTransaction {
