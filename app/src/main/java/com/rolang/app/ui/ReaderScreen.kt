@@ -86,7 +86,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                 Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Image(painterResource(illustrationResource(story.image)), null,
                         Modifier.fillMaxWidth().height(96.dp), contentScale = ContentScale.Fit)
-                    SectionTitle(story.title(prefs.target), "Unit ${story.order} · ${story.kind.label} · ${story.category}")
+                    SectionTitle(story.title(prefs.target), "${story.kind.label} · ${story.category} · ${story.level.label}")
                     Text(story.summary(prefs.target), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Tap any word to explore its meaning.", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -162,25 +162,10 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                     }
                 }
             }
-            if (story.exercises.isNotEmpty()) item(key = "exercises-heading") {
-                Text("Check your understanding", Modifier.widthIn(max = 680.dp).fillMaxWidth(),
-                    style = MaterialTheme.typography.titleLarge)
-            }
-            itemsIndexed(story.exercises, key = { exercise, _ -> "exercise:$exercise" }) { _, exercise ->
-                var answerVisible by rememberSaveable(story.id, exercise.question(prefs.native)) { mutableStateOf(false) }
-                Card(Modifier.widthIn(max = 680.dp).fillMaxWidth()) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(exercise.question(prefs.native), style = MaterialTheme.typography.titleMedium)
-                        if (answerVisible) Text(exercise.answer(prefs.native), color = MaterialTheme.colorScheme.primary)
-                        TextButton(onClick = { answerVisible = !answerVisible }) {
-                            Text(if (answerVisible) "Hide answer" else "Show answer")
-                        }
-                    }
-                }
-            }
-            item(key = "finish") {
-                Button(onClick = { viewModel.reading(story, prefs.target, story.sentences.lastIndex, true); onBack() },
-                    modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth()) { Text("Finish story") }
+            item(key = "exercises") {
+                ExerciseSession(story, state, { score, total, answers ->
+                    viewModel.completeExercises(story, score, total, answers)
+                }, onBack)
             }
         }
     }

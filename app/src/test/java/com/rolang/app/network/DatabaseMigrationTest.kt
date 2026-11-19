@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rolang.app.data.LearningDatabase
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*
@@ -37,7 +38,8 @@ class DatabaseMigrationTest {
             sqlite.version = 1
         }
         val upgraded = Room.databaseBuilder(context, LearningDatabase::class.java, name)
-            .addMigrations(LearningDatabase.MIGRATION_1_2, LearningDatabase.MIGRATION_2_3).build()
+            .addMigrations(LearningDatabase.MIGRATION_1_2, LearningDatabase.MIGRATION_2_3,
+                LearningDatabase.MIGRATION_3_4).build()
         try {
             assertEquals(1, upgraded.dao().storyCount())
             assertTrue(upgraded.dao().allReadings().single().completed)
@@ -47,6 +49,7 @@ class DatabaseMigrationTest {
             assertFalse(upgraded.dao().allStories().single().remote)
             assertTrue(upgraded.dao().allStories().single().available)
             assertTrue(upgraded.dao().pending().isEmpty())
+            assertTrue(upgraded.dao().exerciseResults().first().isEmpty())
         } finally { upgraded.close(); context.deleteDatabase(name) }
     }
 
@@ -79,7 +82,7 @@ class DatabaseMigrationTest {
             sqlite.version = 2
         }
         val upgraded = Room.databaseBuilder(context, LearningDatabase::class.java, name)
-            .addMigrations(LearningDatabase.MIGRATION_2_3).build()
+            .addMigrations(LearningDatabase.MIGRATION_2_3, LearningDatabase.MIGRATION_3_4).build()
         try {
             val words = upgraded.dao().allVocabulary().associateBy { it.word }
             assertEquals("LEARNING", words.getValue("new").status)

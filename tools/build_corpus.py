@@ -11,7 +11,95 @@ UNITS = []
 
 def t(en, id_, tl): return {"en": en, "id": id_, "tl": tl}
 def n(title, en, id_, tl): return {"title": t(title, title, title), "text": t(en, id_, tl)}
-def q(en, id_, tl, a_en, a_id, a_tl): return {"question": t(en, id_, tl), "answer": t(a_en, a_id, a_tl)}
+def q(en, id_, tl, a_en, a_id, a_tl):
+    return {"type": "COMPREHENSION", "prompt": t(en, id_, tl),
+            "answer": t(a_en, a_id, a_tl),
+            "explanation": t("The answer is stated in the learning text.",
+                             "Jawabannya disebutkan dalam teks pembelajaran.",
+                             "Nasa teksto ng aralin ang sagot.")}
+
+
+def generated_exercises(id_, kind, sentences, focus, note, authored):
+    """Build a complete, content-derived practice set for every offline unit."""
+    result = []
+    for index, item in enumerate(authored):
+        result.append({"id": f"{id_}_comprehension_{index + 1}", **item})
+    if kind != "LESSON" and not authored:
+        result.append({
+            "id": f"{id_}_comprehension_1", "type": "COMPREHENSION",
+            "prompt": t("What happens first in this story?", "Apa yang terjadi pertama dalam cerita ini?",
+                        "Ano ang unang nangyayari sa kuwentong ito?"),
+            "answer": t(*sentences[0]),
+            "explanation": t("The opening sentence introduces the first event.",
+                             "Kalimat pembuka memperkenalkan peristiwa pertama.",
+                             "Ipinakikilala ng pambungad na pangungusap ang unang pangyayari.")})
+
+    focus = list(focus)
+    if focus:
+        correct = focus[0]
+        alternatives = (focus[1:] + focus[:1])[:3]
+        choices = [correct] + alternatives
+        result.append({
+            "id": f"{id_}_choice", "type": "MULTIPLE_CHOICE",
+            "prompt": t(f'Which option means “{correct[2]}”?', f'Mana arti “{correct[2]}”?',
+                        f'Alin ang kahulugan ng “{correct[2]}”?'),
+            "choices": {lang: [value[i] for value in choices] for i, lang in enumerate(LANGS)},
+            "answer": t(*correct),
+            "explanation": t(f'“{correct[2]}” means “{correct[0]}”.',
+                             f'“{correct[2]}” berarti “{correct[1]}”.',
+                             f'Ang “{correct[2]}” ay nangangahulugang “{correct[2]}”.')})
+        result.append({
+            "id": f"{id_}_vocabulary", "type": "VOCABULARY_TRANSLATION",
+            "prompt": t(f'Type the meaning of “{correct[2]}”.', f'Ketik arti “{correct[2]}”.',
+                        f'Isulat ang kahulugan ng “{correct[2]}”.'),
+            "answer": t(*correct),
+            "explanation": t(f'The focus expression is “{correct[0]}”.',
+                             f'Ekspresi fokusnya adalah “{correct[1]}”.',
+                             f'Ang pokus na parirala ay “{correct[2]}”.')})
+
+    first = sentences[0]
+    blank_answers = []
+    blank_prompts = []
+    for i, sentence in enumerate(first):
+        words = sentence.rstrip(".!?").split()
+        answer = words[-1].strip(",:;“”\"")
+        blank_answers.append(answer)
+        blank_prompts.append(sentence.replace(answer, "____", 1))
+    result.append({
+        "id": f"{id_}_blank", "type": "FILL_BLANK", "prompt": t(*blank_prompts),
+        "answer": t(*blank_answers),
+        "explanation": t("The missing word completes the example sentence.",
+                         "Kata yang hilang melengkapi kalimat contoh.",
+                         "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap.")})
+
+    if kind == "LESSON":
+        grammar_title = note["title"] if note else t("Lesson pattern", "Pola pelajaran", "Padron ng aralin")
+        result.append({
+            "id": f"{id_}_grammar", "type": "GRAMMAR",
+            "prompt": t("Which topic explains the main pattern in this lesson?",
+                        "Topik mana yang menjelaskan pola utama pelajaran ini?",
+                        "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"),
+            "choices": {
+                "en": [grammar_title["en"], "Word order", "Informal spelling"],
+                "id": [grammar_title["id"], "Urutan kata", "Ejaan informal"],
+                "tl": [grammar_title["tl"], "Ayos ng salita", "Di-pormal na baybay"],
+            },
+            "answer": grammar_title,
+            "explanation": t("This is the grammar or usage focus explained in the lesson.",
+                             "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+                             "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin.")})
+        result.append({
+            "id": f"{id_}_sentence", "type": "SENTENCE_CONSTRUCTION",
+            "prompt": t("Put the words in order to rebuild the example.",
+                        "Susun kata-kata untuk membentuk kembali contoh.",
+                        "Ayusin ang mga salita upang mabuo muli ang halimbawa."),
+            "answer": t(*first),
+            "tokens": {lang: list(reversed(first[i].replace(".", "").replace(",", "").split()))
+                       for i, lang in enumerate(LANGS)},
+            "explanation": t("This order matches the complete example sentence.",
+                             "Urutan ini sesuai dengan kalimat contoh lengkap.",
+                             "Tugma ang ayos na ito sa buong halimbawang pangungusap.")})
+    return result
 
 
 def u(id_, kind, family, category, image, title, summary, sentences, focus=(), note=None,
@@ -25,7 +113,8 @@ def u(id_, kind, family, category, image, title, summary, sentences, focus=(), n
                          f"Gamitin nang mag-isa ang wika sa yunit {order}.")],
         "notes": [note] if note else [], "pronunciation": t(*(pronunciation or ("", "", ""))),
         "focus": {lang: [x[i] for x in focus] for i, lang in enumerate(LANGS)},
-        "sentences": [t(*x) for x in sentences], "speakers": list(speakers), "exercises": list(exercises)})
+        "sentences": [t(*x) for x in sentences], "speakers": list(speakers),
+        "exercises": generated_exercises(id_, kind, sentences, focus, note, exercises)})
 
 
 u("a1_01_sounds", "LESSON", "foundations", "Foundations", "sounds",

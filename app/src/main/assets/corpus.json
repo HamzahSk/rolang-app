@@ -91,7 +91,9 @@
       "speakers": [],
       "exercises": [
         {
-          "question": {
+          "id": "a1_01_sounds_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "Which letters form one sound in ngayon?",
             "id": "Huruf apa yang menjadi satu bunyi dalam ngayon?",
             "tl": "Aling mga titik ang iisang tunog sa ngayon?"
@@ -100,6 +102,187 @@
             "en": "Ng.",
             "id": "Ng.",
             "tl": "Ng."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_01_sounds_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “ako”?",
+            "id": "Mana arti “ako”?",
+            "tl": "Alin ang kahulugan ng “ako”?"
+          },
+          "choices": {
+            "en": [
+              "I",
+              "house",
+              "food",
+              "thank you"
+            ],
+            "id": [
+              "saya",
+              "rumah",
+              "makanan",
+              "terima kasih"
+            ],
+            "tl": [
+              "ako",
+              "bahay",
+              "pagkain",
+              "salamat"
+            ]
+          },
+          "answer": {
+            "en": "I",
+            "id": "saya",
+            "tl": "ako"
+          },
+          "explanation": {
+            "en": "“ako” means “I”.",
+            "id": "“ako” berarti “saya”.",
+            "tl": "Ang “ako” ay nangangahulugang “ako”."
+          }
+        },
+        {
+          "id": "a1_01_sounds_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “ako”.",
+            "id": "Ketik arti “ako”.",
+            "tl": "Isulat ang kahulugan ng “ako”."
+          },
+          "answer": {
+            "en": "I",
+            "id": "saya",
+            "tl": "ako"
+          },
+          "explanation": {
+            "en": "The focus expression is “I”.",
+            "id": "Ekspresi fokusnya adalah “saya”.",
+            "tl": "Ang pokus na parirala ay “ako”."
+          }
+        },
+        {
+          "id": "a1_01_sounds_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Filipino has five clear vowels: a, e, i, o, and ____.",
+            "id": "Filipino memiliki lima vokal yang jelas: a, e, i, o, dan ____.",
+            "tl": "May limang malinaw na patinig ang Filipino: a, e, i, o, at ____."
+          },
+          "answer": {
+            "en": "u",
+            "id": "u",
+            "tl": "u"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_01_sounds_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "28-letter alphabet",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "28-letter alphabet",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "28-letter alphabet",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "28-letter alphabet",
+            "id": "28-letter alphabet",
+            "tl": "28-letter alphabet"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_01_sounds_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "Filipino has five clear vowels: a, e, i, o, and u.",
+            "id": "Filipino memiliki lima vokal yang jelas: a, e, i, o, dan u.",
+            "tl": "May limang malinaw na patinig ang Filipino: a, e, i, o, at u."
+          },
+          "tokens": {
+            "en": [
+              "u",
+              "and",
+              "o",
+              "i",
+              "e",
+              "a",
+              "vowels:",
+              "clear",
+              "five",
+              "has",
+              "Filipino"
+            ],
+            "id": [
+              "u",
+              "dan",
+              "o",
+              "i",
+              "e",
+              "a",
+              "jelas:",
+              "yang",
+              "vokal",
+              "lima",
+              "memiliki",
+              "Filipino"
+            ],
+            "tl": [
+              "u",
+              "at",
+              "o",
+              "i",
+              "e",
+              "a",
+              "Filipino:",
+              "ang",
+              "patinig",
+              "na",
+              "malinaw",
+              "limang",
+              "May"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
           }
         }
       ]
@@ -204,7 +387,9 @@
       ],
       "exercises": [
         {
-          "question": {
+          "id": "a1_02_greetings_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "What is Liza's name?",
             "id": "Siapa nama perempuan itu?",
             "tl": "Ano ang pangalan ng babae?"
@@ -213,6 +398,88 @@
             "en": "Liza.",
             "id": "Liza.",
             "tl": "Liza."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_02_greetings_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “magandang umaga”?",
+            "id": "Mana arti “magandang umaga”?",
+            "tl": "Alin ang kahulugan ng “magandang umaga”?"
+          },
+          "choices": {
+            "en": [
+              "good morning",
+              "how are you",
+              "nice to meet you",
+              "take care"
+            ],
+            "id": [
+              "selamat pagi",
+              "apa kabar",
+              "senang bertemu denganmu",
+              "hati-hati"
+            ],
+            "tl": [
+              "magandang umaga",
+              "kumusta ka",
+              "ikinagagalak kitang makilala",
+              "ingat"
+            ]
+          },
+          "answer": {
+            "en": "good morning",
+            "id": "selamat pagi",
+            "tl": "magandang umaga"
+          },
+          "explanation": {
+            "en": "“magandang umaga” means “good morning”.",
+            "id": "“magandang umaga” berarti “selamat pagi”.",
+            "tl": "Ang “magandang umaga” ay nangangahulugang “magandang umaga”."
+          }
+        },
+        {
+          "id": "a1_02_greetings_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “magandang umaga”.",
+            "id": "Ketik arti “magandang umaga”.",
+            "tl": "Isulat ang kahulugan ng “magandang umaga”."
+          },
+          "answer": {
+            "en": "good morning",
+            "id": "selamat pagi",
+            "tl": "magandang umaga"
+          },
+          "explanation": {
+            "en": "The focus expression is “good morning”.",
+            "id": "Ekspresi fokusnya adalah “selamat pagi”.",
+            "tl": "Ang pokus na parirala ay “magandang umaga”."
+          }
+        },
+        {
+          "id": "a1_02_greetings_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Good morning! How are ____?",
+            "id": "Selamat pagi! Apa ____?",
+            "tl": "Magandang umaga! Kumusta ____?"
+          },
+          "answer": {
+            "en": "you",
+            "id": "kabar",
+            "tl": "ka"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -322,7 +589,9 @@
       "speakers": [],
       "exercises": [
         {
-          "question": {
+          "id": "a1_03_pronouns_questions_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "Which pronoun includes the listener?",
             "id": "Pronomina mana yang mencakup lawan bicara?",
             "tl": "Aling panghalip ang kasama ang kausap?"
@@ -331,6 +600,170 @@
             "en": "Tayo.",
             "id": "Tayo.",
             "tl": "Tayo."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_03_pronouns_questions_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “ako”?",
+            "id": "Mana arti “ako”?",
+            "tl": "Alin ang kahulugan ng “ako”?"
+          },
+          "choices": {
+            "en": [
+              "I",
+              "you",
+              "he or she",
+              "we including you"
+            ],
+            "id": [
+              "saya",
+              "kamu",
+              "dia",
+              "kita"
+            ],
+            "tl": [
+              "ako",
+              "ikaw",
+              "siya",
+              "tayo"
+            ]
+          },
+          "answer": {
+            "en": "I",
+            "id": "saya",
+            "tl": "ako"
+          },
+          "explanation": {
+            "en": "“ako” means “I”.",
+            "id": "“ako” berarti “saya”.",
+            "tl": "Ang “ako” ay nangangahulugang “ako”."
+          }
+        },
+        {
+          "id": "a1_03_pronouns_questions_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “ako”.",
+            "id": "Ketik arti “ako”.",
+            "tl": "Isulat ang kahulugan ng “ako”."
+          },
+          "answer": {
+            "en": "I",
+            "id": "saya",
+            "tl": "ako"
+          },
+          "explanation": {
+            "en": "The focus expression is “I”.",
+            "id": "Ekspresi fokusnya adalah “saya”.",
+            "tl": "Ang pokus na parirala ay “ako”."
+          }
+        },
+        {
+          "id": "a1_03_pronouns_questions_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "I am Nia, and she is ____.",
+            "id": "Saya Nia dan dia ____.",
+            "tl": "Ako si Nia, at siya si ____."
+          },
+          "answer": {
+            "en": "Mara",
+            "id": "Mara",
+            "tl": "Mara"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_03_pronouns_questions_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "Inclusive and exclusive we",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "Inclusive and exclusive we",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "Inclusive and exclusive we",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "Inclusive and exclusive we",
+            "id": "Inclusive and exclusive we",
+            "tl": "Inclusive and exclusive we"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_03_pronouns_questions_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "I am Nia, and she is Mara.",
+            "id": "Saya Nia dan dia Mara.",
+            "tl": "Ako si Nia, at siya si Mara."
+          },
+          "tokens": {
+            "en": [
+              "Mara",
+              "is",
+              "she",
+              "and",
+              "Nia",
+              "am",
+              "I"
+            ],
+            "id": [
+              "Mara",
+              "dia",
+              "dan",
+              "Nia",
+              "Saya"
+            ],
+            "tl": [
+              "Mara",
+              "si",
+              "siya",
+              "at",
+              "Nia",
+              "si",
+              "Ako"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
           }
         }
       ]
@@ -441,7 +874,9 @@
       ],
       "exercises": [
         {
-          "question": {
+          "id": "a1_04_meet_joel_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "Where does Joel live?",
             "id": "Di mana Joel tinggal?",
             "tl": "Saan nakatira si Joel?"
@@ -450,6 +885,88 @@
             "en": "In Manila.",
             "id": "Di Manila.",
             "tl": "Sa Maynila."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_04_meet_joel_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “ano ang pangalan mo”?",
+            "id": "Mana arti “ano ang pangalan mo”?",
+            "tl": "Alin ang kahulugan ng “ano ang pangalan mo”?"
+          },
+          "choices": {
+            "en": [
+              "what is your name",
+              "where are you from",
+              "student",
+              "classmates"
+            ],
+            "id": [
+              "siapa namamu",
+              "kamu dari mana",
+              "siswa",
+              "teman sekelas"
+            ],
+            "tl": [
+              "ano ang pangalan mo",
+              "taga-saan ka",
+              "estudyante",
+              "magkaklase"
+            ]
+          },
+          "answer": {
+            "en": "what is your name",
+            "id": "siapa namamu",
+            "tl": "ano ang pangalan mo"
+          },
+          "explanation": {
+            "en": "“ano ang pangalan mo” means “what is your name”.",
+            "id": "“ano ang pangalan mo” berarti “siapa namamu”.",
+            "tl": "Ang “ano ang pangalan mo” ay nangangahulugang “ano ang pangalan mo”."
+          }
+        },
+        {
+          "id": "a1_04_meet_joel_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “ano ang pangalan mo”.",
+            "id": "Ketik arti “ano ang pangalan mo”.",
+            "tl": "Isulat ang kahulugan ng “ano ang pangalan mo”."
+          },
+          "answer": {
+            "en": "what is your name",
+            "id": "siapa namamu",
+            "tl": "ano ang pangalan mo"
+          },
+          "explanation": {
+            "en": "The focus expression is “what is your name”.",
+            "id": "Ekspresi fokusnya adalah “siapa namamu”.",
+            "tl": "Ang pokus na parirala ay “ano ang pangalan mo”."
+          }
+        },
+        {
+          "id": "a1_04_meet_joel_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Hi! What's your ____?",
+            "id": "Hai! Siapa ____?",
+            "tl": "Hi! Ano ang pangalan ____?"
+          },
+          "answer": {
+            "en": "name",
+            "id": "namamu",
+            "tl": "mo"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -551,7 +1068,9 @@
       "speakers": [],
       "exercises": [
         {
-          "question": {
+          "id": "a1_05_numbers_time_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "How do you say seven o'clock?",
             "id": "Bagaimana mengatakan pukul tujuh?",
             "tl": "Paano sabihin ang ikapitong oras?"
@@ -560,6 +1079,178 @@
             "en": "Alas-siyete.",
             "id": "Alas-siyete.",
             "tl": "Alas-siyete."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_05_numbers_time_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “isa”?",
+            "id": "Mana arti “isa”?",
+            "tl": "Alin ang kahulugan ng “isa”?"
+          },
+          "choices": {
+            "en": [
+              "one",
+              "two",
+              "three",
+              "ten"
+            ],
+            "id": [
+              "satu",
+              "dua",
+              "tiga",
+              "sepuluh"
+            ],
+            "tl": [
+              "isa",
+              "dalawa",
+              "tatlo",
+              "sampu"
+            ]
+          },
+          "answer": {
+            "en": "one",
+            "id": "satu",
+            "tl": "isa"
+          },
+          "explanation": {
+            "en": "“isa” means “one”.",
+            "id": "“isa” berarti “satu”.",
+            "tl": "Ang “isa” ay nangangahulugang “isa”."
+          }
+        },
+        {
+          "id": "a1_05_numbers_time_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “isa”.",
+            "id": "Ketik arti “isa”.",
+            "tl": "Isulat ang kahulugan ng “isa”."
+          },
+          "answer": {
+            "en": "one",
+            "id": "satu",
+            "tl": "isa"
+          },
+          "explanation": {
+            "en": "The focus expression is “one”.",
+            "id": "Ekspresi fokusnya adalah “satu”.",
+            "tl": "Ang pokus na parirala ay “isa”."
+          }
+        },
+        {
+          "id": "a1_05_numbers_time_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "I have two brothers and one ____.",
+            "id": "Saya memiliki dua saudara laki-laki dan satu saudara ____.",
+            "tl": "May dalawa akong kapatid na lalaki at isang kapatid na ____."
+          },
+          "answer": {
+            "en": "sister",
+            "id": "perempuan",
+            "tl": "babae"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_05_numbers_time_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "Two number systems",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "Two number systems",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "Two number systems",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "Two number systems",
+            "id": "Two number systems",
+            "tl": "Two number systems"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_05_numbers_time_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "I have two brothers and one sister.",
+            "id": "Saya memiliki dua saudara laki-laki dan satu saudara perempuan.",
+            "tl": "May dalawa akong kapatid na lalaki at isang kapatid na babae."
+          },
+          "tokens": {
+            "en": [
+              "sister",
+              "one",
+              "and",
+              "brothers",
+              "two",
+              "have",
+              "I"
+            ],
+            "id": [
+              "perempuan",
+              "saudara",
+              "satu",
+              "dan",
+              "laki-laki",
+              "saudara",
+              "dua",
+              "memiliki",
+              "Saya"
+            ],
+            "tl": [
+              "babae",
+              "na",
+              "kapatid",
+              "isang",
+              "at",
+              "lalaki",
+              "na",
+              "kapatid",
+              "akong",
+              "dalawa",
+              "May"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
           }
         }
       ]
@@ -664,7 +1355,9 @@
       "speakers": [],
       "exercises": [
         {
-          "question": {
+          "id": "a1_06_morning_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "Why is Lina happy?",
             "id": "Mengapa Lina senang?",
             "tl": "Bakit masaya si Lina?"
@@ -673,6 +1366,88 @@
             "en": "She is not late.",
             "id": "Dia tidak terlambat.",
             "tl": "Hindi siya huli."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_06_morning_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “gumising”?",
+            "id": "Mana arti “gumising”?",
+            "tl": "Alin ang kahulugan ng “gumising”?"
+          },
+          "choices": {
+            "en": [
+              "wake up",
+              "take a bath",
+              "eat",
+              "drink"
+            ],
+            "id": [
+              "bangun",
+              "mandi",
+              "makan",
+              "minum"
+            ],
+            "tl": [
+              "gumising",
+              "maligo",
+              "kumain",
+              "uminom"
+            ]
+          },
+          "answer": {
+            "en": "wake up",
+            "id": "bangun",
+            "tl": "gumising"
+          },
+          "explanation": {
+            "en": "“gumising” means “wake up”.",
+            "id": "“gumising” berarti “bangun”.",
+            "tl": "Ang “gumising” ay nangangahulugang “gumising”."
+          }
+        },
+        {
+          "id": "a1_06_morning_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “gumising”.",
+            "id": "Ketik arti “gumising”.",
+            "tl": "Isulat ang kahulugan ng “gumising”."
+          },
+          "answer": {
+            "en": "wake up",
+            "id": "bangun",
+            "tl": "gumising"
+          },
+          "explanation": {
+            "en": "The focus expression is “wake up”.",
+            "id": "Ekspresi fokusnya adalah “bangun”.",
+            "tl": "Ang pokus na parirala ay “gumising”."
+          }
+        },
+        {
+          "id": "a1_06_morning_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Lina wakes up at six in the ____.",
+            "id": "Lina bangun pukul enam ____.",
+            "tl": "Gumigising si Lina nang alas-sais ng ____."
+          },
+          "answer": {
+            "en": "morning",
+            "id": "pagi",
+            "tl": "umaga"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -775,7 +1550,176 @@
         }
       ],
       "speakers": [],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "a1_07_family_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “nanay”?",
+            "id": "Mana arti “nanay”?",
+            "tl": "Alin ang kahulugan ng “nanay”?"
+          },
+          "choices": {
+            "en": [
+              "mother",
+              "father",
+              "older brother",
+              "older sister"
+            ],
+            "id": [
+              "ibu",
+              "ayah",
+              "kakak laki-laki",
+              "kakak perempuan"
+            ],
+            "tl": [
+              "nanay",
+              "tatay",
+              "kuya",
+              "ate"
+            ]
+          },
+          "answer": {
+            "en": "mother",
+            "id": "ibu",
+            "tl": "nanay"
+          },
+          "explanation": {
+            "en": "“nanay” means “mother”.",
+            "id": "“nanay” berarti “ibu”.",
+            "tl": "Ang “nanay” ay nangangahulugang “nanay”."
+          }
+        },
+        {
+          "id": "a1_07_family_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “nanay”.",
+            "id": "Ketik arti “nanay”.",
+            "tl": "Isulat ang kahulugan ng “nanay”."
+          },
+          "answer": {
+            "en": "mother",
+            "id": "ibu",
+            "tl": "nanay"
+          },
+          "explanation": {
+            "en": "The focus expression is “mother”.",
+            "id": "Ekspresi fokusnya adalah “ibu”.",
+            "tl": "Ang pokus na parirala ay “nanay”."
+          }
+        },
+        {
+          "id": "a1_07_family_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "This is my mother, Rosa, and that is your ____.",
+            "id": "Ini ibu saya, Rosa, dan itu ____.",
+            "tl": "Ito ang nanay ko, si Rosa, at iyan ang tatay ____."
+          },
+          "answer": {
+            "en": "father",
+            "id": "ayahmu",
+            "tl": "mo"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_07_family_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "Possessives",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "Possessives",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "Possessives",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "Possessives",
+            "id": "Possessives",
+            "tl": "Possessives"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_07_family_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "This is my mother, Rosa, and that is your father.",
+            "id": "Ini ibu saya, Rosa, dan itu ayahmu.",
+            "tl": "Ito ang nanay ko, si Rosa, at iyan ang tatay mo."
+          },
+          "tokens": {
+            "en": [
+              "father",
+              "your",
+              "is",
+              "that",
+              "and",
+              "Rosa",
+              "mother",
+              "my",
+              "is",
+              "This"
+            ],
+            "id": [
+              "ayahmu",
+              "itu",
+              "dan",
+              "Rosa",
+              "saya",
+              "ibu",
+              "Ini"
+            ],
+            "tl": [
+              "mo",
+              "tatay",
+              "ang",
+              "iyan",
+              "at",
+              "Rosa",
+              "si",
+              "ko",
+              "nanay",
+              "ang",
+              "Ito"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
+          }
+        }
+      ]
     },
     {
       "id": "a1_08_family_lunch",
@@ -861,7 +1805,9 @@
       "speakers": [],
       "exercises": [
         {
-          "question": {
+          "id": "a1_08_family_lunch_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "What does Mara's father cook?",
             "id": "Apa yang dimasak ayah Mara?",
             "tl": "Ano ang niluluto ng tatay ni Mara?"
@@ -870,6 +1816,88 @@
             "en": "Fish.",
             "id": "Ikan.",
             "tl": "Isda."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_08_family_lunch_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “pananghalian”?",
+            "id": "Mana arti “pananghalian”?",
+            "tl": "Alin ang kahulugan ng “pananghalian”?"
+          },
+          "choices": {
+            "en": [
+              "lunch",
+              "cook",
+              "fish",
+              "plate"
+            ],
+            "id": [
+              "makan siang",
+              "memasak",
+              "ikan",
+              "piring"
+            ],
+            "tl": [
+              "pananghalian",
+              "magluto",
+              "isda",
+              "plato"
+            ]
+          },
+          "answer": {
+            "en": "lunch",
+            "id": "makan siang",
+            "tl": "pananghalian"
+          },
+          "explanation": {
+            "en": "“pananghalian” means “lunch”.",
+            "id": "“pananghalian” berarti “makan siang”.",
+            "tl": "Ang “pananghalian” ay nangangahulugang “pananghalian”."
+          }
+        },
+        {
+          "id": "a1_08_family_lunch_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “pananghalian”.",
+            "id": "Ketik arti “pananghalian”.",
+            "tl": "Isulat ang kahulugan ng “pananghalian”."
+          },
+          "answer": {
+            "en": "lunch",
+            "id": "makan siang",
+            "tl": "pananghalian"
+          },
+          "explanation": {
+            "en": "The focus expression is “lunch”.",
+            "id": "Ekspresi fokusnya adalah “makan siang”.",
+            "tl": "Ang pokus na parirala ay “pananghalian”."
+          }
+        },
+        {
+          "id": "a1_08_family_lunch_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "On Sunday, Mara invites her friend Dito to ____.",
+            "id": "Pada hari Minggu, Mara mengundang temannya Dito untuk makan ____.",
+            "tl": "Sa Linggo, inaanyayahan ni Mara ang kaibigan niyang si Dito sa ____."
+          },
+          "answer": {
+            "en": "lunch",
+            "id": "siang",
+            "tl": "pananghalian"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -972,7 +2000,167 @@
         }
       ],
       "speakers": [],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "a1_09_objects_school_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “aklat”?",
+            "id": "Mana arti “aklat”?",
+            "tl": "Alin ang kahulugan ng “aklat”?"
+          },
+          "choices": {
+            "en": [
+              "book",
+              "notebook",
+              "pencil",
+              "chair"
+            ],
+            "id": [
+              "buku",
+              "buku catatan",
+              "pensil",
+              "kursi"
+            ],
+            "tl": [
+              "aklat",
+              "kuwaderno",
+              "lapis",
+              "silya"
+            ]
+          },
+          "answer": {
+            "en": "book",
+            "id": "buku",
+            "tl": "aklat"
+          },
+          "explanation": {
+            "en": "“aklat” means “book”.",
+            "id": "“aklat” berarti “buku”.",
+            "tl": "Ang “aklat” ay nangangahulugang “aklat”."
+          }
+        },
+        {
+          "id": "a1_09_objects_school_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “aklat”.",
+            "id": "Ketik arti “aklat”.",
+            "tl": "Isulat ang kahulugan ng “aklat”."
+          },
+          "answer": {
+            "en": "book",
+            "id": "buku",
+            "tl": "aklat"
+          },
+          "explanation": {
+            "en": "The focus expression is “book”.",
+            "id": "Ekspresi fokusnya adalah “buku”.",
+            "tl": "Ang pokus na parirala ay “aklat”."
+          }
+        },
+        {
+          "id": "a1_09_objects_school_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "There is a notebook inside the ____.",
+            "id": "Ada buku catatan di dalam ____.",
+            "tl": "May kuwaderno sa loob ng ____."
+          },
+          "answer": {
+            "en": "bag",
+            "id": "tas",
+            "tl": "bag"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_09_objects_school_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "May, mayroon, and wala",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "May, mayroon, and wala",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "May, mayroon, and wala",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "May, mayroon, and wala",
+            "id": "May, mayroon, and wala",
+            "tl": "May, mayroon, and wala"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_09_objects_school_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "There is a notebook inside the bag.",
+            "id": "Ada buku catatan di dalam tas.",
+            "tl": "May kuwaderno sa loob ng bag."
+          },
+          "tokens": {
+            "en": [
+              "bag",
+              "the",
+              "inside",
+              "notebook",
+              "a",
+              "is",
+              "There"
+            ],
+            "id": [
+              "tas",
+              "dalam",
+              "di",
+              "catatan",
+              "buku",
+              "Ada"
+            ],
+            "tl": [
+              "bag",
+              "ng",
+              "loob",
+              "sa",
+              "kuwaderno",
+              "May"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
+          }
+        }
+      ]
     },
     {
       "id": "a1_10_school_dialogue",
@@ -1064,7 +2252,9 @@
       ],
       "exercises": [
         {
-          "question": {
+          "id": "a1_10_school_dialogue_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "Where is the notebook?",
             "id": "Di mana buku catatannya?",
             "tl": "Nasaan ang kuwaderno?"
@@ -1073,6 +2263,88 @@
             "en": "Under the chair.",
             "id": "Di bawah kursi.",
             "tl": "Sa ilalim ng silya."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_10_school_dialogue_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “nasaan”?",
+            "id": "Mana arti “nasaan”?",
+            "tl": "Alin ang kahulugan ng “nasaan”?"
+          },
+          "choices": {
+            "en": [
+              "where is",
+              "mine",
+              "yours",
+              "wait"
+            ],
+            "id": [
+              "di mana",
+              "milik saya",
+              "milikmu",
+              "tunggu"
+            ],
+            "tl": [
+              "nasaan",
+              "akin",
+              "iyo",
+              "sandali"
+            ]
+          },
+          "answer": {
+            "en": "where is",
+            "id": "di mana",
+            "tl": "nasaan"
+          },
+          "explanation": {
+            "en": "“nasaan” means “where is”.",
+            "id": "“nasaan” berarti “di mana”.",
+            "tl": "Ang “nasaan” ay nangangahulugang “nasaan”."
+          }
+        },
+        {
+          "id": "a1_10_school_dialogue_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “nasaan”.",
+            "id": "Ketik arti “nasaan”.",
+            "tl": "Isulat ang kahulugan ng “nasaan”."
+          },
+          "answer": {
+            "en": "where is",
+            "id": "di mana",
+            "tl": "nasaan"
+          },
+          "explanation": {
+            "en": "The focus expression is “where is”.",
+            "id": "Ekspresi fokusnya adalah “di mana”.",
+            "tl": "Ang pokus na parirala ay “nasaan”."
+          }
+        },
+        {
+          "id": "a1_10_school_dialogue_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Rina, where is my blue ____?",
+            "id": "Rina, di mana buku catatan biru ____?",
+            "tl": "Rina, nasaan ang asul kong ____?"
+          },
+          "answer": {
+            "en": "notebook",
+            "id": "saya",
+            "tl": "kuwaderno"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -1175,7 +2447,161 @@
         }
       ],
       "speakers": [],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "a1_11_verbs_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “mag-aral”?",
+            "id": "Mana arti “mag-aral”?",
+            "tl": "Alin ang kahulugan ng “mag-aral”?"
+          },
+          "choices": {
+            "en": [
+              "study",
+              "studied",
+              "is studying",
+              "will study"
+            ],
+            "id": [
+              "belajar",
+              "telah belajar",
+              "sedang belajar",
+              "akan belajar"
+            ],
+            "tl": [
+              "mag-aral",
+              "nag-aral",
+              "nag-aaral",
+              "mag-aaral"
+            ]
+          },
+          "answer": {
+            "en": "study",
+            "id": "belajar",
+            "tl": "mag-aral"
+          },
+          "explanation": {
+            "en": "“mag-aral” means “study”.",
+            "id": "“mag-aral” berarti “belajar”.",
+            "tl": "Ang “mag-aral” ay nangangahulugang “mag-aral”."
+          }
+        },
+        {
+          "id": "a1_11_verbs_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “mag-aral”.",
+            "id": "Ketik arti “mag-aral”.",
+            "tl": "Isulat ang kahulugan ng “mag-aral”."
+          },
+          "answer": {
+            "en": "study",
+            "id": "belajar",
+            "tl": "mag-aral"
+          },
+          "explanation": {
+            "en": "The focus expression is “study”.",
+            "id": "Ekspresi fokusnya adalah “belajar”.",
+            "tl": "Ang pokus na parirala ay “mag-aral”."
+          }
+        },
+        {
+          "id": "a1_11_verbs_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "I studied Tagalog ____.",
+            "id": "Saya belajar Tagalog ____.",
+            "tl": "Nag-aral ako ng Tagalog ____."
+          },
+          "answer": {
+            "en": "yesterday",
+            "id": "kemarin",
+            "tl": "kahapon"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_11_verbs_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "Aspect, not tense",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "Aspect, not tense",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "Aspect, not tense",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "Aspect, not tense",
+            "id": "Aspect, not tense",
+            "tl": "Aspect, not tense"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_11_verbs_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "I studied Tagalog yesterday.",
+            "id": "Saya belajar Tagalog kemarin.",
+            "tl": "Nag-aral ako ng Tagalog kahapon."
+          },
+          "tokens": {
+            "en": [
+              "yesterday",
+              "Tagalog",
+              "studied",
+              "I"
+            ],
+            "id": [
+              "kemarin",
+              "Tagalog",
+              "belajar",
+              "Saya"
+            ],
+            "tl": [
+              "kahapon",
+              "Tagalog",
+              "ng",
+              "ako",
+              "Nag-aral"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
+          }
+        }
+      ]
     },
     {
       "id": "a1_12_negation_description",
@@ -1275,7 +2701,175 @@
         }
       ],
       "speakers": [],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "a1_12_negation_description_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “hindi”?",
+            "id": "Mana arti “hindi”?",
+            "tl": "Alin ang kahulugan ng “hindi”?"
+          },
+          "choices": {
+            "en": [
+              "not",
+              "none",
+              "do not",
+              "clean"
+            ],
+            "id": [
+              "tidak",
+              "tidak ada",
+              "jangan",
+              "bersih"
+            ],
+            "tl": [
+              "hindi",
+              "wala",
+              "huwag",
+              "malinis"
+            ]
+          },
+          "answer": {
+            "en": "not",
+            "id": "tidak",
+            "tl": "hindi"
+          },
+          "explanation": {
+            "en": "“hindi” means “not”.",
+            "id": "“hindi” berarti “tidak”.",
+            "tl": "Ang “hindi” ay nangangahulugang “hindi”."
+          }
+        },
+        {
+          "id": "a1_12_negation_description_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “hindi”.",
+            "id": "Ketik arti “hindi”.",
+            "tl": "Isulat ang kahulugan ng “hindi”."
+          },
+          "answer": {
+            "en": "not",
+            "id": "tidak",
+            "tl": "hindi"
+          },
+          "explanation": {
+            "en": "The focus expression is “not”.",
+            "id": "Ekspresi fokusnya adalah “tidak”.",
+            "tl": "Ang pokus na parirala ay “hindi”."
+          }
+        },
+        {
+          "id": "a1_12_negation_description_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "The room is not dirty; it is clean and ____.",
+            "id": "Ruangan itu tidak kotor; ruangan itu bersih dan ____.",
+            "tl": "Hindi marumi ang silid; malinis at maliwanag ____."
+          },
+          "answer": {
+            "en": "bright",
+            "id": "terang",
+            "tl": "ito"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_12_negation_description_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "Three negatives and a linker",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "Three negatives and a linker",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "Three negatives and a linker",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "Three negatives and a linker",
+            "id": "Three negatives and a linker",
+            "tl": "Three negatives and a linker"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_12_negation_description_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "The room is not dirty; it is clean and bright.",
+            "id": "Ruangan itu tidak kotor; ruangan itu bersih dan terang.",
+            "tl": "Hindi marumi ang silid; malinis at maliwanag ito."
+          },
+          "tokens": {
+            "en": [
+              "bright",
+              "and",
+              "clean",
+              "is",
+              "it",
+              "dirty;",
+              "not",
+              "is",
+              "room",
+              "The"
+            ],
+            "id": [
+              "terang",
+              "dan",
+              "bersih",
+              "itu",
+              "ruangan",
+              "kotor;",
+              "tidak",
+              "itu",
+              "Ruangan"
+            ],
+            "tl": [
+              "ito",
+              "maliwanag",
+              "at",
+              "malinis",
+              "silid;",
+              "ang",
+              "marumi",
+              "Hindi"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
+          }
+        }
+      ]
     },
     {
       "id": "a1_13_food",
@@ -1378,7 +2972,170 @@
         }
       ],
       "speakers": [],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "a1_13_food_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “kanin”?",
+            "id": "Mana arti “kanin”?",
+            "tl": "Alin ang kahulugan ng “kanin”?"
+          },
+          "choices": {
+            "en": [
+              "rice",
+              "chicken",
+              "vegetables",
+              "water"
+            ],
+            "id": [
+              "nasi",
+              "ayam",
+              "sayuran",
+              "air"
+            ],
+            "tl": [
+              "kanin",
+              "manok",
+              "gulay",
+              "tubig"
+            ]
+          },
+          "answer": {
+            "en": "rice",
+            "id": "nasi",
+            "tl": "kanin"
+          },
+          "explanation": {
+            "en": "“kanin” means “rice”.",
+            "id": "“kanin” berarti “nasi”.",
+            "tl": "Ang “kanin” ay nangangahulugang “kanin”."
+          }
+        },
+        {
+          "id": "a1_13_food_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “kanin”.",
+            "id": "Ketik arti “kanin”.",
+            "tl": "Isulat ang kahulugan ng “kanin”."
+          },
+          "answer": {
+            "en": "rice",
+            "id": "nasi",
+            "tl": "kanin"
+          },
+          "explanation": {
+            "en": "The focus expression is “rice”.",
+            "id": "Ekspresi fokusnya adalah “nasi”.",
+            "tl": "Ang pokus na parirala ay “kanin”."
+          }
+        },
+        {
+          "id": "a1_13_food_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "I like rice, chicken, vegetables, and ____.",
+            "id": "Saya suka nasi, ayam, sayuran, dan ____.",
+            "tl": "Gusto ko ng kanin, manok, gulay, at ____."
+          },
+          "answer": {
+            "en": "mangoes",
+            "id": "mangga",
+            "tl": "mangga"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_13_food_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "Po and opo",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "Po and opo",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "Po and opo",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "Po and opo",
+            "id": "Po and opo",
+            "tl": "Po and opo"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_13_food_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "I like rice, chicken, vegetables, and mangoes.",
+            "id": "Saya suka nasi, ayam, sayuran, dan mangga.",
+            "tl": "Gusto ko ng kanin, manok, gulay, at mangga."
+          },
+          "tokens": {
+            "en": [
+              "mangoes",
+              "and",
+              "vegetables",
+              "chicken",
+              "rice",
+              "like",
+              "I"
+            ],
+            "id": [
+              "mangga",
+              "dan",
+              "sayuran",
+              "ayam",
+              "nasi",
+              "suka",
+              "Saya"
+            ],
+            "tl": [
+              "mangga",
+              "at",
+              "gulay",
+              "manok",
+              "kanin",
+              "ng",
+              "ko",
+              "Gusto"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
+          }
+        }
+      ]
     },
     {
       "id": "a1_14_cafe",
@@ -1473,7 +3230,9 @@
       ],
       "exercises": [
         {
-          "question": {
+          "id": "a1_14_cafe_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "What does the customer not want?",
             "id": "Apa yang tidak diinginkan pelanggan?",
             "tl": "Ano ang ayaw ng mamimili?"
@@ -1482,6 +3241,88 @@
             "en": "Spicy sauce.",
             "id": "Saus pedas.",
             "tl": "Maanghang na sarsa."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_14_cafe_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “ano ang gusto ninyo”?",
+            "id": "Mana arti “ano ang gusto ninyo”?",
+            "tl": "Alin ang kahulugan ng “ano ang gusto ninyo”?"
+          },
+          "choices": {
+            "en": [
+              "what would you like",
+              "anything else",
+              "that's all",
+              "bill"
+            ],
+            "id": [
+              "Anda ingin apa",
+              "ada tambahan lain",
+              "itu saja",
+              "tagihan"
+            ],
+            "tl": [
+              "ano ang gusto ninyo",
+              "may iba pa",
+              "iyon lang",
+              "bayarin"
+            ]
+          },
+          "answer": {
+            "en": "what would you like",
+            "id": "Anda ingin apa",
+            "tl": "ano ang gusto ninyo"
+          },
+          "explanation": {
+            "en": "“ano ang gusto ninyo” means “what would you like”.",
+            "id": "“ano ang gusto ninyo” berarti “Anda ingin apa”.",
+            "tl": "Ang “ano ang gusto ninyo” ay nangangahulugang “ano ang gusto ninyo”."
+          }
+        },
+        {
+          "id": "a1_14_cafe_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “ano ang gusto ninyo”.",
+            "id": "Ketik arti “ano ang gusto ninyo”.",
+            "tl": "Isulat ang kahulugan ng “ano ang gusto ninyo”."
+          },
+          "answer": {
+            "en": "what would you like",
+            "id": "Anda ingin apa",
+            "tl": "ano ang gusto ninyo"
+          },
+          "explanation": {
+            "en": "The focus expression is “what would you like”.",
+            "id": "Ekspresi fokusnya adalah “Anda ingin apa”.",
+            "tl": "Ang pokus na parirala ay “ano ang gusto ninyo”."
+          }
+        },
+        {
+          "id": "a1_14_cafe_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Good afternoon. What would you ____?",
+            "id": "Selamat siang. Anda ingin ____?",
+            "tl": "Magandang hapon po. Ano ang gusto ____?"
+          },
+          "answer": {
+            "en": "like",
+            "id": "apa",
+            "tl": "ninyo"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -1575,7 +3416,9 @@
       "speakers": [],
       "exercises": [
         {
-          "question": {
+          "id": "market_beginner_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "How much are the tomatoes?",
             "id": "Berapa harga tomatnya?",
             "tl": "Magkano ang kamatis?"
@@ -1584,6 +3427,88 @@
             "en": "Eighty pesos.",
             "id": "Delapan puluh peso.",
             "tl": "Walumpung piso."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "market_beginner_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “palengke”?",
+            "id": "Mana arti “palengke”?",
+            "tl": "Alin ang kahulugan ng “palengke”?"
+          },
+          "choices": {
+            "en": [
+              "market",
+              "one kilo",
+              "vendor",
+              "buy"
+            ],
+            "id": [
+              "pasar",
+              "satu kilo",
+              "pedagang",
+              "membeli"
+            ],
+            "tl": [
+              "palengke",
+              "isang kilo",
+              "tindera",
+              "bumili"
+            ]
+          },
+          "answer": {
+            "en": "market",
+            "id": "pasar",
+            "tl": "palengke"
+          },
+          "explanation": {
+            "en": "“palengke” means “market”.",
+            "id": "“palengke” berarti “pasar”.",
+            "tl": "Ang “palengke” ay nangangahulugang “palengke”."
+          }
+        },
+        {
+          "id": "market_beginner_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “palengke”.",
+            "id": "Ketik arti “palengke”.",
+            "tl": "Isulat ang kahulugan ng “palengke”."
+          },
+          "answer": {
+            "en": "market",
+            "id": "pasar",
+            "tl": "palengke"
+          },
+          "explanation": {
+            "en": "The focus expression is “market”.",
+            "id": "Ekspresi fokusnya adalah “pasar”.",
+            "tl": "Ang pokus na parirala ay “palengke”."
+          }
+        },
+        {
+          "id": "market_beginner_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Maya walks to the market in the ____.",
+            "id": "Maya berjalan ke pasar pada pagi ____.",
+            "tl": "Naglalakad si Maya papunta sa palengke sa ____."
+          },
+          "answer": {
+            "en": "morning",
+            "id": "hari",
+            "tl": "umaga"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -1686,7 +3611,164 @@
         }
       ],
       "speakers": [],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "a1_16_places_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “katabi”?",
+            "id": "Mana arti “katabi”?",
+            "tl": "Alin ang kahulugan ng “katabi”?"
+          },
+          "choices": {
+            "en": [
+              "beside",
+              "across from",
+              "straight",
+              "left"
+            ],
+            "id": [
+              "di samping",
+              "di seberang",
+              "lurus",
+              "kiri"
+            ],
+            "tl": [
+              "katabi",
+              "tapat",
+              "diretso",
+              "kaliwa"
+            ]
+          },
+          "answer": {
+            "en": "beside",
+            "id": "di samping",
+            "tl": "katabi"
+          },
+          "explanation": {
+            "en": "“katabi” means “beside”.",
+            "id": "“katabi” berarti “di samping”.",
+            "tl": "Ang “katabi” ay nangangahulugang “katabi”."
+          }
+        },
+        {
+          "id": "a1_16_places_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “katabi”.",
+            "id": "Ketik arti “katabi”.",
+            "tl": "Isulat ang kahulugan ng “katabi”."
+          },
+          "answer": {
+            "en": "beside",
+            "id": "di samping",
+            "tl": "katabi"
+          },
+          "explanation": {
+            "en": "The focus expression is “beside”.",
+            "id": "Ekspresi fokusnya adalah “di samping”.",
+            "tl": "Ang pokus na parirala ay “katabi”."
+          }
+        },
+        {
+          "id": "a1_16_places_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "The bank is beside the ____.",
+            "id": "Bank berada di samping ____.",
+            "tl": "Katabi ng botika ang ____."
+          },
+          "answer": {
+            "en": "pharmacy",
+            "id": "apotek",
+            "tl": "bangko"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        },
+        {
+          "id": "a1_16_places_grammar",
+          "type": "GRAMMAR",
+          "prompt": {
+            "en": "Which topic explains the main pattern in this lesson?",
+            "id": "Topik mana yang menjelaskan pola utama pelajaran ini?",
+            "tl": "Aling paksa ang nagpapaliwanag sa pangunahing padron ng araling ito?"
+          },
+          "choices": {
+            "en": [
+              "Nasa and papunta sa",
+              "Word order",
+              "Informal spelling"
+            ],
+            "id": [
+              "Nasa and papunta sa",
+              "Urutan kata",
+              "Ejaan informal"
+            ],
+            "tl": [
+              "Nasa and papunta sa",
+              "Ayos ng salita",
+              "Di-pormal na baybay"
+            ]
+          },
+          "answer": {
+            "en": "Nasa and papunta sa",
+            "id": "Nasa and papunta sa",
+            "tl": "Nasa and papunta sa"
+          },
+          "explanation": {
+            "en": "This is the grammar or usage focus explained in the lesson.",
+            "id": "Ini adalah fokus tata bahasa atau penggunaan yang dijelaskan dalam pelajaran.",
+            "tl": "Ito ang pokus sa balarila o gamit na ipinaliwanag sa aralin."
+          }
+        },
+        {
+          "id": "a1_16_places_sentence",
+          "type": "SENTENCE_CONSTRUCTION",
+          "prompt": {
+            "en": "Put the words in order to rebuild the example.",
+            "id": "Susun kata-kata untuk membentuk kembali contoh.",
+            "tl": "Ayusin ang mga salita upang mabuo muli ang halimbawa."
+          },
+          "answer": {
+            "en": "The bank is beside the pharmacy.",
+            "id": "Bank berada di samping apotek.",
+            "tl": "Katabi ng botika ang bangko."
+          },
+          "tokens": {
+            "en": [
+              "pharmacy",
+              "the",
+              "beside",
+              "is",
+              "bank",
+              "The"
+            ],
+            "id": [
+              "apotek",
+              "samping",
+              "di",
+              "berada",
+              "Bank"
+            ],
+            "tl": [
+              "bangko",
+              "ang",
+              "botika",
+              "ng",
+              "Katabi"
+            ]
+          },
+          "explanation": {
+            "en": "This order matches the complete example sentence.",
+            "id": "Urutan ini sesuai dengan kalimat contoh lengkap.",
+            "tl": "Tugma ang ayos na ito sa buong halimbawang pangungusap."
+          }
+        }
+      ]
     },
     {
       "id": "a1_17_directions",
@@ -1778,7 +3860,9 @@
       ],
       "exercises": [
         {
-          "question": {
+          "id": "a1_17_directions_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "What is beside the terminal?",
             "id": "Apa yang berada di samping terminal?",
             "tl": "Ano ang katabi ng terminal?"
@@ -1787,6 +3871,88 @@
             "en": "The supermarket.",
             "id": "Supermarket.",
             "tl": "Ang supermarket."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_17_directions_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “makikiraan po”?",
+            "id": "Mana arti “makikiraan po”?",
+            "tl": "Alin ang kahulugan ng “makikiraan po”?"
+          },
+          "choices": {
+            "en": [
+              "excuse me",
+              "until",
+              "cross",
+              "excuse me"
+            ],
+            "id": [
+              "permisi",
+              "sampai",
+              "menyeberang",
+              "permisi"
+            ],
+            "tl": [
+              "makikiraan po",
+              "hanggang",
+              "tumawid",
+              "makikiraan po"
+            ]
+          },
+          "answer": {
+            "en": "excuse me",
+            "id": "permisi",
+            "tl": "makikiraan po"
+          },
+          "explanation": {
+            "en": "“makikiraan po” means “excuse me”.",
+            "id": "“makikiraan po” berarti “permisi”.",
+            "tl": "Ang “makikiraan po” ay nangangahulugang “makikiraan po”."
+          }
+        },
+        {
+          "id": "a1_17_directions_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “makikiraan po”.",
+            "id": "Ketik arti “makikiraan po”.",
+            "tl": "Isulat ang kahulugan ng “makikiraan po”."
+          },
+          "answer": {
+            "en": "excuse me",
+            "id": "permisi",
+            "tl": "makikiraan po"
+          },
+          "explanation": {
+            "en": "The focus expression is “excuse me”.",
+            "id": "Ekspresi fokusnya adalah “permisi”.",
+            "tl": "Ang pokus na parirala ay “makikiraan po”."
+          }
+        },
+        {
+          "id": "a1_17_directions_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Excuse me, where is the bus ____?",
+            "id": "Permisi, di mana terminal ____?",
+            "tl": "Makikiraan po, nasaan ang terminal ng ____?"
+          },
+          "answer": {
+            "en": "terminal",
+            "id": "bus",
+            "tl": "bus"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -1888,7 +4054,104 @@
         }
       ],
       "speakers": [],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "a1_18_friendship_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
+            "en": "What happens first in this story?",
+            "id": "Apa yang terjadi pertama dalam cerita ini?",
+            "tl": "Ano ang unang nangyayari sa kuwentong ito?"
+          },
+          "answer": {
+            "en": "Aya and Tomas study together every Tuesday.",
+            "id": "Aya dan Tomas belajar bersama setiap Selasa.",
+            "tl": "Magkasamang nag-aaral sina Aya at Tomas tuwing Martes."
+          },
+          "explanation": {
+            "en": "The opening sentence introduces the first event.",
+            "id": "Kalimat pembuka memperkenalkan peristiwa pertama.",
+            "tl": "Ipinakikilala ng pambungad na pangungusap ang unang pangyayari."
+          }
+        },
+        {
+          "id": "a1_18_friendship_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “magkasama”?",
+            "id": "Mana arti “magkasama”?",
+            "tl": "Alin ang kahulugan ng “magkasama”?"
+          },
+          "choices": {
+            "en": [
+              "together",
+              "dream",
+              "I like you",
+              "good friends"
+            ],
+            "id": [
+              "bersama",
+              "impian",
+              "saya menyukaimu",
+              "teman baik"
+            ],
+            "tl": [
+              "magkasama",
+              "pangarap",
+              "gusto kita",
+              "mabuting magkaibigan"
+            ]
+          },
+          "answer": {
+            "en": "together",
+            "id": "bersama",
+            "tl": "magkasama"
+          },
+          "explanation": {
+            "en": "“magkasama” means “together”.",
+            "id": "“magkasama” berarti “bersama”.",
+            "tl": "Ang “magkasama” ay nangangahulugang “magkasama”."
+          }
+        },
+        {
+          "id": "a1_18_friendship_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “magkasama”.",
+            "id": "Ketik arti “magkasama”.",
+            "tl": "Isulat ang kahulugan ng “magkasama”."
+          },
+          "answer": {
+            "en": "together",
+            "id": "bersama",
+            "tl": "magkasama"
+          },
+          "explanation": {
+            "en": "The focus expression is “together”.",
+            "id": "Ekspresi fokusnya adalah “bersama”.",
+            "tl": "Ang pokus na parirala ay “magkasama”."
+          }
+        },
+        {
+          "id": "a1_18_friendship_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Aya and Tomas study together every ____.",
+            "id": "Aya dan Tomas belajar bersama setiap ____.",
+            "tl": "Magkasamang nag-aaral sina Aya at Tomas tuwing ____."
+          },
+          "answer": {
+            "en": "Tuesday",
+            "id": "Selasa",
+            "tl": "Martes"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
+          }
+        }
+      ]
     },
     {
       "id": "a1_19_phone",
@@ -1980,7 +4243,9 @@
       ],
       "exercises": [
         {
-          "question": {
+          "id": "a1_19_phone_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "Why can't Bea meet at seven?",
             "id": "Mengapa Bea tidak dapat bertemu pukul tujuh?",
             "tl": "Bakit hindi puwede si Bea nang alas-siyete?"
@@ -1989,6 +4254,88 @@
             "en": "She is cooking dinner.",
             "id": "Dia memasak makan malam.",
             "tl": "Nagluluto siya ng hapunan."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_19_phone_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “pelikula”?",
+            "id": "Mana arti “pelikula”?",
+            "tl": "Alin ang kahulugan ng “pelikula”?"
+          },
+          "choices": {
+            "en": [
+              "movie",
+              "can",
+              "send me",
+              "movie"
+            ],
+            "id": [
+              "film",
+              "dapat",
+              "kirimi saya",
+              "film"
+            ],
+            "tl": [
+              "pelikula",
+              "puwede",
+              "padalhan mo ako",
+              "pelikula"
+            ]
+          },
+          "answer": {
+            "en": "movie",
+            "id": "film",
+            "tl": "pelikula"
+          },
+          "explanation": {
+            "en": "“pelikula” means “movie”.",
+            "id": "“pelikula” berarti “film”.",
+            "tl": "Ang “pelikula” ay nangangahulugang “pelikula”."
+          }
+        },
+        {
+          "id": "a1_19_phone_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “pelikula”.",
+            "id": "Ketik arti “pelikula”.",
+            "tl": "Isulat ang kahulugan ng “pelikula”."
+          },
+          "answer": {
+            "en": "movie",
+            "id": "film",
+            "tl": "pelikula"
+          },
+          "explanation": {
+            "en": "The focus expression is “movie”.",
+            "id": "Ekspresi fokusnya adalah “film”.",
+            "tl": "Ang pokus na parirala ay “pelikula”."
+          }
+        },
+        {
+          "id": "a1_19_phone_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Hello, Bea. Are you at ____?",
+            "id": "Halo, Bea. Apakah kamu di ____?",
+            "tl": "Hello, Bea. Nasa ____hay ka ba?"
+          },
+          "answer": {
+            "en": "home",
+            "id": "rumah",
+            "tl": "ba"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]
@@ -2084,7 +4431,9 @@
       "speakers": [],
       "exercises": [
         {
-          "question": {
+          "id": "a1_20_final_comprehension_1",
+          "type": "COMPREHENSION",
+          "prompt": {
             "en": "What does Sari order?",
             "id": "Apa yang dipesan Sari?",
             "tl": "Ano ang inorder ni Sari?"
@@ -2093,6 +4442,88 @@
             "en": "Rice, vegetables, and water.",
             "id": "Nasi, sayuran, dan air.",
             "tl": "Kanin, gulay, at tubig."
+          },
+          "explanation": {
+            "en": "The answer is stated in the learning text.",
+            "id": "Jawabannya disebutkan dalam teks pembelajaran.",
+            "tl": "Nasa teksto ng aralin ang sagot."
+          }
+        },
+        {
+          "id": "a1_20_final_choice",
+          "type": "MULTIPLE_CHOICE",
+          "prompt": {
+            "en": "Which option means “nang tatlong buwan”?",
+            "id": "Mana arti “nang tatlong buwan”?",
+            "tl": "Alin ang kahulugan ng “nang tatlong buwan”?"
+          },
+          "choices": {
+            "en": [
+              "for three months",
+              "ask for directions",
+              "make mistakes",
+              "people understand"
+            ],
+            "id": [
+              "selama tiga bulan",
+              "meminta petunjuk",
+              "membuat kesalahan",
+              "orang-orang memahami"
+            ],
+            "tl": [
+              "nang tatlong buwan",
+              "magtanong ng direksiyon",
+              "magkamali",
+              "nauunawaan ng mga tao"
+            ]
+          },
+          "answer": {
+            "en": "for three months",
+            "id": "selama tiga bulan",
+            "tl": "nang tatlong buwan"
+          },
+          "explanation": {
+            "en": "“nang tatlong buwan” means “for three months”.",
+            "id": "“nang tatlong buwan” berarti “selama tiga bulan”.",
+            "tl": "Ang “nang tatlong buwan” ay nangangahulugang “nang tatlong buwan”."
+          }
+        },
+        {
+          "id": "a1_20_final_vocabulary",
+          "type": "VOCABULARY_TRANSLATION",
+          "prompt": {
+            "en": "Type the meaning of “nang tatlong buwan”.",
+            "id": "Ketik arti “nang tatlong buwan”.",
+            "tl": "Isulat ang kahulugan ng “nang tatlong buwan”."
+          },
+          "answer": {
+            "en": "for three months",
+            "id": "selama tiga bulan",
+            "tl": "nang tatlong buwan"
+          },
+          "explanation": {
+            "en": "The focus expression is “for three months”.",
+            "id": "Ekspresi fokusnya adalah “selama tiga bulan”.",
+            "tl": "Ang pokus na parirala ay “nang tatlong buwan”."
+          }
+        },
+        {
+          "id": "a1_20_final_blank",
+          "type": "FILL_BLANK",
+          "prompt": {
+            "en": "Sari is an Indonesian student who lives in Manila for three ____.",
+            "id": "Sari adalah siswa Indonesia yang tinggal di Manila selama tiga ____.",
+            "tl": "Isang estudyanteng Indones si Sari na nakatira sa Maynila nang tatlong ____."
+          },
+          "answer": {
+            "en": "months",
+            "id": "bulan",
+            "tl": "buwan"
+          },
+          "explanation": {
+            "en": "The missing word completes the example sentence.",
+            "id": "Kata yang hilang melengkapi kalimat contoh.",
+            "tl": "Kinukumpleto ng nawawalang salita ang halimbawang pangungusap."
           }
         }
       ]

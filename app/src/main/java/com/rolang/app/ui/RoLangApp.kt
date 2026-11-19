@@ -23,6 +23,7 @@ import com.rolang.app.LearningViewModel
 private data class Destination(val route: String, val title: String, val icon: ImageVector)
 private val destinations = listOf(
     Destination("home", "Home", Icons.Outlined.Home),
+    Destination("lessons", "Lessons", Icons.Outlined.School),
     Destination("stories", "Stories", Icons.AutoMirrored.Outlined.MenuBook),
     Destination("vocabulary", "Vocabulary", Icons.Outlined.Bookmarks),
     Destination("review", "Review", Icons.Outlined.AutoAwesome),
@@ -62,7 +63,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar) },
             bottomBar = {
-                if (!route.startsWith("reader")) NavigationBar {
+                if (!route.startsWith("reader") && !route.startsWith("lesson/")) NavigationBar {
                     destinations.forEach { item ->
                         NavigationBarItem(selected = route == item.route, onClick = { navigate(item.route) },
                             icon = { Icon(item.icon, contentDescription = null) }, label = { Text(item.title) })
@@ -79,12 +80,14 @@ fun RoLangApp(viewModel: LearningViewModel) {
                         CircularProgressIndicator()
                         Text("Preparing your offline library…")
                     }
-                } else NavHost(nav, startDestination = "home", modifier = Modifier.widthIn(max = 840.dp).fillMaxSize(),
+                } else NavHost(nav, startDestination = "home", modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
                     enterTransition = { fadeIn() }, exitTransition = { fadeOut() }) {
                     composable("home") {
-                        HomeScreen(state, now, { navigate("stories") }, { navigate("review") }, { nav.navigate("reader/$it") })
+                        HomeScreen(state, now, { navigate("lessons") }, { navigate("stories") }, { navigate("review") },
+                            { nav.navigate("lesson/$it") }, { nav.navigate("reader/$it") })
                     }
-                    composable("stories") { StoriesScreen(state, viewModel::level) { nav.navigate("reader/$it") } }
+                    composable("lessons") { LessonsScreen(state) { nav.navigate("lesson/$it") } }
+                    composable("stories") { StoriesScreen(state) { nav.navigate("reader/$it") } }
                     composable("vocabulary") { VocabularyScreen(state, now, viewModel::mastery, viewModel::delete, viewModel::status) { navigate("stories") } }
                     composable("review") {
                         ReviewScreen(state, now, quiz, busy, viewModel::startQuiz, viewModel::answer, viewModel::reveal,
@@ -96,6 +99,18 @@ fun RoLangApp(viewModel: LearningViewModel) {
                     composable("reader/{id}") { backStack ->
                         val story = state.stories.firstOrNull { it.id == backStack.arguments?.getString("id") }
                         if (story != null) ReaderScreen(story, state, viewModel, onBack = { nav.popBackStack() })
+                    }
+                    composable("lesson/{id}") { backStack ->
+                        val lesson = state.lessons.firstOrNull { it.id == backStack.arguments?.getString("id") }
+                        if (lesson != null) {
+                            val index = state.lessons.indexOf(lesson)
+                            val previous = state.lessons.getOrNull(index - 1)
+                            val next = state.lessons.getOrNull(index + 1)
+                            LessonScreen(lesson, state, index + 1, onBack = { nav.popBackStack() },
+                                onComplete = { score, total, answers -> viewModel.completeExercises(lesson, score, total, answers) },
+                                onPrevious = previous?.let { previousLesson -> { nav.navigate("lesson/${previousLesson.id}") } },
+                                onNext = next?.let { nextLesson -> { nav.navigate("lesson/${nextLesson.id}") } })
+                        }
                     }
                 }
             }

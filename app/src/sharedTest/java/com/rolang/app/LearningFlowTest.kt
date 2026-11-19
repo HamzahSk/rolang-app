@@ -9,13 +9,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Exercises navigation, actual word links, saving, translation, and quiz grading. */
+/** Exercises navigation, actual word links, saving, translation, and vocabulary quiz grading. */
 @RunWith(AndroidJUnit4::class)
 class LearningFlowTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun readSaveAndReviewAWordThroughTheInterface() {
-        compose.waitUntil(30_000) { compose.onAllNodesWithText("Explore stories").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(30_000) { compose.onAllNodesWithText("Keep your momentum").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Stories", useUnmergedTree = true).performClick()
         scrollClick("stories-list", "The morning market")
         compose.onNodeWithTag("reader-content").performScrollToNode(hasText("Maya walks to the market in the morning."))
@@ -43,7 +43,7 @@ class LearningFlowTest {
         compose.onNodeWithText("Maya berjalan ke pasar pada pagi hari.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("reader-content").performScrollToNode(hasTestTag("story-paragraph-2"))
         compose.onNodeWithTag("story-paragraph-2").assertIsDisplayed()
-        scrollClick("reader-content", "Finish story")
+        compose.onNodeWithContentDescription("Back to stories").performClick()
         compose.onNodeWithText("Vocabulary", useUnmergedTree = true).performClick()
         compose.onNodeWithTag("vocabulary-list").performScrollToNode(hasText("maya"))
         compose.onNodeWithText("maya").assertIsDisplayed()
@@ -58,8 +58,9 @@ class LearningFlowTest {
         compose.onNodeWithTag("review-content").performScrollToIndex(0)
         compose.waitUntil(10_000) { compose.onAllNodesWithText("You're all caught up").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Profile", useUnmergedTree = true).performClick()
-        compose.onNodeWithTag("profile-content").performScrollToNode(hasText("Stories completed: 1 · Reviews recorded: 1"))
-        compose.onNodeWithText("Stories completed: 1 · Reviews recorded: 1").assertIsDisplayed()
+        compose.onNodeWithTag("profile-content").performScrollToNode(hasText("Lessons completed: 0 · Stories completed: 0"))
+        compose.onNodeWithText("Lessons completed: 0 · Stories completed: 0").assertIsDisplayed()
+        compose.onNodeWithText("Reviews recorded: 1").assertIsDisplayed()
     }
     private fun scrollClick(container: String, text: String) {
         compose.onNodeWithTag(container).performScrollToNode(hasText(text))

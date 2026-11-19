@@ -42,13 +42,15 @@ when checks fail. This debug build requires no GitHub Secrets or signing keystor
 1. In **Profile**, independently choose English, Indonesian, or Filipino (Tagalog)
    as your learning and reference languages. Choose a reading level, text size,
    and light or dark appearance. Preferences survive restart.
-2. Browse the ordered **Tagalog A1 curriculum** or search by topic. It contains
-   lessons, realistic dialogues, and original readings, all available offline.
-3. Scroll through the entire story as continuous paragraphs in the Reading room.
+2. Follow the ordered **Tagalog A1 Lessons** curriculum by unit and topic, with
+   goals, vocabulary, grammar, examples, prerequisites, and graded final practice.
+   Browse **Stories** independently by level, format, and topic.
+3. Scroll through an entire story as continuous paragraphs in the Reading room.
    Tap any word to see its offline translation,
    contextual meaning, part of speech, explanation, and example in both languages.
    **Translate story** shows reference-language text beneath each paragraph. Your
-   paragraph position is saved; **Finish story** records completion.
+   paragraph position is saved. Completing the comprehension practice records
+   the story and score; every practice set gives immediate feedback and can be retried.
 4. Save words and find them in **Vocabulary**, grouped by story or category.
    New words are blue, Learning words green, Almost Mastered words yellow, and
    Known words have no highlight. Every word remains tappable. Change any of the
@@ -62,8 +64,9 @@ when checks fail. This debug build requires no GitHub Secrets or signing keystor
    words to Learning. Manual Known status pauses reviews; New/Learning resets the
    consecutive streak and makes the word due. Manual Almost Mastered is preserved
    through Good/Easy reviews. An open quiz cannot overwrite a later manual edit.
-6. **Home** and **Profile** show collected words, completion, due reviews,
-   mastery, review accuracy, and a calendar-day review streak.
+6. **Home** and **Profile** show separate lesson/story completion, the next lesson,
+   reading progress, collected words, daily activity, upcoming reviews, mastery,
+   review accuracy, and a calendar-day review streak.
 
 Vocabulary and review statistics are separated by target/reference language pair.
 Reading progress is separated by story variant and target language. Database writes
@@ -114,8 +117,9 @@ Published stories and per-story dictionaries cache in Room, so word lookup and
 reading remain local after download. A failed or partial catalog refresh retains
 cached content. A complete successful refresh hides removed/unpublished remote
 stories without deleting learning history. Bundled stories remain available.
-The existing version-1 database upgrades through versions 2 and 3 with explicit
-migrations preserving vocabulary, reading, reviews, schedules, and pending edits;
+The existing version-1 database upgrades through version 4 with explicit
+migrations preserving vocabulary, reading, reviews, schedules, and pending edits
+while adding persistent lesson/story exercise results;
 new installs also work entirely offline. Legacy mastery fields map to the new
 statuses. Deploy the updated backend before distributing this app build.
 
@@ -168,8 +172,10 @@ on a clean installation so the UI scenario starts with its default language pair
 
 ## Content scope
 
-The bundled library contains 20 progressive A1 units: nine structured lessons,
-six realistic dialogues, and five coherent readings. Topics cover pronunciation,
+The bundled library contains nine structured lessons plus an independent reading
+library of six realistic dialogues and five coherent stories. Its 92 interactive
+questions cover multiple choice, vocabulary translation, fill-in-the-blank,
+grammar, sentence construction, and reading comprehension. Topics cover pronunciation,
 introductions, pronouns, questions, numbers and time, family, school and everyday
 objects, verb aspect, negation, descriptions, food and shopping, directions,
 travel, daily conversation, friendship, and simple romance. Each unit includes

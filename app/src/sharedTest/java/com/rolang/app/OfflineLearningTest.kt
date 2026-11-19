@@ -40,6 +40,15 @@ class OfflineLearningTest {
         assertEquals((1..20).toList(), stories.sortedBy { it.order }.map { it.order })
         assertEquals(setOf(UnitKind.LESSON, UnitKind.DIALOGUE, UnitKind.STORY), stories.map { it.kind }.toSet())
         assertTrue(stories.all { it.level == Level.BEGINNER })
+        val lessonTypes = setOf(ExerciseType.MULTIPLE_CHOICE, ExerciseType.VOCABULARY_TRANSLATION,
+            ExerciseType.FILL_BLANK, ExerciseType.GRAMMAR, ExerciseType.SENTENCE_CONSTRUCTION)
+        assertTrue(stories.filter { it.kind == UnitKind.LESSON }.all { story ->
+            lessonTypes.all { required -> story.exercises.any { it.type == required } }
+        })
+        assertTrue(stories.filter { it.kind != UnitKind.LESSON }.all { story ->
+            story.exercises.any { it.type == ExerciseType.COMPREHENSION } &&
+                story.exercises.any { it.type == ExerciseType.MULTIPLE_CHOICE }
+        })
         for (story in stories) for (target in Language.entries) for (native in Language.entries) {
             for (index in story.sentences.indices) for (token in Words.tokens(story.sentence(index, target))) {
                 val detail = repository.lookup(story, index, token.text, target, native)
@@ -65,6 +74,7 @@ class OfflineLearningTest {
         assertTrue(repository.save(story, tagalogDetail, target, Language.TAGALOG, now))
         repository.reading(story, target, 2, true)
         repository.reading(story, target, 1, false)
+        repository.exerciseResult(story, target, 4, 5, mapOf("question" to "answer"), now)
         val original = repository.dao.vocabulary().first().first { it.reference == native.code }
         assertTrue(repository.review(original, Rating.GOOD, true, now + 1))
         assertFalse(repository.review(original, Rating.EASY, true, now + 2))
@@ -77,7 +87,11 @@ class OfflineLearningTest {
         assertEquals(1, repository.dao.reviews().first().size)
         assertEquals(2, repository.dao.vocabulary().first().size)
         assertTrue(repository.dao.readings().first().single().completed)
-        assertEquals(1, repository.dao.readings().first().single().sentence)
+        assertEquals(story.sentences.lastIndex, repository.dao.readings().first().single().sentence)
+        val result = repository.dao.exerciseResults().first().single()
+        assertEquals(1, result.attempts)
+        assertEquals(4, result.bestScore)
+        assertTrue(result.completed)
         repository.mastery(saved.id, true, now + 3)
         assertFalse(repository.review(repository.dao.vocabularyById(saved.id)!!, Rating.GOOD, true, now + 4))
         repository.mastery(saved.id, false, now + 5)

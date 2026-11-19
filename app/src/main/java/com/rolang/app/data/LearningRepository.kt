@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import com.rolang.app.domain.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 class LearningRepository(private val database: LearningDatabase) {
     val dao = database.dao()
@@ -88,6 +89,32 @@ class LearningRepository(private val database: LearningDatabase) {
         val previous = dao.reading(story.id, language.code)
         val reading = ReadingEntity(story.id, language.code, sentence.coerceIn(story.sentences.indices),
             completed || previous?.completed == true)
+        dao.saveReading(reading)
+        dao.enqueue(SyncCodec.progress(reading))
+    }
+    suspend fun exerciseResult(
+        story: Story,
+        language: Language,
+        score: Int,
+        total: Int,
+        answers: Map<String, String>,
+        now: Long,
+    ) = database.withTransaction {
+        val previous = dao.exerciseResult(story.id, language.code)
+        val result = ExerciseResultEntity(
+            contentId = story.id,
+            language = language.code,
+            contentType = if (story.kind == UnitKind.LESSON) "LESSON" else "STORY",
+            attempts = (previous?.attempts ?: 0) + 1,
+            bestScore = maxOf(previous?.bestScore ?: 0, score),
+            latestScore = score,
+            totalQuestions = total,
+            answersJson = JSONObject(answers).toString(),
+            completed = true,
+            updatedAt = now,
+        )
+        dao.saveExerciseResult(result)
+        val reading = ReadingEntity(story.id, language.code, story.sentences.lastIndex, true)
         dao.saveReading(reading)
         dao.enqueue(SyncCodec.progress(reading))
     }

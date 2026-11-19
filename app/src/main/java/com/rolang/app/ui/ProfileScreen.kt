@@ -21,6 +21,8 @@ fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Lan
     val prefs = state.preferences
     val reviews = state.courseReviews
     val mastered = state.courseWords.count { it.mastered }
+    val completedLessons = state.lessons.count { state.contentCompleted(it.id) }
+    val completedStories = state.readingStories.count { state.contentCompleted(it.id) }
     val dates = reviews.map { Instant.ofEpochMilli(it.reviewedAt).atZone(ZoneId.systemDefault()).toLocalDate() }.toSet()
     var cursor = if (LocalDate.now() in dates) LocalDate.now() else LocalDate.now().minusDays(1)
     var streak = 0
@@ -38,7 +40,8 @@ fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Lan
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("$mastered of ${state.courseWords.size} words mastered", style = MaterialTheme.typography.titleMedium)
                     LinearProgressIndicator(progress = { if (state.courseWords.isEmpty()) 0f else mastered.toFloat() / state.courseWords.size }, modifier = Modifier.fillMaxWidth())
-                    Text("Stories completed: ${state.courseReadings.count { it.completed }} · Reviews recorded: ${reviews.size}")
+                    Text("Lessons completed: $completedLessons · Stories completed: $completedStories")
+                    Text("Reviews recorded: ${reviews.size}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

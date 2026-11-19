@@ -62,6 +62,20 @@ data class VocabularyEntity(
 @Entity(tableName = "reading", primaryKeys = ["storyId", "language"])
 data class ReadingEntity(val storyId: String, val language: String, val sentence: Int = 0, val completed: Boolean = false)
 
+@Entity(tableName = "exercise_results", primaryKeys = ["contentId", "language"])
+data class ExerciseResultEntity(
+    val contentId: String,
+    val language: String,
+    val contentType: String,
+    val attempts: Int,
+    val bestScore: Int,
+    val latestScore: Int,
+    val totalQuestions: Int,
+    val answersJson: String,
+    val completed: Boolean,
+    val updatedAt: Long,
+)
+
 @Entity(tableName = "reviews", indices = [Index(value = ["syncKey"], unique = true)])
 data class ReviewEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -129,6 +143,12 @@ interface LearningDao {
     suspend fun allReadings(): List<ReadingEntity>
     @Query("DELETE FROM reading WHERE storyId=:storyId AND language=:language")
     suspend fun deleteReading(storyId: String, language: String)
+    @Query("SELECT * FROM exercise_results")
+    fun exerciseResults(): Flow<List<ExerciseResultEntity>>
+    @Query("SELECT * FROM exercise_results WHERE contentId=:contentId AND language=:language")
+    suspend fun exerciseResult(contentId: String, language: String): ExerciseResultEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveExerciseResult(result: ExerciseResultEntity)
     @Query("SELECT * FROM reviews ORDER BY reviewedAt DESC")
     fun reviews(): Flow<List<ReviewEntity>>
     @Insert
@@ -158,10 +178,19 @@ interface LearningDao {
 }
 
 @Database(entities = [StoryEntity::class, LexemeEntity::class, StoryLexemeEntity::class, VocabularyEntity::class,
-    ReadingEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 3, exportSchema = true)
+    ReadingEntity::class, ExerciseResultEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 4, exportSchema = true)
 abstract class LearningDatabase : RoomDatabase() {
     abstract fun dao(): LearningDao
     companion object {
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS exercise_results (
+                    contentId TEXT NOT NULL, language TEXT NOT NULL, contentType TEXT NOT NULL,
+                    attempts INTEGER NOT NULL, bestScore INTEGER NOT NULL, latestScore INTEGER NOT NULL,
+                    totalQuestions INTEGER NOT NULL, answersJson TEXT NOT NULL, completed INTEGER NOT NULL,
+                    updatedAt INTEGER NOT NULL, PRIMARY KEY(contentId, language))""")
+            }
+        }
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE vocabulary ADD COLUMN status TEXT NOT NULL DEFAULT 'LEARNING'")

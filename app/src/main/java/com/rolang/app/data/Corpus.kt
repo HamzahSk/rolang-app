@@ -8,14 +8,30 @@ import org.json.JSONObject
 
 enum class UnitKind(val label: String) { LESSON("Lesson"), DIALOGUE("Dialogue"), STORY("Reading") }
 
+enum class ExerciseType {
+    MULTIPLE_CHOICE, VOCABULARY_TRANSLATION, FILL_BLANK, GRAMMAR,
+    SENTENCE_CONSTRUCTION, COMPREHENSION,
+}
+
 data class LearningNote(val title: Map<String, String>, val text: Map<String, String>) {
     fun title(language: Language) = title.getValue(language.code)
     fun text(language: Language) = text.getValue(language.code)
 }
 
-data class Exercise(val question: Map<String, String>, val answer: Map<String, String>) {
-    fun question(language: Language) = question.getValue(language.code)
+data class Exercise(
+    val id: String,
+    val type: ExerciseType,
+    val prompt: Map<String, String>,
+    val answer: Map<String, String>,
+    val explanation: Map<String, String>,
+    val choices: Map<String, List<String>> = emptyMap(),
+    val tokens: Map<String, List<String>> = emptyMap(),
+) {
+    fun question(language: Language) = prompt.getValue(language.code)
     fun answer(language: Language) = answer.getValue(language.code)
+    fun explanation(language: Language) = explanation.getValue(language.code)
+    fun choices(language: Language) = choices[language.code].orEmpty()
+    fun tokens(language: Language) = tokens[language.code].orEmpty()
 }
 
 data class Story(
@@ -50,9 +66,27 @@ object Corpus {
             val item = array.getJSONObject(it)
             LearningNote(translations(item.getJSONObject("title")), translations(item.getJSONObject("text")))
         } }.orEmpty()
-        fun exercises() = json.optJSONArray("exercises")?.let { array -> (0 until array.length()).map {
-            val item = array.getJSONObject(it)
-            Exercise(translations(item.getJSONObject("question")), translations(item.getJSONObject("answer")))
+        fun localizedStrings(obj: JSONObject?, field: String): Map<String, List<String>> = obj?.optJSONObject(field)?.let { values ->
+            Language.entries.associate { language ->
+                language.code to values.optJSONArray(language.code)?.let { array ->
+                    (0 until array.length()).map(array::getString)
+                }.orEmpty()
+            }
+        }.orEmpty()
+        fun exercises() = json.optJSONArray("exercises")?.let { array -> (0 until array.length()).map { index ->
+            val item = array.getJSONObject(index)
+            val prompt = item.optJSONObject("prompt") ?: item.getJSONObject("question")
+            Exercise(
+                id = item.optString("id", "${entity.id}_exercise_${index + 1}"),
+                type = runCatching { ExerciseType.valueOf(item.optString("type", "COMPREHENSION")) }
+                    .getOrDefault(ExerciseType.COMPREHENSION),
+                prompt = translations(prompt),
+                answer = translations(item.getJSONObject("answer")),
+                explanation = item.optJSONObject("explanation")?.let(::translations)
+                    ?: Language.entries.associate { language -> language.code to "Review the learning text for this answer." },
+                choices = localizedStrings(item, "choices"),
+                tokens = localizedStrings(item, "tokens"),
+            )
         } }.orEmpty()
         val focus = json.optJSONObject("focus")?.let { obj -> Language.entries.associate { language ->
             language.code to obj.optJSONArray(language.code)?.let { array ->
@@ -117,6 +151,17 @@ object Corpus {
                     require("${language.code}:${Words.key(expression)}" in keys) {
                         "Missing ${language.code} focus expression $expression in ${row.id}"
                     }
+                }
+                require(story.exercises.isNotEmpty()) { "${row.id} needs interactive exercises" }
+                story.exercises.forEach { exercise ->
+                    require(exercise.question(language).isNotBlank())
+                    require(exercise.answer(language).isNotBlank())
+                    require(exercise.explanation(language).isNotBlank())
+                    if (exercise.type == ExerciseType.MULTIPLE_CHOICE || exercise.type == ExerciseType.GRAMMAR) {
+                        require(exercise.choices(language).size >= 2)
+                        require(exercise.answer(language) in exercise.choices(language))
+                    }
+                    if (exercise.type == ExerciseType.SENTENCE_CONSTRUCTION) require(exercise.tokens(language).isNotEmpty())
                 }
             }
         }
