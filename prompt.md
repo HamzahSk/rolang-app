@@ -1,141 +1,33 @@
-Task: Implement Tagalog A1 Content and Server Integration
+Fix the Android app's online data loading and crash issues.
 
-Work directly in both repositories:
+Problems:
 
-- "rolang-app/" — Android application.
-- "rolang-server/" — Backend and MongoDB.
+- The app does not send any network requests to the online server.
+- Online content is never loaded, so the learning library always displays "Pustaka belajar tidak tersedia".
+- This issue can also cause the app to crash or force close.
 
-1. Learning Configuration
+Tasks:
 
-Set the default learning language:
+1. Trace the complete data-loading flow from the Android UI to the API layer.
+2. Find out why no HTTP requests are being made. Check API configuration, base URL, repositories, ViewModels, network permissions, request triggers, and error handling.
+3. Fix the actual cause and ensure the app correctly connects to the existing backend and loads real data from MongoDB through its APIs.
+4. Make sure loading, empty, offline, and server-error states are handled safely. A failed request must never cause a crash.
+5. Fix any related force-close issues and prevent null data, parsing errors, or unexpected API responses from crashing the app.
+6. Add persistent crash and error logging. Save logs to:
 
-- Native language: Indonesian ("id").
-- Target language: Tagalog ("tl").
-- Level: A1 (Beginner).
+"Android/data/<app.package.name>/files/logs/"
 
-Use Indonesian for all explanations, translations, and learning instructions. Do not mix English into the learning materials.
+Include timestamps, exception details, stack traces, API request URLs, HTTP status codes, and relevant error information. Do not log passwords, tokens, or other sensitive data.
 
-2. Create Complete A1 Lessons
+7. Ensure logs are saved even when an uncaught exception causes the app to terminate. Use a safe logging mechanism and avoid introducing additional crashes.
+8. Add a way to inspect or export diagnostic logs if practical.
 
-Build a structured A1 curriculum with progressive modules covering:
+Important:
 
-- Greetings and introductions.
-- Pronouns and sentence structures.
-- Basic grammar and particles ("ang", "ng", "sa").
-- Numbers, dates, and time.
-- Family and relationships.
-- Food, drinks, and daily activities.
-- Places and directions.
-- Common verbs and expressions.
-- Questions, negation, and everyday conversations.
+- Inspect the existing code before making changes.
+- Do not replace the existing backend or use mock data.
+- Preserve the current UI and unrelated features.
+- Test actual API requests and verify that online content appears in the app.
+- Build the Android app and fix any compilation errors.
 
-Each lesson should include:
-
-- Learning objectives.
-- Tagalog vocabulary and Indonesian meanings.
-- Example sentences and translations.
-- Grammar explanations in Indonesian.
-- Natural dialogues.
-- Pronunciation guidance.
-- Interactive exercises and answer explanations.
-- Short review.
-
-Ensure the lessons are progressive, accurate, and suitable for absolute beginners.
-
-3. Create Engaging A1 Stories
-
-Create original, interesting, and reasonably long Tagalog stories.
-
-Use themes such as friendship, school, adventure, mystery, family, and everyday life.
-
-Each story should have multiple chapters, coherent plots, consistent characters, and natural dialogue.
-
-Every chapter must include:
-
-- Original Tagalog text.
-- Complete Indonesian translation.
-- Important vocabulary and meanings.
-- Useful expressions.
-- Grammar observations.
-- Reading comprehension questions and answers.
-
-Keep vocabulary and grammar appropriate for A1 learners. Stories should teach useful words naturally through context.
-
-4. MongoDB Integration
-
-Inspect the existing MongoDB architecture and store all learning content in the database.
-
-- Save lessons, modules, stories, chapters, vocabulary, and exercises.
-- Maintain proper relationships and ordering.
-- Use stable identifiers.
-- Prevent duplicate records when seeding repeatedly.
-- Create a reusable seed script.
-- Preserve existing user data and content.
-
-Do not use mock data or hardcoded story content as the primary data source.
-
-5. Backend API
-
-Ensure the server provides working APIs for:
-
-- Learning curriculum and modules.
-- Lesson details.
-- Story catalogs and details.
-- Chapter content.
-- Vocabulary.
-- Exercises and answers.
-
-Preserve existing API compatibility where possible.
-
-6. Android Integration
-
-Ensure "rolang-app" actually retrieves content from "rolang-server".
-
-- Replace hardcoded learning content with real API responses.
-- Display modules, lessons, stories, chapters, and vocabulary.
-- Implement loading, empty, and error states.
-- Add retry handling.
-- Preserve existing UI/UX and navigation.
-- Set Indonesian → Tagalog A1 as the default configuration.
-
-Verify that the app displays actual MongoDB content, not placeholders.
-
-7. Offline Support
-
-Preserve existing offline functionality:
-
-- Automatically cache lessons and stories when opened.
-- Allow downloading complete stories.
-- Show download status and progress.
-- Support offline reading.
-- Synchronize outdated content when online.
-- Never delete cached content because of network failures.
-
-8. Testing
-
-Test both repositories:
-
-- MongoDB connectivity and seed execution.
-- Duplicate prevention.
-- Lesson and story API responses.
-- Chapter ordering and translations.
-- Android server connectivity.
-- Automatic caching and offline reading.
-- Relevant backend tests, Android tests, lint, and build.
-
-If deployment access is available, verify the production API on Vercel.
-
-Important Rules
-
-- Implement actual code and content in both repositories.
-- Do not merely provide suggestions or sample data.
-- Do not modify unrelated features.
-- Do not replace MongoDB.
-- Do not delete existing user data.
-- Prioritize content quality over quantity.
-- Do not claim successful uploads or integration without verification.
-- Work incrementally and fix errors before proceeding.
-
-Final Report
-
-Summarize the lessons, stories, chapters, vocabulary, MongoDB seed results, API verification, Android integration, and test results.
+Focus on making online data loading work reliably and preventing crashes. Do not simply hide the error message.
