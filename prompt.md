@@ -155,4 +155,5 @@ Indonesian is the teaching language. Tagalog is the learning language.
 
 Remove English-related confusion completely while preserving the existing learning experience and user progress.
 
-Implement everything directly in the existing project. Avoid unrelated architectural rewrites.
+Implement everything directly in the existing project. Avoid unrelated architectural rewrites
+.
