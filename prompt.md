@@ -1,162 +1,158 @@
-Task: Redesign Ro-Lang Learning Experience and UI/UX
+Task: Simplify Ro-Lang Language System and Implement Tagalog Text-to-Speech
 
-Inspect the existing Ro-Lang Android project and understand its current architecture before implementing changes.
+Inspect the entire existing Ro-Lang project before making changes.
 
-1. Restructure the Learning Sections
+1. Remove English Learning Content
 
-Separate learning content into two independent sections:
+Simplify the application to support only one language pair:
 
-A. Lessons
+- Reference language: Indonesian ("id")
+- Target language: Filipino / Tagalog ("fil")
 
-Create a structured, progressive learning curriculum.
-
-- Organize lessons into units and topics.
-- Each unit should contain logically ordered lessons.
-- Display lesson numbers, titles, descriptions, and learning objectives.
-- Show completion status and learning progress.
-- Make prerequisites and lesson progression clear.
-- Each lesson should have a dedicated learning interface.
-- Present vocabulary, grammar explanations, examples, and exercises in well-organized sections.
-
-Lessons should feel like a guided language course rather than a collection of unrelated content.
-
-B. Stories
-
-Create a completely separate section dedicated to reading practice.
-
-- Organize stories by level, genre, and topic.
-- Provide story cards with attractive illustrations, titles, descriptions, and difficulty indicators.
-- Keep stories independent from the lesson curriculum.
-- Preserve the existing reading experience, including word highlighting, dictionary lookup, translations, and reading progress.
-- Add story completion tracking.
-
-Lessons and Stories must have separate navigation, content organization, and progress tracking.
-
-2. Interactive Exercises and Questions
-
-Add interactive questions at the end of EVERY lesson and story.
-
-For lessons, include:
-
-- Multiple-choice questions.
-- Vocabulary translation.
-- Fill-in-the-blank exercises.
-- Grammar questions.
-- Sentence construction.
-
-For stories, include:
-
-- Reading comprehension questions.
-- Multiple-choice questions.
-- Vocabulary understanding.
-- Questions about story events and details.
+Indonesian must be the primary interface and explanation language. Tagalog must be the only language being studied.
 
 Requirements:
 
-- Questions must be relevant to the content.
-- Provide immediate feedback for answers.
-- Explain why an answer is correct or incorrect.
-- Display a final score and performance summary.
-- Allow learners to retry exercises.
-- Track completed exercises and results.
+- Remove English from language selection and learning content.
+- Remove English translations, explanations, and vocabulary entries.
+- Replace English-based learning references with Indonesian.
+- Ensure all lessons, stories, vocabulary, exercises, flashcards, and dictionary explanations use Indonesian as their reference language.
+- Update onboarding, profile, settings, and language selection accordingly.
+- Remove obsolete English content from the bundled learning corpus.
 
-Do not make questions purely decorative. They must be functional and interactive.
+Do not remove unrelated application functionality or accidentally delete user learning progress.
 
-3. Learning Interface Improvements
+Keep the architecture extensible for additional languages in the future, but expose only Indonesian → Tagalog for now.
 
-Redesign the lesson experience to make it engaging and easy to follow.
+2. Implement Native Android Text-to-Speech
 
-Consider using:
+Add pronunciation audio throughout the application using Android's built-in "TextToSpeech" API.
 
-- Clear lesson sections and visual hierarchy.
-- Progress indicators.
-- Vocabulary cards.
-- Grammar explanation cards.
-- Example sentence blocks.
-- Illustrations supporting each topic.
-- Interactive exercises between learning sections where appropriate.
-- A clear next/previous lesson navigation.
+Before implementation, inspect the official documentation:
 
-Avoid displaying all lesson content as one long, unstructured page.
+https://developer.android.com/reference/android/speech/tts/TextToSpeech
 
-4. UI/UX Redesign
+Google documents Filipino support with locale "fil-PH":
 
-Improve the overall application interface with a modern educational design.
+https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types
 
-Focus on:
+Use Android's native TTS engine first. Do not require API keys, external accounts, or a cloud service.
 
-- More attractive Home screen.
-- Better lesson and story browsing interfaces.
-- Improved content cards and layouts.
-- Consistent spacing, typography, and visual hierarchy.
-- Better use of illustrations and visual elements.
-- Smooth and meaningful animations.
-- Clear navigation and interaction feedback.
-- Proper light and dark theme support.
+Language Detection
 
-The design should feel polished, modern, friendly, and comparable to a high-quality language-learning application.
+- Initialize Android TextToSpeech properly.
+- Check Filipino availability using "isLanguageAvailable()".
+- Inspect available languages and voices where supported.
+- Use "Locale("fil", "PH")" as the preferred locale.
+- Verify that the selected voice actually supports Filipino.
+- Handle missing voice data and unsupported devices gracefully.
+- Never silently fall back to English pronunciation.
 
-Avoid excessive decoration, clutter, or unnecessary gradients.
+If Filipino is unavailable, show a helpful message explaining how to install Filipino voice data through Android Text-to-Speech settings.
 
-5. Learning Dashboard
+Pronunciation Features
 
-Improve the Home screen to show useful learning information:
+Add speaker buttons to:
 
-- Current learning course and level.
-- Continue learning shortcut.
-- Current unit and next lesson.
-- Lesson completion progress.
-- Story reading progress.
-- Vocabulary collected.
-- Upcoming reviews.
-- Daily learning activity.
+- Individual vocabulary words.
+- Example sentences.
+- Lesson vocabulary.
+- Dialogue lines.
+- Story sentences.
+- Flashcards.
+- Pronunciation exercises.
 
-Make it easy for users to resume where they left off.
+The audio should pronounce the original Tagalog text, not its Indonesian translation.
 
-6. Progress and Data Persistence
+Audio Controls
 
-Integrate all changes with the existing persistence system.
+Implement:
 
-- Track lesson completion independently from story completion.
-- Save exercise answers and results.
-- Preserve learning progress after restarting the application.
-- Prevent duplicate completion records.
-- Maintain compatibility with existing vocabulary and SRS systems.
-- Preserve existing user data and database migrations.
+- Play pronunciation.
+- Stop playback.
+- Replay pronunciation.
+- Adjustable speech speed.
+- Optional pitch adjustment.
+- Clear playback state and visual feedback.
 
-7. Technical Requirements
+Use sensible default speech speed for language learners.
 
-- Reuse existing Kotlin, Jetpack Compose, Material 3, Room, and ViewModel architecture.
-- Avoid unnecessary architectural rewrites.
-- Keep all existing language-learning functionality working.
-- Ensure lessons, stories, and exercises work offline.
-- Use reusable Compose components.
-- Keep content models structured and extensible for future levels.
-- Do not hardcode UI content when it should come from the learning corpus.
+3. Improve Pronunciation Learning
 
-8. Validation
+Add pronunciation-focused learning interactions.
 
-After implementation:
+Examples:
 
-- Verify lesson and story navigation.
-- Test all question types.
-- Verify answer evaluation and scoring.
-- Test completion and progress persistence.
-- Verify light and dark themes.
-- Check different screen sizes.
-- Run unit tests and Android lint.
-- Build the debug APK.
+- Listen to a Tagalog word.
+- Listen to a complete sentence.
+- Repeat and compare vocabulary through listening practice.
+- Listen to dialogue one line at a time.
+- Play an entire story sentence by sentence.
+
+Keep the interface simple and intuitive.
+
+4. TTS Architecture
+
+Create a reusable TTS manager/service instead of initializing separate TextToSpeech instances throughout the application.
+
+Requirements:
+
+- Proper initialization and shutdown.
+- Lifecycle-aware resource management.
+- Handle rapid repeated playback requests.
+- Prevent overlapping speech.
+- Support different speech queue modes.
+- Handle initialization and synthesis errors.
+- Avoid memory leaks.
+- Reuse the existing ViewModel and Compose architecture.
+
+All pronunciation playback should work offline when the required Filipino voice data is installed.
+
+Do not bundle unnecessarily large audio files.
+
+5. UI/UX Integration
+
+Integrate pronunciation controls naturally into the existing UI.
+
+- Use recognizable speaker icons.
+- Add subtle playback animations.
+- Make buttons accessible.
+- Ensure speaker buttons do not interfere with vocabulary selection or word highlighting.
+- Support light and dark themes.
+- Keep the interface clean and consistent.
+
+6. Data and Compatibility
+
+- Update language-pair configuration and content models.
+- Preserve existing Indonesian → Tagalog learning progress.
+- Migrate or safely handle obsolete English-related records.
+- Do not use destructive database migrations.
+- Keep vocabulary, reading, and SRS functionality intact.
+- Ensure the bundled corpus works entirely offline.
+
+7. Validation
+
+Test:
+
+- Indonesian interface and explanations.
+- Tagalog vocabulary and translations.
+- Filipino TTS initialization.
+- Filipino voice availability detection.
+- Word and sentence playback.
+- Playback stop and replay.
+- Missing voice data handling.
+- Offline functionality.
+- Existing database migrations.
+- Unit tests, lint, and debug APK build.
 
 Fix any issues introduced by the changes.
 
 Final Goal
 
-Transform Ro-Lang into a structured, interactive language-learning application.
+Transform Ro-Lang into a focused Indonesian-to-Tagalog learning application with reliable native pronunciation support.
 
-Lessons should function as a guided educational curriculum, while Stories should function as an independent reading practice experience.
+Indonesian is the teaching language. Tagalog is the learning language.
 
-Both must include meaningful interactive questions at the end, with progress tracking and persistent results.
+Remove English-related confusion completely while preserving the existing learning experience and user progress.
 
-Prioritize usability, visual quality, learning effectiveness, and consistency with the existing application architecture.
-
-Implement the changes directly in the project. Do not merely provide mockups, recommendations, or placeholder screens.
+Implement everything directly in the existing project. Avoid unrelated architectural rewrites.
