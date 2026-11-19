@@ -1,159 +1,128 @@
-Task: Simplify Ro-Lang Language System and Implement Tagalog Text-to-Speech
+Task: Migrate Ro-Lang Stories to Online Server with Offline Support
 
-Inspect the entire existing Ro-Lang project before making changes.
+Read and inspect both repositories before making changes:
 
-1. Remove English Learning Content
+- Android app: current workspace ("rolang-app").
+- Backend server: "rolang-server/".
 
-Simplify the application to support only one language pair:
+Main Goal
 
-- Reference language: Indonesian ("id")
-- Target language: Filipino / Tagalog ("fil")
+Transform Ro-Lang into an online-first language-learning application. All story content should be managed and stored on the backend server and its database instead of being bundled directly inside the Android application.
 
-Indonesian must be the primary interface and explanation language. Tagalog must be the only language being studied.
+The app must still support offline reading through downloaded content.
 
-Requirements:
+1. Backend & Database
 
-- Remove English from language selection and learning content.
-- Remove English translations, explanations, and vocabulary entries.
-- Replace English-based learning references with Indonesian.
-- Ensure all lessons, stories, vocabulary, exercises, flashcards, and dictionary explanations use Indonesian as their reference language.
-- Update onboarding, profile, settings, and language selection accordingly.
-- Remove obsolete English content from the bundled learning corpus.
+Inspect the existing backend architecture, database, and API implementation before modifying anything.
 
-Do not remove unrelated application functionality or accidentally delete user learning progress.
+- Move existing story data into the server database.
+- Create or update database models and migrations as needed.
+- Implement APIs to retrieve story lists, story details, chapters, and story content.
+- Support pagination and efficient data retrieval.
+- Provide story metadata such as title, description, language, difficulty, cover, chapters, and other existing fields.
+- Avoid duplicate records when importing existing stories.
+- Preserve existing story content and structure.
+- Implement appropriate validation and error handling.
 
-Keep the architecture extensible for additional languages in the future, but expose only Indonesian → Tagalog for now.
+Do not unnecessarily replace the existing backend stack or database.
 
-2. Implement Native Android Text-to-Speech
+2. Android App Integration
 
-Add pronunciation audio throughout the application using Android's built-in "TextToSpeech" API.
+Connect the Android application to "rolang-server".
 
-Before implementation, inspect the official documentation:
+- Replace local story loading with server API integration.
+- Fetch story catalogs and content from the backend.
+- Implement loading, empty, and error states.
+- Add retry handling and appropriate network timeouts.
+- Keep the existing UI/UX and navigation wherever possible.
+- Ensure API configuration is centralized and easy to change.
 
-https://developer.android.com/reference/android/speech/tts/TextToSpeech
+3. Automatic Offline Saving
 
-Google documents Filipino support with locale "fil-PH":
+Implement automatic local caching:
 
-https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types
+- Whenever a user opens a story or chapter, automatically save its content locally.
+- Save downloaded content in a persistent local database or storage.
+- Avoid unnecessary downloads when content is already cached and up to date.
+- Use versioning or updated timestamps to detect changed content.
+- Preserve downloaded content even after the app is closed or restarted.
+- If the device is offline, automatically load previously cached content.
 
-Use Android's native TTS engine first. Do not require API keys, external accounts, or a cloud service.
+4. Manual Download Feature
 
-Language Detection
+Add a download option to the story interface.
 
-- Initialize Android TextToSpeech properly.
-- Check Filipino availability using "isLanguageAvailable()".
-- Inspect available languages and voices where supported.
-- Use "Locale("fil", "PH")" as the preferred locale.
-- Verify that the selected voice actually supports Filipino.
-- Handle missing voice data and unsupported devices gracefully.
-- Never silently fall back to English pronunciation.
+Users should be able to:
 
-If Filipino is unavailable, show a helpful message explaining how to install Filipino voice data through Android Text-to-Speech settings.
+- Download an entire story, including all its chapters.
+- View download progress.
+- Cancel an active download.
+- See which stories are already downloaded.
+- Remove downloaded content to free up storage.
+- Access downloaded stories without an internet connection.
 
-Pronunciation Features
+The download process must handle interruptions and resume or retry safely when possible.
 
-Add speaker buttons to:
+5. Online and Offline Synchronization
 
-- Individual vocabulary words.
-- Example sentences.
-- Lesson vocabulary.
-- Dialogue lines.
-- Story sentences.
-- Flashcards.
-- Pronunciation exercises.
+Implement a reliable content synchronization strategy:
 
-The audio should pronounce the original Tagalog text, not its Indonesian translation.
+- Online: retrieve the latest available story data from the server.
+- Offline: use locally cached or downloaded data.
+- Automatically update outdated cached content when appropriate.
+- Never delete downloaded content just because a network request fails.
+- Avoid blocking the reading experience while background synchronization occurs.
 
-Audio Controls
+6. Architecture & Data Integrity
 
-Implement:
+- Separate remote data sources from local data sources.
+- Implement a repository layer to coordinate server and local storage.
+- Use the existing Android architecture and libraries where possible.
+- Handle concurrent requests and duplicate downloads safely.
+- Ensure database migrations preserve existing user data.
+- Do not hardcode story content or server responses in the application.
 
-- Play pronunciation.
-- Stop playback.
-- Replay pronunciation.
-- Adjustable speech speed.
-- Optional pitch adjustment.
-- Clear playback state and visual feedback.
+7. Migration
 
-Use sensible default speech speed for language learners.
+Inspect all existing story assets and data in "rolang-app".
 
-3. Improve Pronunciation Learning
+Create a reliable migration/import process to transfer the existing stories into "rolang-server" and its database.
 
-Add pronunciation-focused learning interactions.
+Verify that:
 
-Examples:
+- All existing stories are imported.
+- Chapter ordering is preserved.
+- Text, translations, vocabulary, exercises, and other related content remain intact.
+- Existing story identifiers and relationships are handled consistently.
 
-- Listen to a Tagalog word.
-- Listen to a complete sentence.
-- Repeat and compare vocabulary through listening practice.
-- Listen to dialogue one line at a time.
-- Play an entire story sentence by sentence.
+Do not remove the original local story assets until the server migration has been verified and the application can retrieve the migrated content successfully.
 
-Keep the interface simple and intuitive.
+8. Testing
 
-4. TTS Architecture
+Test both repositories.
 
-Create a reusable TTS manager/service instead of initializing separate TextToSpeech instances throughout the application.
+Verify:
 
-Requirements:
+- Story catalog retrieval.
+- Story detail and chapter retrieval.
+- Automatic saving when opening a story.
+- Manual story downloads.
+- Offline reading.
+- Cache updates after server content changes.
+- App restart and persistent storage.
+- Network failures and interrupted downloads.
 
-- Proper initialization and shutdown.
-- Lifecycle-aware resource management.
-- Handle rapid repeated playback requests.
-- Prevent overlapping speech.
-- Support different speech queue modes.
-- Handle initialization and synthesis errors.
-- Avoid memory leaks.
-- Reuse the existing ViewModel and Compose architecture.
+Run relevant backend tests and Android unit tests, lint, and build checks.
 
-All pronunciation playback should work offline when the required Filipino voice data is installed.
+Important Instructions
 
-Do not bundle unnecessarily large audio files.
+- Work directly in both repositories.
+- Do not merely provide implementation suggestions; implement the actual changes.
+- Inspect existing code and documentation before deciding the architecture.
+- Do not rewrite unrelated features or unnecessarily redesign the UI.
+- Keep the Android application and backend API compatible.
+- Preserve all existing story content and learning features.
+- Update API documentation and project documentation where necessary.
+- Commit-ready implementation, without placeholders or unfinished mock APIs.
 
-5. UI/UX Integration
-
-Integrate pronunciation controls naturally into the existing UI.
-
-- Use recognizable speaker icons.
-- Add subtle playback animations.
-- Make buttons accessible.
-- Ensure speaker buttons do not interfere with vocabulary selection or word highlighting.
-- Support light and dark themes.
-- Keep the interface clean and consistent.
-
-6. Data and Compatibility
-
-- Update language-pair configuration and content models.
-- Preserve existing Indonesian → Tagalog learning progress.
-- Migrate or safely handle obsolete English-related records.
-- Do not use destructive database migrations.
-- Keep vocabulary, reading, and SRS functionality intact.
-- Ensure the bundled corpus works entirely offline.
-
-7. Validation
-
-Test:
-
-- Indonesian interface and explanations.
-- Tagalog vocabulary and translations.
-- Filipino TTS initialization.
-- Filipino voice availability detection.
-- Word and sentence playback.
-- Playback stop and replay.
-- Missing voice data handling.
-- Offline functionality.
-- Existing database migrations.
-- Unit tests, lint, and debug APK build.
-
-Fix any issues introduced by the changes.
-
-Final Goal
-
-Transform Ro-Lang into a focused Indonesian-to-Tagalog learning application with reliable native pronunciation support.
-
-Indonesian is the teaching language. Tagalog is the learning language.
-
-Remove English-related confusion completely while preserving the existing learning experience and user progress.
-
-Implement everything directly in the existing project. Avoid unrelated architectural rewrites
-.
+The final result should be an online-first Ro-Lang application where stories are served by the backend, automatically cached when opened, and available offline through manual downloads.

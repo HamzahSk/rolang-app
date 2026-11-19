@@ -1,3 +1,4 @@
+
 name: Codex DB Fixer
 
 on:
@@ -24,6 +25,7 @@ jobs:
   codex-run:
     runs-on: ubuntu-24.04
     timeout-minutes: 240
+
     env:
       AGENTROUTER_API_KEY: ${{ secrets.AGENTROUTER_API_KEY }}
       CODEX_BASE_SHA: ${{ github.sha }}
@@ -36,8 +38,27 @@ jobs:
           echo "CODEX_HOME=$RUNNER_TEMP/codex-home" >> "$GITHUB_ENV"
           echo "CODEX_RECOVERY_DIR=$RUNNER_TEMP/codex-recovery" >> "$GITHUB_ENV"
 
+      # Main repository
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # Secondary repository
+      - name: Checkout rolang-server
+        uses: actions/checkout@v4
+        with:
+          repository: HamzahSk/rolang-server
+          token: ${{ secrets.ROLANG_SERVER_TOKEN }}
+          ref: main
+          path: rolang-server
+          fetch-depth: 0
+          persist-credentials: true
+
+      # Prevent the nested repository from being included
+      # in the main repository's Git operations.
+      - name: Exclude secondary repository
+        shell: bash
+        run: |
+          echo "/rolang-server/" >> .git/info/exclude
 
       - name: Restore Codex session cache
         uses: actions/cache/restore@v4
@@ -105,12 +126,14 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+
           if [[ -z "${AGENTROUTER_API_KEY:-}" ]]; then
             echo "::error::Repository secret AGENTROUTER_API_KEY is required"
             exit 1
           fi
 
           mkdir -p "$CODEX_HOME"
+
           cat > "$CODEX_HOME/config.toml" <<'EOF'
           model = "gpt-5.6-sol"
           model_provider = "agentrouter"
@@ -134,7 +157,37 @@ jobs:
 
       - name: Run Codex with session recovery
         shell: bash
-        run: bash .github/scripts/run-codex-with-recovery.sh prompt.md
+        run: |
+          echo "Available repositories:"
+          echo "Main: $GITHUB_WORKSPACE"
+          echo "Backend: $GITHUB_WORKSPACE/rolang-server"
+
+          bash .github/scripts/run-codex-with-recovery.sh prompt.md
+
+      # Commit backend changes independently.
+      - name: Commit and push rolang-server changes
+        if: always()
+        shell: bash
+        env:
+          GH_PAT: ${{ secrets.ROLANG_SERVER_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+
+          cd rolang-server
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No backend changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: update rolang-server via Codex"
+
+          git push origin HEAD:main
 
       - name: Collect changed files and recovery diagnostics
         if: always()
@@ -159,10 +212,12 @@ jobs:
           if [[ -d "$CODEX_RECOVERY_DIR" ]]; then
             cp -a "$CODEX_RECOVERY_DIR/." codex_diagnostics/
           fi
+
           if [[ -d "$CODEX_HOME/sessions" ]]; then
             mkdir -p codex_diagnostics/sessions
             cp -a "$CODEX_HOME/sessions/." codex_diagnostics/sessions/
           fi
+
           if [[ -d "$CODEX_HOME/recovery-checkpoint" ]]; then
             mkdir -p codex_diagnostics/recovery-checkpoint
             cp -a "$CODEX_HOME/recovery-checkpoint/." codex_diagnostics/recovery-checkpoint/
@@ -217,6 +272,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+
           if [[ -f ai_changes/deleted_files.txt ]]; then
             while IFS= read -r file; do
               [[ -n "$file" ]] && rm -f -- "$file"
@@ -241,7 +297,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
         with:
-          # Override the default, which includes the removed legacy tools package.
           packages: 'platform-tools'
 
       - name: Install Android SDK Components
