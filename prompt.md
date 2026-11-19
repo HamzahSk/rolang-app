@@ -1,107 +1,164 @@
-Task: Diagnose and Fix Ro-Lang Server Vercel HTTP 500 Errors
+Task: Migrate Ro-Lang Server from PostgreSQL to MongoDB Atlas
 
-Focus primarily on "rolang-server/". The deployed Vercel server currently returns HTTP 500 errors even though the required environment variables have already been configured.
+Migrate the existing "rolang-server/" backend from PostgreSQL to MongoDB Atlas because the current PostgreSQL setup keeps producing HTTP 500 errors on Vercel despite multiple configuration attempts.
 
-Perform a thorough investigation and fix the actual root cause.
+The goal is to have a fully functional MongoDB-backed backend that deploys reliably on Vercel.
 
-1. Inspect the Server
+1. Inspect Existing Architecture
 
-- Inspect the entire "rolang-server/" project structure.
-- Read package.json, Vercel configuration, API routes, database configuration, environment variable usage, and deployment scripts.
-- Identify the backend framework, runtime, database provider, and deployment architecture.
-- Check for incorrect imports, missing modules, incompatible dependencies, invalid configurations, and runtime-specific issues.
+Before making changes:
 
-2. Diagnose HTTP 500 Errors
+- Inspect the entire "rolang-server/" project.
+- Identify the current framework, database client, ORM, API routes, models, and data relationships.
+- Understand how stories, chapters, vocabulary, translations, exercises, and other learning content are currently structured.
+- Inspect existing PostgreSQL migrations and schemas to understand the data that must be preserved.
 
-Investigate possible causes, including:
+Do not blindly replace the existing architecture.
 
-- Incorrect environment variable names or access.
-- Database connection failures.
-- Invalid database URLs or connection settings.
-- Database schema and migration mismatches.
-- Incorrect serverless function configuration.
-- Runtime incompatibilities with Vercel.
-- Initialization errors and unhandled exceptions.
-- Incorrect API route exports or request handling.
-- Build-time versus runtime environment configuration.
+2. Migrate Database to MongoDB
 
-Do not assume environment variables are missing simply because the server returns HTTP 500.
+Replace PostgreSQL with MongoDB Atlas.
 
-3. Verify Database Connectivity
+- Use the official MongoDB Node.js driver or an appropriate existing MongoDB-compatible solution.
+- Remove PostgreSQL-specific database dependencies and configuration when no longer needed.
+- Implement a centralized MongoDB connection manager.
+- Reuse database connections across Vercel serverless function invocations whenever possible.
+- Avoid creating unnecessary connections for every request.
+- Use environment variables for MongoDB configuration.
+- Support MongoDB Atlas connection strings.
+- Implement appropriate connection error handling and timeouts.
 
-- Inspect the existing database connection implementation.
-- Verify that the application initializes database connections correctly in Vercel serverless environments.
-- Fix connection pooling and initialization issues where necessary.
-- Verify that required tables and migrations exist.
-- Ensure database queries work correctly in production.
-- Avoid creating unnecessary database connections on every request.
+Use a single consistent database configuration throughout the backend.
 
-Never expose database credentials or secret environment variable values in logs.
+3. Redesign Data Models
 
-4. Fix All Backend Issues
+Convert existing relational models into appropriate MongoDB document structures.
 
-After identifying the root cause:
+Preserve all existing data and relationships, including:
 
-- Fix the actual source code and configuration.
-- Ensure all API routes work correctly.
-- Fix incorrect request and response handling.
-- Add proper error handling.
-- Return meaningful HTTP status codes.
-- Ensure server initialization does not crash.
-- Preserve the existing API structure and functionality.
+- Stories
+- Chapters
+- Story metadata
+- Translations
+- Vocabulary
+- Exercises
+- Learning content
+- Other existing entities
 
-Do not hide errors by returning HTTP 200 for failed operations.
+Choose between embedded documents and references based on data size, access patterns, and scalability.
 
-5. Vercel Deployment Compatibility
+Avoid excessively large documents and respect MongoDB document size limitations.
 
-Ensure the project is properly configured for Vercel:
+Create appropriate indexes for frequently queried fields.
 
-- Correct build configuration.
-- Correct function entrypoints and routing.
-- Compatible Node.js runtime.
-- Correct dependency installation.
-- Correct environment variable access.
-- Proper production database initialization.
-- No reliance on persistent local filesystem storage.
+4. Preserve Existing API Compatibility
 
-If the current architecture is incompatible with Vercel, adapt it without unnecessarily replacing the existing backend stack.
+Keep the existing API endpoints and response formats compatible with "rolang-app".
 
-6. Testing and Verification
+Ensure:
 
-Perform all available checks:
+- Story catalog retrieval works.
+- Story details can be retrieved.
+- Chapters can be retrieved in the correct order.
+- Story content remains complete.
+- Pagination works.
+- Search and filtering continue working.
+- Existing API consumers do not break unnecessarily.
 
-- Install dependencies.
+Do not redesign unrelated application functionality.
+
+5. Data Migration
+
+Implement a migration/import script that transfers existing PostgreSQL data into MongoDB.
+
+Requirements:
+
+- Preserve existing story content.
+- Preserve chapter ordering.
+- Preserve translations, vocabulary, exercises, and relationships.
+- Maintain stable identifiers wherever possible.
+- Avoid duplicate records when migration is executed multiple times.
+- Validate imported document counts and relationships.
+- Provide migration logs without exposing credentials.
+
+Do not delete PostgreSQL configuration or existing migration files until the MongoDB migration has been successfully verified.
+
+6. Vercel Compatibility
+
+Ensure the MongoDB implementation works correctly in Vercel serverless environments.
+
+- Use supported Node.js runtime features.
+- Configure database connection reuse.
+- Avoid persistent filesystem dependencies.
+- Handle concurrent requests safely.
+- Ensure all API routes use the centralized MongoDB connection.
+- Avoid database initialization failures during module imports where possible.
+
+Add a "/health" endpoint that checks server availability and MongoDB connectivity without exposing sensitive information.
+
+7. Environment Configuration
+
+Inspect the actual environment variable names used throughout the project.
+
+Use a centralized configuration, preferably:
+
+"MONGODB_URI"
+"MONGODB_DB_NAME"
+
+Update ".env.example" with the required variable names and descriptions.
+
+Do not hardcode credentials or expose connection strings in logs.
+
+Do not assume environment variables are automatically available without verifying their usage.
+
+8. Testing
+
+Before considering the migration complete:
+
+- Install and update dependencies.
 - Run the production build.
-- Run backend tests.
-- Test database connectivity when credentials are available.
-- Test all API endpoints locally.
-- Verify health-check and database-dependent routes.
-- Inspect Vercel deployment configuration.
+- Test MongoDB connectivity.
+- Test all API endpoints.
+- Test story and chapter retrieval.
+- Test pagination and search.
+- Verify database indexes.
+- Test error handling when MongoDB is unavailable.
+- Verify Vercel deployment compatibility.
 
-Create or improve a lightweight "/health" endpoint that reports server status and database connectivity without exposing secrets or internal infrastructure details.
+If MongoDB Atlas credentials are unavailable, complete the implementation and provide the exact configuration steps needed for testing.
 
-If Vercel CLI or deployment access is available, inspect deployment logs and verify the deployed application.
+9. Cleanup
 
-If deployment access is unavailable, clearly identify what remains unverified and provide the exact checks needed.
+After successful migration and verification:
+
+- Remove unused PostgreSQL dependencies.
+- Remove obsolete PostgreSQL connection code.
+- Update documentation.
+- Update deployment instructions.
+- Keep ".env.example" synchronized with the actual implementation.
+
+Do not remove existing PostgreSQL data or migrations before the migration has been verified.
 
 Important Rules
 
 - Work directly inside "rolang-server/".
-- Do not modify "rolang-app" unless an API compatibility fix is absolutely necessary.
-- Do not blindly rewrite the backend.
-- Do not replace the database or framework without a strong technical reason.
-- Do not invent environment variables or assume their names.
-- Never print secret values in logs or reports.
-- Preserve existing story APIs and database data.
-- Do not delete migrations or existing database records.
-- Fix root causes instead of applying temporary workarounds.
+- Do not modify "rolang-app" unless API compatibility requires it.
+- Do not merely provide suggestions; implement the actual migration.
+- Do not create mock database implementations.
+- Do not silently discard existing story data.
+- Do not unnecessarily rewrite unrelated backend functionality.
+- Do not claim deployment success without actual verification.
 
-Finally, provide a concise report containing:
+Final Report
 
-1. Actual root cause of the HTTP 500 error.
-2. Files modified.
-3. Fixes implemented.
-4. Build and test results.
-5. Any remaining manual Vercel configuration or deployment steps.
+Provide:
 
-The goal is a fully functional Ro-Lang backend deployed on Vercel, with working database connectivity and API endpoints.
+1. Previous PostgreSQL architecture and identified problems.
+2. MongoDB architecture implemented.
+3. Files modified.
+4. Data migration results.
+5. Required MongoDB Atlas environment variables.
+6. Build and test results.
+7. Remaining manual configuration or deployment steps.
+
+The final result must be a fully MongoDB-backed Ro-Lang server that works reliably on Vercel.
