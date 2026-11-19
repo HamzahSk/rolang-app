@@ -92,7 +92,7 @@ class HybridLearningTest {
         server.enqueue(json(detail))
         assertTrue(engine.synchronize())
         StoryRepository(database, StoryRemoteSource { ServerConfig(serverBaseUrl = server.url("/").toString(), onlineEnabled = true) }).open("remote_story")
-        assertEquals("/api/v1/stories?limit=30", server.takeRequest().path)
+        assertEquals("/api/v1/stories?limit=30&language=tl&difficulty=A1", server.takeRequest().path)
         assertEquals("/api/v1/stories/remote_story?view=manifest", server.takeRequest().path)
         database.close()
         database = Room.databaseBuilder(context, LearningDatabase::class.java, databaseName).build()
@@ -115,7 +115,7 @@ class HybridLearningTest {
         server.enqueue(json(detail))
         // Catalog metadata is safe to retrieve; invalid content is rejected when opened.
         try { engine.synchronize(); fail("Expected incomplete dictionary rejection") } catch (_: IllegalArgumentException) { }
-        assertEquals(20, database.dao().storyCount())
+        assertEquals(21, database.dao().storyCount())
         val story = Corpus.story(database.dao().stories().first().first())
         assertTrue(repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
             Language.ENGLISH, Language.INDONESIAN).translation.isNotBlank())
@@ -195,7 +195,7 @@ class HybridLearningTest {
         try { engine.synchronize(); fail("Expected expired authentication") } catch (_: ApiException) { }
         assertNull(sessions.read())
         assertEquals(pending.operationId, database.dao().pending().single().operationId)
-        assertEquals(20, database.dao().storyCount())
+        assertEquals(21, database.dao().storyCount())
     }
 
     @Test fun switchingAccountCannotUploadThePreviousAccountsLibrary() = runBlocking {

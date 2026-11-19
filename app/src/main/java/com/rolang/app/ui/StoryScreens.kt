@@ -26,6 +26,13 @@ import com.rolang.app.data.Story
 import com.rolang.app.domain.Level
 import java.util.concurrent.TimeUnit
 
+private fun moduleTitle(id: String) = mapOf(
+    "foundations" to "Dasar bahasa", "greetings" to "Salam dan perkenalan", "time" to "Angka dan waktu",
+    "routine" to "Kegiatan sehari-hari", "family" to "Keluarga", "school" to "Sekolah",
+    "grammar" to "Tata bahasa", "food" to "Makanan dan belanja", "travel" to "Tempat dan arah",
+    "friends" to "Persahabatan", "review" to "Tinjauan akhir",
+)[id] ?: id
+
 @Composable
 fun HomeScreen(
     state: LearningState, now: Long, lessons: () -> Unit, stories: () -> Unit,
@@ -49,57 +56,57 @@ fun HomeScreen(
                     Text("Ro-Lang", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                     Text("${prefs.target.label} · ${prefs.level.label}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                AssistChip(onClick = {}, label = { Text("${state.stories.count { it.sentences.isNotEmpty() }} saved offline") },
+                AssistChip(onClick = {}, label = { Text("${state.stories.count { it.sentences.isNotEmpty() }} tersimpan luring") },
                     leadingIcon = { Icon(Icons.Outlined.OfflinePin, null, Modifier.size(18.dp)) })
             }
         }
         item { LibraryStatus(state, null) }
-        item { SectionTitle("Keep your momentum", "A clear next step, with reading practice alongside your course.") }
+        item { SectionTitle("Lanjutkan kemajuan", "Langkah berikutnya yang jelas beserta latihan membaca.") }
         nextLesson?.let { lesson -> item {
             val unitNumber = lessonItems.map { it.family }.distinct().indexOf(lesson.family) + 1
             Card(onClick = { learn(lesson.id) }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.School, null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(10.dp)); Text("CONTINUE LEARNING", style = MaterialTheme.typography.labelLarge)
+                        Spacer(Modifier.width(10.dp)); Text("LANJUTKAN BELAJAR", style = MaterialTheme.typography.labelLarge)
                     }
                     Text(lesson.title(prefs.target), style = MaterialTheme.typography.headlineMedium)
-                    Text("Unit $unitNumber · ${lesson.family.replaceFirstChar(Char::uppercase)} · Next lesson",
+                    Text("Unit $unitNumber · ${moduleTitle(lesson.family)} · Pelajaran berikutnya",
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LinearProgressIndicator(progress = { if (lessonItems.isEmpty()) 0f else completedLessons.toFloat() / lessonItems.size }, Modifier.fillMaxWidth())
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("$completedLessons of ${lessonItems.size} lessons")
-                        Text("Resume", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        Text("$completedLessons dari ${lessonItems.size} pelajaran")
+                        Text("Lanjutkan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
         } }
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile("$completedLessons/${lessonItems.size}", "Lessons", Modifier.weight(1f))
-            StatTile("$completedStories/${state.readingStories.size}", "Stories", Modifier.weight(1f))
+            StatTile("$completedLessons/${lessonItems.size}", "Pelajaran", Modifier.weight(1f))
+            StatTile("$completedStories/${state.readingStories.size}", "Cerita", Modifier.weight(1f))
         } }
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile("${state.courseWords.size}", "Words saved", Modifier.weight(1f)); StatTile("$activity", "Today", Modifier.weight(1f))
+            StatTile("${state.courseWords.size}", "Kata tersimpan", Modifier.weight(1f)); StatTile("$activity", "Hari ini", Modifier.weight(1f))
         } }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Review forecast", style = MaterialTheme.typography.titleLarge)
-                    Text(if (due > 0) "$due ready now · $upcoming coming this week" else "You’re caught up · $upcoming coming this week")
+                    Text("Jadwal tinjauan", style = MaterialTheme.typography.titleLarge)
+                    Text(if (due > 0) "$due siap sekarang · $upcoming minggu ini" else "Semua selesai · $upcoming minggu ini")
                     Button(onClick = if (due > 0) review else lessons, Modifier.fillMaxWidth()) {
-                        Text(if (due > 0) "Review due vocabulary" else "Browse lessons")
+                        Text(if (due > 0) "Tinjau kosakata" else "Lihat pelajaran")
                     }
                 }
             }
         }
-        item { SectionTitle("Choose your practice") }
+        item { SectionTitle("Pilih latihan") }
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            PracticeCard("Lessons", "Guided course", Icons.Outlined.School, lessons, Modifier.weight(1f))
-            PracticeCard("Stories", "Reading room", Icons.AutoMirrored.Outlined.MenuBook, stories, Modifier.weight(1f))
+            PracticeCard("Pelajaran", "Kursus terpandu", Icons.Outlined.School, lessons, Modifier.weight(1f))
+            PracticeCard("Cerita", "Ruang baca", Icons.AutoMirrored.Outlined.MenuBook, stories, Modifier.weight(1f))
         } }
         state.readingStories.firstOrNull { story -> state.storyReadings.any { it.storyId == story.id && !it.completed } }?.let { story -> item {
             TextButton(onClick = { read(story.id) }) {
-                Text("Continue reading “${story.title(prefs.target)}”"); Icon(Icons.AutoMirrored.Outlined.ArrowForward, null)
+                Text("Lanjut membaca “${story.title(prefs.target)}”"); Icon(Icons.AutoMirrored.Outlined.ArrowForward, null)
             }
         } }
     }
@@ -131,12 +138,12 @@ fun LessonsScreen(state: LearningState, viewModel: LearningViewModel? = null, op
     val groups = lessons.groupBy { it.family }
     LazyColumn(Modifier.testTag("lessons-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { LibraryStatus(state, viewModel) }
-        item { SectionTitle("Tagalog A1 lessons", "A guided curriculum with clear goals, practice, and prerequisites.") }
+        item { SectionTitle("Pelajaran Tagalog A1", "Kurikulum bertahap dengan tujuan, latihan, dan urutan yang jelas.") }
         item { LinearProgressIndicator(progress = { if (lessons.isEmpty()) 0f else completed.size.toFloat() / lessons.size }, modifier = Modifier.fillMaxWidth()) }
         groups.entries.forEachIndexed { unitIndex, (family, unitLessons) ->
             item(key = "unit:$family") { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("UNIT ${unitIndex + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-                Text(family.replaceFirstChar(Char::uppercase), style = MaterialTheme.typography.titleLarge)
+                Text(moduleTitle(family), style = MaterialTheme.typography.titleLarge)
                 Text(unitLessons.joinToString(" · ") { it.category }, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } }
             items(unitLessons, key = { it.id }) { lesson ->
@@ -164,13 +171,13 @@ private fun LessonCard(lesson: Story, number: Int, complete: Boolean, prerequisi
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("Lesson $number · ${lesson.category}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+                Text("Pelajaran $number · ${lesson.category}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
                 Text(lesson.title(state.preferences.target), style = MaterialTheme.typography.titleMedium)
                 Text(lesson.summary(state.preferences.target), maxLines = 2, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 when {
-                    result != null -> Text("Best score ${result.bestScore}/${result.totalQuestions} · ${result.attempts} attempt${if (result.attempts == 1) "" else "s"}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                    prerequisite != null -> Text("Recommended first: ${prerequisite.title(state.preferences.target)}", style = MaterialTheme.typography.bodyMedium)
-                    else -> Text("Ready to start", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    result != null -> Text("Nilai terbaik ${result.bestScore}/${result.totalQuestions} · ${result.attempts} percobaan", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    prerequisite != null -> Text("Disarankan lebih dahulu: ${prerequisite.title(state.preferences.target)}", style = MaterialTheme.typography.bodyMedium)
+                    else -> Text("Siap dimulai", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 }
             }
             Icon(Icons.AutoMirrored.Outlined.ArrowForward, null)
@@ -182,31 +189,31 @@ private fun LessonCard(lesson: Story, number: Int, complete: Boolean, prerequisi
 @Composable
 fun StoriesScreen(state: LearningState, viewModel: LearningViewModel? = null, read: (String) -> Unit) {
     var savedOnly by rememberSaveable { mutableStateOf(false) }
-    var format by rememberSaveable { mutableStateOf("All formats") }
-    var topic by rememberSaveable { mutableStateOf("All topics") }
-    var level by rememberSaveable { mutableStateOf("All levels") }
+    var format by rememberSaveable { mutableStateOf("Semua format") }
+    var topic by rememberSaveable { mutableStateOf("Semua topik") }
+    var level by rememberSaveable { mutableStateOf("Semua tingkat") }
     var query by rememberSaveable { mutableStateOf("") }
     val stories = state.readingStories
-    val formats = listOf("All formats") + stories.map { it.kind.label }.distinct()
-    val topics = listOf("All topics") + stories.map { it.category }.distinct()
-    val levels = listOf("All levels") + stories.map { it.level.label }.distinct()
+    val formats = listOf("Semua format") + stories.map { it.kind.label }.distinct()
+    val topics = listOf("Semua topik") + stories.map { it.category }.distinct()
+    val levels = listOf("Semua tingkat") + stories.map { it.level.label }.distinct()
     val filtered = stories.filter { story ->
         (!savedOnly || story.sentences.isNotEmpty()) &&
-        (format == "All formats" || story.kind.label == format) &&
-        (topic == "All topics" || story.category == topic) &&
-        (level == "All levels" || story.level.label == level) &&
+        (format == "Semua format" || story.kind.label == format) &&
+        (topic == "Semua topik" || story.category == topic) &&
+        (level == "Semua tingkat" || story.level.label == level) &&
         (story.title(state.preferences.target).contains(query, true) || story.summary(state.preferences.target).contains(query, true)) }
     LazyColumn(Modifier.testTag("stories-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { LibraryStatus(state, viewModel) }
-        item { FilterChip(savedOnly, { savedOnly = !savedOnly }, label = { Text("Saved offline") }) }
-        item { SectionTitle("Stories", "Independent reading practice by level, genre, and topic.") }
+        item { FilterChip(savedOnly, { savedOnly = !savedOnly }, label = { Text("Tersimpan luring") }) }
+        item { SectionTitle("Cerita", "Latihan membaca mandiri berdasarkan tingkat dan topik.") }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), singleLine = true,
-            label = { Text("Search stories") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }) }
-        item { FilterGroup("Level", levels, level) { level = it } }
+            label = { Text("Cari cerita") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }) }
+        item { FilterGroup("Tingkat", levels, level) { level = it } }
         item { FilterGroup("Format", formats, format) { format = it } }
-        item { FilterGroup("Topic", topics, topic) { topic = it } }
-        item { Text("${filtered.size} readings", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
-        if (filtered.isEmpty()) item { InfoCard("No stories found", "Try another title, genre, or topic.") }
+        item { FilterGroup("Topik", topics, topic) { topic = it } }
+        item { Text("${filtered.size} bacaan", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
+        if (filtered.isEmpty()) item { InfoCard("Cerita tidak ditemukan", "Coba judul atau topik lain.") }
         items(filtered, key = { it.id }) { story -> StoryCard(story, state, viewModel, read) }
     }
 }
@@ -241,9 +248,9 @@ fun StoryCard(story: Story, state: LearningState, viewModel: LearningViewModel? 
                     state.contentCompleted(story.id) -> 1f; reading == null -> 0f; else -> ((reading.sentence + 1f) / story.sentenceCount.coerceAtLeast(1)).coerceIn(0f, 1f)
                 } }, Modifier.fillMaxWidth())
                 viewModel?.let { DownloadControls(story, state, it) }
-                Text(when { result?.completed == true -> "Completed · best ${result.bestScore}/${result.totalQuestions}"
-                    state.contentCompleted(story.id) -> "Completed · practice available"
-                    reading != null -> "Continue reading"; else -> "Start story" },
+                Text(when { result?.completed == true -> "Selesai · terbaik ${result.bestScore}/${result.totalQuestions}"
+                    state.contentCompleted(story.id) -> "Selesai · latihan tersedia"
+                    reading != null -> "Lanjut membaca"; else -> "Mulai cerita" },
                     color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
             }
         }

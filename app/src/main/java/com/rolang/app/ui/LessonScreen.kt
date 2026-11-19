@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.rolang.app.LearningState
 import com.rolang.app.data.Story
 
-private val lessonSections = listOf("Goals", "Vocabulary", "Grammar", "Examples", "Practice")
+private val lessonSections = listOf("Tujuan", "Kosakata", "Tata bahasa", "Contoh", "Latihan")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -37,14 +37,14 @@ fun LessonScreen(
 ) {
     var section by rememberSaveable(lesson.id) { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Lesson $lessonNumber") }, navigationIcon = {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back to lessons") }
+        TopAppBar(title = { Text("Pelajaran $lessonNumber") }, navigationIcon = {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Kembali ke daftar pelajaran") }
         }, actions = {
             IconButton(onClick = { onPrevious?.invoke() }, enabled = onPrevious != null) {
-                Icon(Icons.AutoMirrored.Outlined.NavigateBefore, "Previous lesson")
+                Icon(Icons.AutoMirrored.Outlined.NavigateBefore, "Pelajaran sebelumnya")
             }
             IconButton(onClick = { onNext?.invoke() }, enabled = onNext != null) {
-                Icon(Icons.AutoMirrored.Outlined.NavigateNext, "Next lesson")
+                Icon(Icons.AutoMirrored.Outlined.NavigateNext, "Pelajaran berikutnya")
             }
         })
         Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -79,10 +79,10 @@ fun LessonScreen(
             Surface(tonalElevation = 3.dp) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     OutlinedButton(onClick = { section-- }, enabled = section > 0) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, null); Spacer(Modifier.width(6.dp)); Text("Previous")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, null); Spacer(Modifier.width(6.dp)); Text("Sebelumnya")
                     }
                     Button(onClick = { section++ }) {
-                        Text("Next: ${lessonSections[section + 1]}"); Spacer(Modifier.width(6.dp))
+                        Text("Berikutnya: ${lessonSections[section + 1]}"); Spacer(Modifier.width(6.dp))
                         Icon(Icons.AutoMirrored.Outlined.ArrowForward, null)
                     }
                 }
@@ -101,10 +101,10 @@ private fun LessonOverview(lesson: Story, state: LearningState) {
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Flag, null); Spacer(Modifier.width(8.dp)); Text("Learning objectives", style = MaterialTheme.typography.titleMedium)
+                    Icon(Icons.Outlined.Flag, null); Spacer(Modifier.width(8.dp)); Text("Tujuan pembelajaran", style = MaterialTheme.typography.titleMedium)
                 }
                 lesson.objectives.forEach { Text("• ${it.getValue(state.preferences.native.code)}") }
-                Text("Complete all five sections and the final practice to finish this lesson.",
+                Text("Selesaikan kelima bagian dan latihan akhir untuk menuntaskan pelajaran ini.",
                     color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
@@ -117,7 +117,7 @@ private fun VocabularySection(lesson: Story, state: LearningState) {
     val target = lesson.focus(state.preferences.target)
     val native = lesson.focus(state.preferences.native)
     Column(Modifier.widthIn(max = 720.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionTitle("Focus vocabulary", "Study the core expressions before reading the examples.")
+        SectionTitle("Kosakata utama", "Pelajari ungkapan inti sebelum membaca contoh.")
         target.forEachIndexed { index, word ->
             ElevatedCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(18.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -135,10 +135,10 @@ private fun VocabularySection(lesson: Story, state: LearningState) {
 @Composable
 private fun GrammarSection(lesson: Story, state: LearningState) {
     Column(Modifier.widthIn(max = 720.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        SectionTitle("Grammar & usage", "Short explanations you can apply immediately.")
+        SectionTitle("Tata bahasa dan penggunaan", "Penjelasan singkat yang dapat langsung dipakai.")
         lesson.pronunciation[state.preferences.native.code]?.takeIf(String::isNotBlank)?.let { guide ->
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                Column(Modifier.padding(20.dp)) { DetailSection("Pronunciation guide", guide) }
+                Column(Modifier.padding(20.dp)) { DetailSection("Panduan pelafalan", guide) }
             }
         }
         lesson.notes.forEach { note ->
@@ -153,7 +153,7 @@ private fun GrammarSection(lesson: Story, state: LearningState) {
 private fun ExampleCard(lesson: Story, state: LearningState, index: Int) {
     Card(Modifier.widthIn(max = 720.dp).fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("EXAMPLE ${index + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+            Text("CONTOH ${index + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             Text(lesson.sentence(index, state.preferences.target), style = MaterialTheme.typography.titleMedium)
             HorizontalDivider()
             Text(lesson.sentence(index, state.preferences.native), color = MaterialTheme.colorScheme.onSurfaceVariant)

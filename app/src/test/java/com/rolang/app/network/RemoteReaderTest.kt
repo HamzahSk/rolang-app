@@ -30,12 +30,12 @@ class RemoteReaderTest {
         val initial = Corpus.story(TestCorpus.load(application).first.first())
         var story by mutableStateOf(initial)
         val viewModel = LearningViewModel(application)
-        val state = LearningState(readings = listOf(ReadingEntity(initial.id, "en", 299)), ready = true)
+        val state = LearningState(readings = listOf(ReadingEntity(initial.id, "tl", 299)), ready = true)
         compose.setContent { RoLangTheme(false) { ReaderScreen(story, state, viewModel) {} } }
-        compose.onNodeWithText("Paragraph ${initial.sentences.size} of ${initial.sentences.size}").assertExists()
+        compose.onNodeWithText("Paragraf ${initial.sentences.size} dari ${initial.sentences.size}").assertExists()
         compose.runOnIdle { story = initial.copy(sentences = initial.sentences.take(1)) }
-        compose.onNodeWithText("Paragraph 1 of 1").assertExists()
-        compose.onNodeWithText(initial.sentences.first().getValue("en")).assertExists()
+        compose.onNodeWithText("Paragraf 1 dari 1").assertExists()
+        compose.onNodeWithText(initial.sentences.first().getValue("tl")).assertExists()
     }
 
     @Test fun changingReferenceLanguageKeepsEveryWordLinkInteractive() {
@@ -53,11 +53,11 @@ class RemoteReaderTest {
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isNotEmpty() }
         }
         tapFirstWord()
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("English → Indonesian", substring = true).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithContentDescription("Close word details").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Tagalog → Indonesia", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Tutup rincian kata").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isEmpty() }
-        compose.runOnIdle { state = state.copy(preferences = state.preferences.copy(native = Language.TAGALOG)) }
+        compose.runOnIdle { state = state.copy(preferences = state.preferences.copy(native = Language.ENGLISH)) }
         tapFirstWord()
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("English → Filipino (Tagalog)", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Tagalog → Inggris", substring = true).fetchSemanticsNodes().isNotEmpty() }
     }
 }

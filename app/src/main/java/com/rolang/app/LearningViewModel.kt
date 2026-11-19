@@ -90,7 +90,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         content.copy(catalogLoading = catalog.loading, catalogError = catalog.error, downloads = downloads)
     }
     val state = combine(library, ready, error) { content, ready, error -> content.copy(ready = ready, error = error) }
-        .catch { emit(LearningState(error = "Unable to load local learning data. Restart the app to retry.")) }
+        .catch { emit(LearningState(error = "Data belajar lokal tidak dapat dimuat. Mulai ulang aplikasi untuk mencoba lagi.")) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, LearningState())
 
     init {
@@ -102,7 +102,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
                 services.configure()
                 refreshCatalog()
             } catch (_: Exception) {
-                error.value = "Unable to prepare the offline library. Restart the app to retry."
+                error.value = "Pustaka luring tidak dapat disiapkan. Mulai ulang aplikasi untuk mencoba lagi."
             }
         }
         viewModelScope.launch { while (isActive) { _now.value = System.currentTimeMillis(); delay(30_000) } }
@@ -125,7 +125,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     fun clearMessage() { _message.value = null }
     private fun work(action: suspend () -> Unit) = viewModelScope.launch {
         try { action(); services.schedulePending() } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { _message.value = "Couldn't save this change. Please try again." }
+        catch (_: Exception) { _message.value = "Perubahan belum dapat disimpan. Silakan coba lagi." }
     }
     fun target(language: Language) {
         languageGeneration++
@@ -153,7 +153,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     fun save(story: Story, word: WordDetail, prefs: LearningPreferences) { work {
         val saved = repository.save(story, word, prefs.target, prefs.native, System.currentTimeMillis())
         _now.value = System.currentTimeMillis()
-        _message.value = if (saved) "Saved to vocabulary · ready for review" else "Already saved from this story"
+        _message.value = if (saved) "Tersimpan di kosakata · siap ditinjau" else "Sudah tersimpan dari cerita ini"
     } }
     fun mastery(word: VocabularyEntity) { work {
         repository.mastery(word.id, !word.mastered, System.currentTimeMillis())
@@ -167,14 +167,14 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         repository.status(story, word, prefs.target, prefs.native, status, System.currentTimeMillis())
         _now.value = System.currentTimeMillis()
     } }
-    fun delete(word: VocabularyEntity) { work { repository.delete(word.id); _message.value = "Word removed" } }
+    fun delete(word: VocabularyEntity) { work { repository.delete(word.id); _message.value = "Kata dihapus" } }
     fun reading(story: Story, language: Language, index: Int, completed: Boolean) { work {
         repository.reading(story, language, index, completed)
-        if (completed) _message.value = "Story completed · well done"
+        if (completed) _message.value = "Cerita selesai · bagus"
     } }
     fun completeExercises(story: Story, score: Int, total: Int, answers: Map<String, String>) { work {
         repository.exerciseResult(story, state.value.preferences.target, score, total, answers, System.currentTimeMillis())
-        _message.value = "$score of $total correct · progress saved"
+        _message.value = "$score dari $total benar · kemajuan tersimpan"
     } }
     fun startQuiz(mode: PracticeMode) {
         if (_busy.value) return
@@ -230,7 +230,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
                 val saved = repository.review(question.word, rating, question.correct, System.currentTimeMillis())
                 _quiz.value = null
                 _now.value = System.currentTimeMillis()
-                _message.value = if (saved) "Review saved" else "This word is no longer due for review"
+                _message.value = if (saved) "Tinjauan tersimpan" else "Kata ini belum perlu ditinjau lagi"
             } finally { _busy.value = false }
         }
     }

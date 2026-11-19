@@ -14,7 +14,7 @@ import java.io.IOException
 
 val Context.learningPreferences by preferencesDataStore(name = "learning_preferences")
 data class LearningPreferences(
-    val target: Language = Language.ENGLISH,
+    val target: Language = Language.TAGALOG,
     val native: Language = Language.INDONESIAN,
     val level: Level = Level.BEGINNER,
     val fontSize: Float = 20f,
@@ -28,7 +28,7 @@ class PreferencesRepository(private val store: DataStore<Preferences>, private v
     private val font = floatPreferencesKey("font")
     private val dark = booleanPreferencesKey("dark")
     val preferences = store.data.catch { if (it is IOException) emit(emptyPreferences()) else throw it }.map {
-        LearningPreferences(Language.from(it[target] ?: "en"), Language.from(it[native] ?: "id"),
+        LearningPreferences(Language.from(it[target] ?: "tl"), Language.from(it[native] ?: "id"),
             Level.entries.firstOrNull { value -> value.name == it[level] } ?: Level.BEGINNER,
             (it[font] ?: 20f).coerceIn(16f, 28f), it[dark] ?: false)
     }

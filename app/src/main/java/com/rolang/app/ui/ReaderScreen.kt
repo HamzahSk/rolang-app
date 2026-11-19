@@ -75,10 +75,10 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
         }
     }
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Reading room", style = MaterialTheme.typography.titleMedium) },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back to stories") } })
+        TopAppBar(title = { Text("Ruang baca", style = MaterialTheme.typography.titleMedium) },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Kembali ke daftar cerita") } })
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Paragraph ${index + 1} of ${story.sentences.size}", style = MaterialTheme.typography.labelLarge)
+            Text("Paragraf ${index + 1} dari ${story.sentences.size}", style = MaterialTheme.typography.labelLarge)
             LinearProgressIndicator(progress = { (index + 1f) / story.sentences.size }, modifier = Modifier.fillMaxWidth())
         }
         LazyColumn(Modifier.weight(1f).testTag("reader-content"), state = listState,
@@ -90,11 +90,11 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                         Modifier.fillMaxWidth().height(96.dp), contentScale = ContentScale.Fit)
                     SectionTitle(story.title(prefs.target), "${story.kind.label} · ${story.category} · ${story.level.label}")
                     Text(story.summary(prefs.target), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Tap any word to explore its meaning.", style = MaterialTheme.typography.bodyMedium,
+                    Text("Ketuk kata apa pun untuk melihat artinya.", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     DownloadControls(story, state, viewModel)
                     if (story.chapters.size > 1) {
-                        Text("Chapters", style = MaterialTheme.typography.titleMedium)
+                        Text("Bab", style = MaterialTheme.typography.titleMedium)
                         story.chapters.forEach { chapter -> TextButton(onClick = {
                             chapterScope.launch { listState.scrollToItem(chapter.start + 1) }
                         }) { Text(chapter.title.getValue(prefs.target.code)) } }
@@ -103,7 +103,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                     OutlinedButton(onClick = { translated = !translated }) {
                         Icon(Icons.Outlined.Translate, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(if (translated) "Hide translation" else "Translate story")
+                        Text(if (translated) "Sembunyikan terjemahan" else "Tampilkan terjemahan")
                     }
                 }
             }
@@ -135,7 +135,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
             }
             if (story.objectives.isNotEmpty()) item(key = "objectives") {
                 Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Learning goals", style = MaterialTheme.typography.titleLarge)
+                    Text("Tujuan pembelajaran", style = MaterialTheme.typography.titleLarge)
                     story.objectives.forEach { Text("• ${it.getValue(prefs.native.code)}") }
                 }
             }
@@ -143,7 +143,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                 Card(Modifier.widthIn(max = 680.dp).fillMaxWidth(), colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                     Column(Modifier.padding(20.dp)) {
-                        DetailSection("Pronunciation guide", story.pronunciation.getValue(prefs.native.code))
+                        DetailSection("Panduan pelafalan", story.pronunciation.getValue(prefs.native.code))
                     }
                 }
             }
@@ -155,7 +155,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
             }
             if (story.focus(prefs.target).isNotEmpty()) item(key = "focus") {
                 Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Focus vocabulary", style = MaterialTheme.typography.titleLarge)
+                    Text("Kosakata utama", style = MaterialTheme.typography.titleLarge)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         story.focus(prefs.target).forEach { expression ->
                             val status = state.wordStatus(story.id, expression)
@@ -184,21 +184,21 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(selected!!.text, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
-                    IconButton(onClick = { selected = null }) { Icon(Icons.Outlined.Close, "Close word details") }
+                    IconButton(onClick = { selected = null }) { Icon(Icons.Outlined.Close, "Tutup rincian kata") }
                 }
             }
             val word = detail
             if (word == null) item {
-                if (lookupError) Text("Unable to open this translation. Close and tap the word to retry.")
+                if (lookupError) Text("Terjemahan ini belum dapat dibuka. Tutup lalu ketuk katanya untuk mencoba lagi.")
                 else CircularProgressIndicator()
             } else {
                 item {
                     Text(word.translation, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                     Text("${word.partOfSpeech} · ${prefs.target.label} → ${prefs.native.label}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                item { DetailSection("Meaning", word.meaning) }
-                item { DetailSection("Pronunciation & context", word.explanation) }
-                item { DetailSection("Example", word.example + "\n\n" + word.exampleTranslation) }
+                item { DetailSection("Makna", word.meaning) }
+                item { DetailSection("Pelafalan dan konteks", word.explanation) }
+                item { DetailSection("Contoh", word.example + "\n\n" + word.exampleTranslation) }
                 item {
                     VocabularyStatusSelector(state.wordStatus(story.id, word.word)) {
                         viewModel.status(story, word, prefs, it)
@@ -208,7 +208,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                     val saved = state.courseWords.any { it.storyId == story.id && it.word == Words.key(word.word) }
                     Button(onClick = { viewModel.save(story, word, prefs) }, enabled = !saved, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Outlined.BookmarkAdd, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp))
-                        Text(if (saved) "Saved to vocabulary" else "Save word")
+                        Text(if (saved) "Tersimpan di kosakata" else "Simpan kata")
                     }
                 }
             }

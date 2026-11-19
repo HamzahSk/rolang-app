@@ -36,8 +36,8 @@ class OfflineLearningTest {
         TestCorpus.seed(repository.dao, context)
         TestCorpus.seed(repository.dao, context)
         val stories = repository.dao.stories().first().map(Corpus::story)
-        assertEquals(20, stories.size)
-        assertEquals((1..20).toList(), stories.sortedBy { it.order }.map { it.order })
+        assertEquals(21, stories.size)
+        assertEquals((1..21).toList(), stories.sortedBy { it.order }.map { it.order })
         assertEquals(setOf(UnitKind.LESSON, UnitKind.DIALOGUE, UnitKind.STORY), stories.map { it.kind }.toSet())
         assertTrue(stories.all { it.level == Level.BEGINNER })
         val lessonTypes = setOf(ExerciseType.MULTIPLE_CHOICE, ExerciseType.VOCABULARY_TRANSLATION,

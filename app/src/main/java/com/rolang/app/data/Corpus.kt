@@ -5,7 +5,7 @@ import com.rolang.app.domain.Level
 import com.rolang.app.domain.Words
 import org.json.JSONObject
 
-enum class UnitKind(val label: String) { LESSON("Lesson"), DIALOGUE("Dialogue"), STORY("Reading") }
+enum class UnitKind(val label: String) { LESSON("Pelajaran"), DIALOGUE("Dialog"), STORY("Bacaan") }
 
 enum class ExerciseType {
     MULTIPLE_CHOICE, VOCABULARY_TRANSLATION, FILL_BLANK, GRAMMAR,
@@ -85,7 +85,7 @@ object Corpus {
                 prompt = translations(prompt),
                 answer = translations(item.getJSONObject("answer")),
                 explanation = item.optJSONObject("explanation")?.let(::translations)
-                    ?: Language.entries.associate { language -> language.code to "Review the learning text for this answer." },
+                    ?: Language.entries.associate { language -> language.code to "Tinjau kembali teks pembelajaran untuk jawaban ini." },
                 choices = localizedStrings(item, "choices"),
                 tokens = localizedStrings(item, "tokens"),
             )

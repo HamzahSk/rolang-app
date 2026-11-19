@@ -31,52 +31,52 @@ class LearningFlowTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun readSaveAndReviewAWordThroughTheInterface() {
-        compose.waitUntil(30_000) { compose.onAllNodesWithText("Keep your momentum").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Stories", useUnmergedTree = true).performClick()
-        scrollClick("stories-list", "The morning market")
-        compose.onNodeWithTag("reader-content").performScrollToNode(hasText("Maya walks to the market in the morning."))
-        val text = compose.onNodeWithText("Maya walks to the market in the morning.")
+        compose.waitUntil(30_000) { compose.onAllNodesWithText("Lanjutkan kemajuan").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Cerita", useUnmergedTree = true).performClick()
+        scrollClick("stories-list", "Ang palengke sa umaga")
+        compose.onNodeWithTag("reader-content").performScrollToNode(hasText("Kailangan ng nanay niya ng kamatis, sibuyas, saging, at sariwang isda."))
+        val text = compose.onNodeWithText("Kailangan ng nanay niya ng kamatis, sibuyas, saging, at sariwang isda.")
         val layouts = mutableListOf<TextLayoutResult>()
         text.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         text.performTouchInput { click(layouts.single().getBoundingBox(1).center) }
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isNotEmpty() }
-        scrollClick("word-details", "Save word")
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Saved to vocabulary").fetchSemanticsNodes().isNotEmpty() }
-        scrollClick("word-details", "Almost Mastered")
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Almost Mastered").fetchSemanticsNodes().isNotEmpty() }
-        scrollClick("word-details", "Known")
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Known").fetchSemanticsNodes().isNotEmpty() }
-        scrollClick("word-details", "Learning")
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Learning").fetchSemanticsNodes().isNotEmpty() }
+        scrollClick("word-details", "Simpan kata")
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Tersimpan di kosakata").fetchSemanticsNodes().isNotEmpty() }
+        scrollClick("word-details", "Hampir dikuasai")
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Status belajar: Hampir dikuasai").fetchSemanticsNodes().isNotEmpty() }
+        scrollClick("word-details", "Dikuasai")
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Status belajar: Dikuasai").fetchSemanticsNodes().isNotEmpty() }
+        scrollClick("word-details", "Dipelajari")
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Status belajar: Dipelajari").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("word-details").performScrollToIndex(0)
-        compose.onNodeWithContentDescription("Close word details").performClick()
+        compose.onNodeWithContentDescription("Tutup rincian kata").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isEmpty() }
         compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithText("Next passage").assertDoesNotExist()
-        scrollClick("reader-content", "Translate story")
+        scrollClick("reader-content", "Tampilkan terjemahan")
         compose.mainClock.advanceTimeBy(1_000)
-        compose.onNodeWithText("Hide translation").assertExists()
-        compose.onNodeWithText("Maya berjalan ke pasar pada pagi hari.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Sembunyikan terjemahan").assertExists()
+        compose.onNodeWithText("Ibunya memerlukan tomat, bawang, pisang, dan ikan segar.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("reader-content").performScrollToNode(hasTestTag("story-paragraph-2"))
         compose.onNodeWithTag("story-paragraph-2").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Back to stories").performClick()
-        compose.onNodeWithText("Vocabulary", useUnmergedTree = true).performClick()
-        compose.onNodeWithTag("vocabulary-list").performScrollToNode(hasText("maya"))
-        compose.onNodeWithText("maya").assertIsDisplayed()
-        compose.onNodeWithText("Review", useUnmergedTree = true).performClick()
-        scrollClick("review-content", "Practice next word")
+        compose.onNodeWithContentDescription("Kembali ke daftar cerita").performClick()
+        compose.onNodeWithText("Kosakata", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("vocabulary-list").performScrollToNode(hasText("kailangan"))
+        compose.onNodeWithText("kailangan").assertIsDisplayed()
+        compose.onNodeWithText("Tinjauan", useUnmergedTree = true).performClick()
+        scrollClick("review-content", "Latih kata berikutnya")
         compose.onNodeWithTag("review-content").performScrollToIndex(0)
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("quiz-question").fetchSemanticsNodes().isNotEmpty() }
-        scrollClick("review-content", "Maya")
-        scrollClick("review-content", "Check answer")
-        compose.onNodeWithText("You remembered it").performScrollTo().assertIsDisplayed()
-        scrollClick("review-content", "Good · 1d")
+        scrollClick("review-content", "memerlukan")
+        scrollClick("review-content", "Periksa jawaban")
+        compose.onNodeWithText("Jawaban diingat").performScrollTo().assertIsDisplayed()
+        scrollClick("review-content", "Baik · 1 hari")
         compose.onNodeWithTag("review-content").performScrollToIndex(0)
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("You're all caught up").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Profile", useUnmergedTree = true).performClick()
-        compose.onNodeWithTag("profile-content").performScrollToNode(hasText("Lessons completed: 0 · Stories completed: 0"))
-        compose.onNodeWithText("Lessons completed: 0 · Stories completed: 0").assertIsDisplayed()
-        compose.onNodeWithText("Reviews recorded: 1").assertIsDisplayed()
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Semua tinjauan selesai").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Profil", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("profile-content").performScrollToNode(hasText("Pelajaran selesai: 0 · Cerita selesai: 0"))
+        compose.onNodeWithText("Pelajaran selesai: 0 · Cerita selesai: 0").assertIsDisplayed()
+        compose.onNodeWithText("Tinjauan tercatat: 1").assertIsDisplayed()
     }
     private fun scrollClick(container: String, text: String) {
         compose.onNodeWithTag(container).performScrollToNode(hasText(text))

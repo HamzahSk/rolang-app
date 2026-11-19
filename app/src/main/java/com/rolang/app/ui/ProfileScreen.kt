@@ -28,47 +28,47 @@ fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Lan
     var streak = 0
     while (cursor in dates) { streak++; cursor = cursor.minusDays(1) }
     LazyColumn(modifier = Modifier.testTag("profile-content"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        item { SectionTitle("Your learning journey", "Small steps become lasting progress.") }
+        item { SectionTitle("Perjalanan belajar", "Langkah kecil membentuk kemajuan yang bertahan.") }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatTile("$streak", "Day review streak", Modifier.weight(1f))
-                StatTile(if (reviews.isEmpty()) "—" else "${reviews.count { it.correct } * 100 / reviews.size}%", "Review accuracy", Modifier.weight(1f))
+                StatTile("$streak", "Hari beruntun", Modifier.weight(1f))
+                StatTile(if (reviews.isEmpty()) "—" else "${reviews.count { it.correct } * 100 / reviews.size}%", "Ketepatan", Modifier.weight(1f))
             }
         }
         item {
             Card {
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("$mastered of ${state.courseWords.size} words mastered", style = MaterialTheme.typography.titleMedium)
+                    Text("$mastered dari ${state.courseWords.size} kata dikuasai", style = MaterialTheme.typography.titleMedium)
                     LinearProgressIndicator(progress = { if (state.courseWords.isEmpty()) 0f else mastered.toFloat() / state.courseWords.size }, modifier = Modifier.fillMaxWidth())
-                    Text("Lessons completed: $completedLessons · Stories completed: $completedStories")
-                    Text("Reviews recorded: ${reviews.size}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Pelajaran selesai: $completedLessons · Cerita selesai: $completedStories")
+                    Text("Tinjauan tercatat: ${reviews.size}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
         item {
-            LanguagePicker("I'm learning", prefs.target, target)
+            LanguagePicker("Saya mempelajari", prefs.target, target)
         }
         item {
-            LanguagePicker("Translate into", prefs.native, native)
-            Text("Your vocabulary and reviews stay separate for each language pair.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            LanguagePicker("Terjemahkan ke", prefs.native, native)
+            Text("Kosakata dan tinjauan dipisahkan untuk setiap pasangan bahasa.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        item { InfoCard("Current course: Tagalog A1", "This release focuses on a complete beginner foundation. Higher-level course content is intentionally not included yet.") }
+        item { InfoCard("Kursus saat ini: Tagalog A1", "Kursus ini berfokus pada dasar lengkap untuk pemula berbahasa Indonesia.") }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Reader text size", style = MaterialTheme.typography.titleMedium)
+                Text("Ukuran teks bacaan", style = MaterialTheme.typography.titleMedium)
                 var size by remember(prefs.fontSize) { mutableFloatStateOf(prefs.fontSize) }
-                Text("${size.toInt()} sp · A comfortable pace for every page")
+                Text("${size.toInt()} sp · Sesuaikan agar nyaman dibaca")
                 Slider(value = size, onValueChange = { size = it }, valueRange = 16f..28f, steps = 5,
                     onValueChangeFinished = { font(size) })
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Dark appearance")
+                    Text("Tampilan gelap")
                     Switch(checked = prefs.dark, onCheckedChange = dark)
                 }
             }
         }
         item { account() }
-        item { InfoCard("Your library travels with you", "Stories, translations, saved words, reading progress, and reviews live on this device. With online features enabled, sign in to sync between devices. Ro-Lang also works offline. Clearing app data or uninstalling removes local data and pending changes.") }
-        item { Text("Ro-Lang · Version 1.0", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item { InfoCard("Pustaka selalu tersedia", "Cerita, terjemahan, kata tersimpan, kemajuan, dan tinjauan disimpan di perangkat. Ro-Lang tetap dapat dibaca luring dan dapat disinkronkan saat daring.") }
+        item { Text("Ro-Lang · Versi 1.0", color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 

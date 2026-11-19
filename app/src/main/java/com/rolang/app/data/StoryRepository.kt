@@ -14,7 +14,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
-class ContentChanged : IOException("Story changed while downloading. Retrying will resume with its latest version.")
+class ContentChanged : IOException("Cerita berubah saat diunduh. Percobaan ulang akan memakai versi terbaru.")
 data class CatalogState(val loading: Boolean = false, val error: String? = null)
 
 class StoryRepository(private val database: LearningDatabase, private val remote: StoryRemoteSource) {
@@ -59,7 +59,7 @@ class StoryRepository(private val database: LearningDatabase, private val remote
                 _catalogState.value = CatalogState()
             } catch (cancelled: CancellationException) { _catalogState.value = CatalogState(); throw cancelled }
             catch (error: Exception) {
-                _catalogState.value = CatalogState(error = "Cannot reach the library. Saved stories are available offline. Retry when connected.")
+                _catalogState.value = CatalogState(error = "Pustaka daring tidak dapat dijangkau. Materi tersimpan tetap tersedia luring. Coba lagi setelah terhubung.")
                 throw error
             }
         }
@@ -216,7 +216,7 @@ class StoryRepository(private val database: LearningDatabase, private val remote
     suspend fun failDownload(id: String, requestId: String, retry: Boolean) = database.withTransaction {
         val current = dao.download(id) ?: return@withTransaction
         if (current.requestId == requestId && current.status != "CANCELLED") dao.saveDownload(current.copy(
-            status = if (retry) "RETRYING" else "FAILED", error = "Download interrupted. Saved chapters will be reused on retry."))
+            status = if (retry) "RETRYING" else "FAILED", error = "Unduhan terhenti. Bab yang tersimpan akan dipakai kembali saat mencoba ulang."))
     }
     suspend fun cancelDownload(id: String) = database.withTransaction {
         dao.download(id)?.let { dao.saveDownload(it.copy(status = "CANCELLED", error = null)) }

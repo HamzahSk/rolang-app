@@ -1,0 +1,26 @@
+Codex recovery result: success
+Attempts used: 1/5
+Resume turns: 0
+Session ID: 01a1f5ba-6de2-7ac1-86bb-ae9daf76d9eb
+Last status: completed
+
+Final Codex response:
+Implemented across both repositories.
+
+- 21 ordered A1 units: 10 lessons, 6 dialogues, 5 stories.
+- 4 long stories contain 13 authored chapters; MongoDB stores 30 chapter records total.
+- 1,486 vocabulary entries and 150 exercises with answers/explanations.
+- Added curriculum, module, lesson, vocabulary, exercise, story, and chapter APIs.
+- Seed is transactional and idempotent: first run inserted 21; second inserted 0; duplicates 0.
+- Android defaults to Indonesian → Tagalog A1, fetches only `tl/A1`, and displays Indonesian instructions.
+- Existing automatic caching, full-story downloads, progress, retries, offline reading, and safe failed-sync behavior remain intact.
+
+Key files: [content generator](/home/runner/work/rolang-app/rolang-app/tools/build_corpus.py:120), [server APIs](/home/runner/work/rolang-app/rolang-app/rolang-server/src/app.js:99), [seed script](/home/runner/work/rolang-app/rolang-app/rolang-server/scripts/seed.js:6), [Android defaults](/home/runner/work/rolang-app/rolang-app/app/src/main/java/com/rolang/app/data/Preferences.kt:16), [remote catalog](/home/runner/work/rolang-app/rolang-app/app/src/main/java/com/rolang/app/network/StoryRemoteSource.kt:17).
+
+Verification:
+
+- Server: 31 tests, 27 passed, 4 environment-specific tests skipped; build passed.
+- Android: unit/UI tests, lint, debug APK, and Android-test APK passed.
+- Live Android ↔ Express ↔ MongoDB integration passed, including reopening all content offline.
+- Local HTTP APIs returned correct curriculum, lesson, chapter ordering, vocabulary, and answers.
+- Production Vercel health is online, but the new deployment is not present: `/api/v1/curriculum` returns 404 and the A1 catalog is empty. No Vercel deployment credentials were available, so I did not claim production deployment.

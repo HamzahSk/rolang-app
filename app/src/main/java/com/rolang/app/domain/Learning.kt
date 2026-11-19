@@ -6,19 +6,19 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 enum class Language(val code: String, val label: String) {
-    ENGLISH("en", "English"), INDONESIAN("id", "Indonesian"), TAGALOG("tl", "Filipino (Tagalog)");
+    ENGLISH("en", "Inggris"), INDONESIAN("id", "Indonesia"), TAGALOG("tl", "Tagalog");
     companion object {
         fun from(code: String) = entries.firstOrNull { it.code == code } ?: ENGLISH
     }
 }
 
 enum class Level(val label: String) {
-    BEGINNER("Beginner · A1"), INTERMEDIATE("Intermediate · B1–B2"), ADVANCED("Advanced · C1–C2")
+    BEGINNER("Pemula · A1"), INTERMEDIATE("Menengah · B1–B2"), ADVANCED("Mahir · C1–C2")
 }
 
 enum class PracticeMode(val label: String) {
-    RECOGNITION("Recognition"), RECALL("Tagalog → Indonesian"), REVERSE("Indonesian → Tagalog"),
-    CONTEXT("Sentence completion"), GRAMMAR("Grammar practice")
+    RECOGNITION("Mengenali"), RECALL("Tagalog → Indonesia"), REVERSE("Indonesia → Tagalog"),
+    CONTEXT("Melengkapi kalimat"), GRAMMAR("Latihan tata bahasa")
 }
 
 data class WordToken(val text: String, val start: Int, val end: Int)
@@ -39,7 +39,7 @@ object Words {
 enum class Rating { AGAIN, HARD, GOOD, EASY }
 
 enum class VocabularyStatus(val label: String) {
-    NEW("New"), LEARNING("Learning"), ALMOST_MASTERED("Almost Mastered"), KNOWN("Known");
+    NEW("Baru"), LEARNING("Dipelajari"), ALMOST_MASTERED("Hampir dikuasai"), KNOWN("Dikuasai");
 
     companion object {
         fun fromLegacy(mastered: Boolean, repetitions: Int) = when {

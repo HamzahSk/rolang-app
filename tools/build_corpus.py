@@ -117,6 +117,27 @@ def u(id_, kind, family, category, image, title, summary, sentences, focus=(), n
         "exercises": generated_exercises(id_, kind, sentences, focus, note, exercises)})
 
 
+def c(id_, title, summary, sentences, focus=(), note=None, exercises=(), speakers=(), pronunciation=None):
+    """Create one self-contained chapter with Indonesian guidance and review."""
+    assert not speakers or len(speakers) == len(sentences)
+    return {"id": id_, "title": t(*title), "summary": t(*summary),
+        "objectives": [t("Memahami peristiwa utama dan memakai ungkapan bab ini.",
+                         "Memahami peristiwa utama dan memakai ungkapan bab ini.",
+                         "Unawain ang pangunahing pangyayari at gamitin ang mga pahayag sa kabanatang ito.")],
+        "notes": [note] if note else [], "pronunciation": t(*(pronunciation or ("", "", ""))),
+        "focus": {lang: [x[i] for x in focus] for i, lang in enumerate(LANGS)},
+        "sentences": [t(*x) for x in sentences], "speakers": list(speakers),
+        "exercises": generated_exercises(id_, "STORY", sentences, focus, note, exercises)}
+
+
+def chaptered(id_, chapters):
+    """Attach ordered chapters while keeping the legacy concatenated story contract."""
+    unit = next(item for item in UNITS if item["id"] == id_)
+    unit["chapters"] = chapters
+    unit["sentences"] = [sentence for chapter in chapters for sentence in chapter["sentences"]]
+    unit["speakers"] = [speaker for chapter in chapters for speaker in chapter.get("speakers", [])]
+
+
 u("a1_01_sounds", "LESSON", "foundations", "Foundations", "sounds",
   ("Filipino sounds and spelling", "Bunyi dan ejaan Filipino", "Mga tunog at baybay ng Filipino"),
   ("The alphabet, five vowels, stress, and the sound ng.", "Alfabet, lima vokal, tekanan, dan bunyi ng.", "Ang alpabeto, limang patinig, diin, at tunog na ng."), [
@@ -397,6 +418,198 @@ u("a1_20_final", "STORY", "review", "A1 final reading", "friends",
 ], [("for three months", "selama tiga bulan", "nang tatlong buwan"), ("ask for directions", "meminta petunjuk", "magtanong ng direksiyon"),
     ("make mistakes", "membuat kesalahan", "magkamali"), ("people understand", "orang-orang memahami", "nauunawaan ng mga tao")],
   exercises=[q("What does Sari order?", "Apa yang dipesan Sari?", "Ano ang inorder ni Sari?", "Rice, vegetables, and water.", "Nasi, sayuran, dan air.", "Kanin, gulay, at tubig.")])
+
+# Four longer, original readings provide coherent chaptered plots. The root text
+# remains their ordered concatenation so old Android clients continue to work.
+chaptered("a1_08_family_lunch", [
+  c("undangan", ("Undangan hari Minggu", "Undangan hari Minggu", "Ang paanyaya sa Linggo"),
+    ("Mara mengundang Dito untuk makan siang bersama keluarganya.", "Mara mengundang Dito untuk makan siang bersama keluarganya.", "Inaanyayahan ni Mara si Dito sa pananghalian kasama ang pamilya niya."), [
+    ("Pada pagi hari, Mara membantu ibunya di dapur.", "Pada pagi hari, Mara membantu ibunya di dapur.", "Sa umaga, tumutulong si Mara sa nanay niya sa kusina."),
+    ("Ibunya memasak sup, sedangkan ayahnya memanggang ikan.", "Ibunya memasak sup, sedangkan ayahnya memanggang ikan.", "Nagluluto ng sabaw ang nanay niya, habang nag-iihaw ng isda ang tatay niya."),
+    ("Adik Mara menata piring dan sendok di meja.", "Adik Mara menata piring dan sendok di meja.", "Inihahanda ng kapatid ni Mara ang mga plato at kutsara sa mesa."),
+    ("Dito datang membawa dua mangga matang.", "Dito datang membawa dua mangga matang.", "Dumarating si Dito na may dalang dalawang hinog na mangga."),
+    ("Selamat datang, kata keluarga Mara.", "Selamat datang, kata keluarga Mara.", "Maligayang pagdating, sabi ng pamilya ni Mara."),
+    ("Dito tersenyum dan mengucapkan terima kasih.", "Dito tersenyum dan mengucapkan terima kasih.", "Ngumingiti si Dito at nagpapasalamat."),
+  ], [("welcome", "selamat datang", "maligayang pagdating"), ("kitchen", "dapur", "kusina")],
+    n("Po untuk menghormati", "Gunakan po ketika berbicara dengan orang yang lebih tua.", "Gunakan po ketika berbicara dengan orang yang lebih tua.", "Gamitin ang po kapag nakikipag-usap sa nakatatanda."),
+    [q("Apa yang dibawa Dito?", "Apa yang dibawa Dito?", "Ano ang dala ni Dito?", "Dua mangga matang.", "Dua mangga matang.", "Dalawang hinog na mangga.")]),
+  c("meja", ("Cerita di meja", "Cerita di meja", "Mga kuwento sa mesa"),
+    ("Semua orang makan dan saling mengenal.", "Semua orang makan dan saling mengenal.", "Kumakain ang lahat at nakikilala ang isa't isa."), [
+    ("Nenek Mara bertanya tentang sekolah Dito.", "Nenek Mara bertanya tentang sekolah Dito.", "Nagtatanong ang lola ni Mara tungkol sa paaralan ni Dito."),
+    ("Saya siswa baru, jawab Dito dengan sopan.", "Saya siswa baru, jawab Dito dengan sopan.", "Bagong estudyante po ako, magalang na sagot ni Dito."),
+    ("Ayah Mara menceritakan kisah lucu tentang pasar.", "Ayah Mara menceritakan kisah lucu tentang pasar.", "Nagkukuwento ang tatay ni Mara ng nakakatawang kuwento tungkol sa palengke."),
+    ("Semua tertawa, tetapi sup hampir jatuh.", "Semua tertawa, tetapi sup hampir jatuh.", "Tumatawa ang lahat, pero muntik nang mahulog ang sabaw."),
+    ("Dito segera memegang mangkuk itu.", "Dito segera memegang mangkuk itu.", "Agad na hinahawakan ni Dito ang mangkok."),
+    ("Terima kasih, Dito, kata ibu Mara.", "Terima kasih, Dito, kata ibu Mara.", "Salamat, Dito, sabi ng nanay ni Mara."),
+  ], [("polite", "sopan", "magalang"), ("everyone", "semua orang", "lahat")],
+    n("Ang dan ng", "Ang menandai fokus kalimat, sedangkan ng sering menandai pelaku atau objek yang tidak difokuskan.", "Ang menandai fokus kalimat, sedangkan ng sering menandai pelaku atau objek yang tidak difokuskan.", "Pananda ng pokus ang ang; madalas namang pananda ng di-pokus na tagaganap o layon ang ng."),
+    [q("Apa yang hampir jatuh?", "Apa yang hampir jatuh?", "Ano ang muntik nang mahulog?", "Sup.", "Sup.", "Ang sabaw.")]),
+  c("pulang", ("Hadiah kecil", "Hadiah kecil", "Ang munting regalo"),
+    ("Dito pulang dengan kenangan hangat.", "Dito pulang dengan kenangan hangat.", "Umuuwing may masayang alaala si Dito."), [
+    ("Setelah makan, Dito membantu membersihkan meja.", "Setelah makan, Dito membantu membersihkan meja.", "Pagkatapos kumain, tumutulong si Dito sa paglilinis ng mesa."),
+    ("Nenek Mara memberinya sebuah buku resep kecil.", "Nenek Mara memberinya sebuah buku resep kecil.", "Binibigyan siya ng lola ni Mara ng maliit na aklat ng mga resipe."),
+    ("Buku ini untuk keluargamu, katanya.", "Buku ini untuk keluargamu, katanya.", "Para ito sa pamilya mo, sabi niya."),
+    ("Dito berjanji akan memasak sup pada hari Minggu berikutnya.", "Dito berjanji akan memasak sup pada hari Minggu berikutnya.", "Nangangako si Dito na magluluto siya ng sabaw sa susunod na Linggo."),
+    ("Mara senang karena temannya merasa diterima.", "Mara senang karena temannya merasa diterima.", "Masaya si Mara dahil tanggap ang kaibigan niya."),
+    ("Sampai jumpa lagi, kata mereka di depan rumah.", "Sampai jumpa lagi, kata mereka di depan rumah.", "Magkita tayong muli, sabi nila sa harap ng bahay."),
+  ], [("recipe", "resep", "resipe"), ("next Sunday", "Minggu berikutnya", "susunod na Linggo")],
+    n("Sa untuk tujuan", "Sa dapat menunjukkan tempat, penerima, atau tujuan: para sa pamilya mo.", "Sa dapat menunjukkan tempat, penerima, atau tujuan: para sa pamilya mo.", "Maaaring magturo ang sa ng lugar, tatanggap, o layon: para sa pamilya mo."),
+    [q("Apa hadiah untuk Dito?", "Apa hadiah untuk Dito?", "Ano ang regalo kay Dito?", "Buku resep kecil.", "Buku resep kecil.", "Maliit na aklat ng mga resipe.")])
+])
+
+chaptered("market_beginner", [
+  c("daftar", ("Daftar belanja", "Daftar belanja", "Ang listahan ng bibilhin"),
+    ("Maya pergi ke pasar dengan daftar belanja.", "Maya pergi ke pasar dengan daftar belanja.", "Pumupunta si Maya sa palengke na may listahan ng bibilhin."), [
+    ("Ibunya memerlukan tomat, bawang, pisang, dan ikan segar.", "Ibunya memerlukan tomat, bawang, pisang, dan ikan segar.", "Kailangan ng nanay niya ng kamatis, sibuyas, saging, at sariwang isda."),
+    ("Pasar ramai, tetapi Maya berjalan perlahan.", "Pasar ramai, tetapi Maya berjalan perlahan.", "Maraming tao sa palengke, pero dahan-dahang naglalakad si Maya."),
+    ("Dia melihat buah merah dan mangga matang.", "Dia melihat buah merah dan mangga matang.", "Nakikita niya ang pulang prutas at hinog na mangga."),
+    ("Pertama, dia membeli satu kilo tomat.", "Pertama, dia membeli satu kilo tomat.", "Una, bumibili siya ng isang kilo ng kamatis."),
+    ("Berapa harganya, tanya Maya.", "Berapa harganya, tanya Maya.", "Magkano po ito, tanong ni Maya."),
+    ("Delapan puluh peso, jawab pedagang.", "Delapan puluh peso, jawab pedagang.", "Walumpung piso, sagot ng tindera."),
+  ], [("shopping list", "daftar belanja", "listahan ng bibilhin"), ("how much", "berapa harga", "magkano")],
+    n("Ng setelah jumlah", "Gunakan ng untuk menghubungkan jumlah dan barang: isang kilo ng kamatis.", "Gunakan ng untuk menghubungkan jumlah dan barang: isang kilo ng kamatis.", "Gamitin ang ng sa pagitan ng dami at bagay: isang kilo ng kamatis."),
+    [q("Berapa harga tomat?", "Berapa harga tomat?", "Magkano ang kamatis?", "Delapan puluh peso.", "Delapan puluh peso.", "Walumpung piso.")]),
+  c("tas_jatuh", ("Tas yang jatuh", "Tas yang jatuh", "Ang nahulog na bag"),
+    ("Sebuah tas jatuh di dekat Maya.", "Sebuah tas jatuh di dekat Maya.", "Nahuhulog ang isang bag malapit kay Maya."), [
+    ("Tomat dan bawang berguling di lantai.", "Tomat dan bawang berguling di lantai.", "Gumugulong sa sahig ang mga kamatis at sibuyas."),
+    ("Maya segera memungut semua sayuran.", "Maya segera memungut semua sayuran.", "Agad na pinupulot ni Maya ang lahat ng gulay."),
+    ("Tas ini milik Anda, kata Maya kepada seorang nenek.", "Tas ini milik Anda, kata Maya kepada seorang nenek.", "Bag po ba ninyo ito, tanong ni Maya sa isang lola."),
+    ("Ya, terima kasih atas bantuanmu, jawab nenek itu.", "Ya, terima kasih atas bantuanmu, jawab nenek itu.", "Opo, salamat sa tulong mo, sagot ng lola."),
+    ("Pedagang juga membantu memasukkan sayuran ke dalam tas.", "Pedagang juga membantu memasukkan sayuran ke dalam tas.", "Tumutulong din ang tindera sa paglalagay ng gulay sa bag."),
+    ("Maya dan nenek itu tersenyum.", "Maya dan nenek itu tersenyum.", "Ngumingiti si Maya at ang lola."),
+  ], [("help", "bantuan", "tulong"), ("bag", "tas", "bag")],
+    n("Kay untuk orang", "Gunakan kay sebelum nama atau orang tunggal dalam keterangan: malapit kay Maya.", "Gunakan kay sebelum nama atau orang tunggal dalam keterangan: malapit kay Maya.", "Gamitin ang kay bago sa pangalan o isang tao: malapit kay Maya."),
+    [q("Siapa pemilik tas?", "Siapa pemilik tas?", "Kanino ang bag?", "Seorang nenek.", "Seorang nenek.", "Sa isang lola.")]),
+  c("mangga", ("Dua mangga", "Dua mangga", "Dalawang mangga"),
+    ("Kebaikan Maya mendapat balasan kecil.", "Kebaikan Maya mendapat balasan kecil.", "May munting balik ang kabutihan ni Maya."), [
+    ("Pedagang memberi Maya dua mangga matang.", "Pedagang memberi Maya dua mangga matang.", "Binibigyan ng tindera si Maya ng dalawang hinog na mangga."),
+    ("Ini hadiah karena kamu suka membantu, katanya.", "Ini hadiah karena kamu suka membantu, katanya.", "Regalo ito dahil matulungin ka, sabi niya."),
+    ("Maya berterima kasih, tetapi tetap membayar semua belanjaannya.", "Maya berterima kasih, tetapi tetap membayar semua belanjaannya.", "Nagpapasalamat si Maya, pero binabayaran pa rin niya ang lahat ng binili."),
+    ("Dia memeriksa daftar sebelum pulang.", "Dia memeriksa daftar sebelum pulang.", "Tinitingnan niya ang listahan bago umuwi."),
+    ("Semua barang sudah ada di dalam tas.", "Semua barang sudah ada di dalam tas.", "Nasa bag na ang lahat ng kailangan niya."),
+    ("Di rumah, keluarganya makan siang bersama.", "Di rumah, keluarganya makan siang bersama.", "Sa bahay, sabay-sabay na nanananghalian ang pamilya niya."),
+  ], [("gift", "hadiah", "regalo"), ("helpful", "suka membantu", "matulungin")],
+    n("Dahil untuk alasan", "Dahil memperkenalkan alasan: regalo ito dahil matulungin ka.", "Dahil memperkenalkan alasan: regalo ito dahil matulungin ka.", "Nagsisimula ng dahilan ang dahil: regalo ito dahil matulungin ka."),
+    [q("Mengapa Maya mendapat mangga?", "Mengapa Maya mendapat mangga?", "Bakit may mangga si Maya?", "Karena dia suka membantu.", "Karena dia suka membantu.", "Dahil matulungin siya.")])
+])
+
+chaptered("a1_18_friendship", [
+  c("kuwaderno", ("Buku catatan Aya", "Buku catatan Aya", "Ang kuwaderno ni Aya"),
+    ("Sebuah benda hilang setelah kelas.", "Sebuah benda hilang setelah kelas.", "May nawawalang gamit pagkatapos ng klase."), [
+    ("Aya dan Tomas belajar bersama setiap Selasa.", "Aya dan Tomas belajar bersama setiap Selasa.", "Magkasamang nag-aaral sina Aya at Tomas tuwing Martes."),
+    ("Hari itu, Aya tidak menemukan buku catatan birunya.", "Hari itu, Aya tidak menemukan buku catatan birunya.", "Hindi makita ni Aya ang asul niyang kuwaderno nang araw na iyon."),
+    ("Di dalamnya ada tugas penting untuk besok.", "Di dalamnya ada tugas penting untuk besok.", "Nasa loob nito ang mahalagang gawain para bukas."),
+    ("Jangan khawatir, kita cari bersama, kata Tomas.", "Jangan khawatir, kita cari bersama, kata Tomas.", "Huwag kang mag-alala, sabay natin itong hanapin, sabi ni Tomas."),
+    ("Mereka memeriksa meja, kursi, dan tas.", "Mereka memeriksa meja, kursi, dan tas.", "Tinitingnan nila ang mesa, silya, at bag."),
+    ("Buku catatan itu tidak ada di ruang kelas.", "Buku catatan itu tidak ada di ruang kelas.", "Wala ang kuwaderno sa silid-aralan."),
+  ], [("look for", "mencari", "hanapin"), ("do not worry", "jangan khawatir", "huwag mag-alala")],
+    n("Wala untuk ketiadaan", "Wala menyatakan bahwa sesuatu tidak ada. Hindi menyangkal sifat atau tindakan.", "Wala menyatakan bahwa sesuatu tidak ada. Hindi menyangkal sifat atau tindakan.", "Wala ang gamit kapag walang bagay; hindi naman ang pananggi sa katangian o kilos."),
+    [q("Apa yang hilang?", "Apa yang hilang?", "Ano ang nawawala?", "Buku catatan biru Aya.", "Buku catatan biru Aya.", "Ang asul na kuwaderno ni Aya.")]),
+  c("mensahe", ("Pesan di perpustakaan", "Pesan di perpustakaan", "Ang mensahe sa aklatan"),
+    ("Sebuah pesan membawa mereka ke tempat lain.", "Sebuah pesan membawa mereka ke tempat lain.", "Dinadala sila ng isang mensahe sa ibang lugar."), [
+    ("Tomas melihat kertas kecil di bawah kursi.", "Tomas melihat kertas kecil di bawah kursi.", "Nakikita ni Tomas ang maliit na papel sa ilalim ng silya."),
+    ("Di kertas itu tertulis, carilah di tempat yang tenang.", "Di kertas itu tertulis, carilah di tempat yang tenang.", "Nakasulat dito, hanapin sa tahimik na lugar."),
+    ("Perpustakaan sangat tenang, kata Aya.", "Perpustakaan sangat tenang, kata Aya.", "Napakatahimik sa aklatan, sabi ni Aya."),
+    ("Mereka pergi ke perpustakaan dan bertanya kepada petugas.", "Mereka pergi ke perpustakaan dan bertanya kepada petugas.", "Pumupunta sila sa aklatan at nagtatanong sa tagapag-ingat."),
+    ("Petugas menunjukkan sebuah buku di dekat jendela.", "Petugas menunjukkan sebuah buku di dekat jendela.", "Itinuturo ng tagapag-ingat ang isang aklat malapit sa bintana."),
+    ("Di balik buku itu ada pesan kedua.", "Di balik buku itu ada pesan kedua.", "May ikalawang mensahe sa likod ng aklat."),
+  ], [("paper", "kertas", "papel"), ("quiet place", "tempat tenang", "tahimik na lugar")],
+    n("Sa untuk tempat", "Sa menandai lokasi atau tujuan: sa aklatan, sa ilalim ng silya.", "Sa menandai lokasi atau tujuan: sa aklatan, sa ilalim ng silya.", "Pananda ng lugar o patutunguhan ang sa: sa aklatan, sa ilalim ng silya."),
+    [q("Ke mana petunjuk pertama membawa mereka?", "Ke mana petunjuk pertama membawa mereka?", "Saan sila dinala ng unang palatandaan?", "Ke perpustakaan.", "Ke perpustakaan.", "Sa aklatan.")]),
+  c("kaibigan", ("Kejutan seorang teman", "Kejutan seorang teman", "Ang sorpresa ng kaibigan"),
+    ("Misteri sederhana berakhir dengan sebuah kejutan.", "Misteri sederhana berakhir dengan sebuah kejutan.", "Nagtatapos sa sorpresa ang payak na hiwaga."), [
+    ("Pesan kedua menyuruh mereka pergi ke taman sekolah.", "Pesan kedua menyuruh mereka pergi ke taman sekolah.", "Sinasabi ng ikalawang mensahe na pumunta sila sa hardin ng paaralan."),
+    ("Di sana, Rina memegang buku catatan Aya.", "Di sana, Rina memegang buku catatan Aya.", "Doon, hawak ni Rina ang kuwaderno ni Aya."),
+    ("Maaf, saya menemukannya dan membuat permainan kecil, kata Rina.", "Maaf, saya menemukannya dan membuat permainan kecil, kata Rina.", "Paumanhin, nakita ko ito at gumawa ako ng munting laro, sabi ni Rina."),
+    ("Aya lega karena tugasnya masih lengkap.", "Aya lega karena tugasnya masih lengkap.", "Panatag si Aya dahil buo pa ang gawain niya."),
+    ("Tomas tertawa dan mengajak mereka minum kopi.", "Tomas tertawa dan mengajak mereka minum kopi.", "Tumatawa si Tomas at inaanyayahan silang magkape."),
+    ("Ketiganya menjadi teman baik dan pulang bersama.", "Ketiganya menjadi teman baik dan pulang bersama.", "Nagiging mabuting magkaibigan silang tatlo at sabay na umuuwi."),
+  ], [("clue", "petunjuk", "palatandaan"), ("surprise", "kejutan", "sorpresa")],
+    n("Sina untuk beberapa nama", "Gunakan sina sebelum dua nama orang atau lebih: sina Aya, Tomas, at Rina.", "Gunakan sina sebelum dua nama orang atau lebih: sina Aya, Tomas, at Rina.", "Gamitin ang sina bago sa dalawa o higit pang pangalan: sina Aya, Tomas, at Rina."),
+    [q("Siapa yang menemukan buku catatan?", "Siapa yang menemukan buku catatan?", "Sino ang nakakita sa kuwaderno?", "Rina.", "Rina.", "Si Rina.")])
+])
+
+chaptered("a1_20_final", [
+  c("hintuan", ("Pertemuan di halte", "Pertemuan di halte", "Pagkikita sa hintuan"),
+    ("Hari pertama petualangan kecil Sari dimulai.", "Hari pertama petualangan kecil Sari dimulai.", "Nagsisimula ang munting pakikipagsapalaran ni Sari."), [
+    ("Sari adalah siswa Indonesia yang tinggal di Manila selama tiga bulan.", "Sari adalah siswa Indonesia yang tinggal di Manila selama tiga bulan.", "Isang estudyanteng Indones si Sari na nakatira sa Maynila nang tatlong buwan."),
+    ("Pada hari Senin, Joel menemuinya di halte bus.", "Pada hari Senin, Joel menemuinya di halte bus.", "Sa Lunes, sinasalubong siya ni Joel sa hintuan ng bus."),
+    ("Selamat pagi, apakah kamu siap, tanya Joel.", "Selamat pagi, apakah kamu siap, tanya Joel.", "Magandang umaga, handa ka na ba, tanong ni Joel."),
+    ("Ya, tetapi saya sedikit gugup, jawab Sari.", "Ya, tetapi saya sedikit gugup, jawab Sari.", "Oo, pero medyo kinakabahan ako, sagot ni Sari."),
+    ("Mereka naik bus dan berbicara tentang sekolah.", "Mereka naik bus dan berbicara tentang sekolah.", "Sumasakay sila ng bus at nag-uusap tungkol sa paaralan."),
+    ("Joel berjanji akan membantu sepanjang hari.", "Joel berjanji akan membantu sepanjang hari.", "Nangangako si Joel na tutulong siya buong araw."),
+  ], [("ready", "siap", "handa"), ("nervous", "gugup", "kinakabahan")],
+    n("Ba untuk pertanyaan", "Letakkan ba setelah predikat pertama: handa ka na ba?", "Letakkan ba setelah predikat pertama: handa ka na ba?", "Ilagay ang ba pagkatapos ng unang panaguri: handa ka na ba?"),
+    [q("Di mana Joel bertemu Sari?", "Di mana Joel bertemu Sari?", "Saan sinalubong ni Joel si Sari?", "Di halte bus.", "Di halte bus.", "Sa hintuan ng bus.")]),
+  c("paaralan", ("Sekolah baru", "Sekolah baru", "Ang bagong paaralan"),
+    ("Sari mengenal tempat dan teman baru.", "Sari mengenal tempat dan teman baru.", "Nakikilala ni Sari ang bagong lugar at mga kaibigan."), [
+    ("Joel menunjukkan ruang kelas dan perpustakaan.", "Joel menunjukkan ruang kelas dan perpustakaan.", "Ipinapakita ni Joel ang silid-aralan at aklatan."),
+    ("Guru mereka bernama Rosa dan berbicara dengan ramah.", "Guru mereka bernama Rosa dan berbicara dengan ramah.", "Rosa ang pangalan ng guro nila at palakaibigan siyang magsalita."),
+    ("Siapa namamu dan dari mana asalmu, tanya Rosa.", "Siapa namamu dan dari mana asalmu, tanya Rosa.", "Ano ang pangalan mo at taga-saan ka, tanong ni Rosa."),
+    ("Saya Sari dari Indonesia, jawabnya dalam bahasa Tagalog.", "Saya Sari dari Indonesia, jawabnya dalam bahasa Tagalog.", "Ako po si Sari mula sa Indonesia, sagot niya sa Tagalog."),
+    ("Teman sekelasnya memahami dan tersenyum.", "Teman sekelasnya memahami dan tersenyum.", "Nauunawaan siya ng mga kaklase at ngumingiti sila."),
+    ("Sari tidak lagi terlalu gugup.", "Sari tidak lagi terlalu gugup.", "Hindi na gaanong kinakabahan si Sari."),
+  ], [("from Indonesia", "dari Indonesia", "mula sa Indonesia"), ("classmate", "teman sekelas", "kaklase")],
+    n("Si untuk nama orang", "Gunakan si sebelum satu nama orang dan sina sebelum beberapa nama.", "Gunakan si sebelum satu nama orang dan sina sebelum beberapa nama.", "Gamitin ang si bago sa isang pangalan at sina bago sa marami."),
+    [q("Siapa nama guru Sari?", "Siapa nama guru Sari?", "Ano ang pangalan ng guro ni Sari?", "Rosa.", "Rosa.", "Rosa.")]),
+  c("pananghalian", ("Makan siang pertama", "Makan siang pertama", "Ang unang pananghalian"),
+    ("Sari memakai Tagalog untuk memesan makanan.", "Sari memakai Tagalog untuk memesan makanan.", "Gumagamit si Sari ng Tagalog sa pag-order ng pagkain."), [
+    ("Saat makan siang, mereka pergi ke kantin sekolah.", "Saat makan siang, mereka pergi ke kantin sekolah.", "Sa pananghalian, pumupunta sila sa kantina ng paaralan."),
+    ("Sari memesan nasi, sayuran, dan air dingin.", "Sari memesan nasi, sayuran, dan air dingin.", "Umuorder si Sari ng kanin, gulay, at malamig na tubig."),
+    ("Apakah makanannya pedas, tanya Sari.", "Apakah makanannya pedas, tanya Sari.", "Maanghang ba ang pagkain, tanong ni Sari."),
+    ("Tidak, rasanya enak dan tidak pedas, jawab penjual.", "Tidak, rasanya enak dan tidak pedas, jawab penjual.", "Hindi, masarap at hindi maanghang, sagot ng tindera."),
+    ("Sari makan perlahan dan mempelajari kata baru.", "Sari makan perlahan dan mempelajari kata baru.", "Dahan-dahang kumakain si Sari at nag-aaral ng bagong salita."),
+    ("Joel senang karena Sari berani berbicara.", "Joel senang karena Sari berani berbicara.", "Masaya si Joel dahil matapang magsalita si Sari."),
+  ], [("canteen", "kantin", "kantina"), ("delicious", "enak", "masarap")],
+    n("Hindi untuk penyangkalan", "Hindi menyangkal sifat atau tindakan: hindi maanghang.", "Hindi menyangkal sifat atau tindakan: hindi maanghang.", "Itinatanggi ng hindi ang katangian o kilos: hindi maanghang."),
+    [q("Apa yang diminum Sari?", "Apa yang diminum Sari?", "Ano ang iniinom ni Sari?", "Air dingin.", "Air dingin.", "Malamig na tubig.")]),
+  c("parke", ("Jalan menuju taman", "Jalan menuju taman", "Ang daan papunta sa parke"),
+    ("Sore hari memberi Sari kesempatan terakhir untuk berlatih.", "Sore hari memberi Sari kesempatan terakhir untuk berlatih.", "May huling pagkakataong magsanay si Sari sa hapon."), [
+    ("Setelah kelas, Sari dan Joel membeli buah di pasar.", "Setelah kelas, Sari dan Joel membeli buah di pasar.", "Pagkatapos ng klase, bumibili sina Sari at Joel ng prutas sa palengke."),
+    ("Mereka ingin pergi ke taman, tetapi tidak tahu jalannya.", "Mereka ingin pergi ke taman, tetapi tidak tahu jalannya.", "Gusto nilang pumunta sa parke, pero hindi nila alam ang daan."),
+    ("Sari bertanya, permisi, di mana taman.", "Sari bertanya, permisi, di mana taman.", "Nagtatanong si Sari, makikiraan po, nasaan ang parke."),
+    ("Jalan lurus lalu belok kiri di gereja, jawab seorang warga.", "Jalan lurus lalu belok kiri di gereja, jawab seorang warga.", "Dumiretso at kumaliwa sa simbahan, sagot ng isang tao."),
+    ("Mereka tiba sebelum pukul lima dan duduk di dekat pohon.", "Mereka tiba sebelum pukul lima dan duduk di dekat pohon.", "Dumarating sila bago mag-alas-singko at umuupo malapit sa puno."),
+    ("Sari membuat beberapa kesalahan, tetapi hari itu dia mendapat teman baru.", "Sari membuat beberapa kesalahan, tetapi hari itu dia mendapat teman baru.", "Nagkakamali si Sari, pero nagkakaroon siya ng mga bagong kaibigan sa araw na iyon."),
+  ], [("road", "jalan", "daan"), ("tree", "pohon", "puno")],
+    n("Petunjuk arah", "Gunakan bentuk perintah sederhana seperti dumiretso, kumaliwa, dan kumanan.", "Gunakan bentuk perintah sederhana seperti dumiretso, kumaliwa, dan kumanan.", "Gamitin ang payak na utos na dumiretso, kumaliwa, at kumanan."),
+    [q("Di mana mereka belok kiri?", "Di mana mereka belok kiri?", "Saan sila kumakaliwa?", "Di gereja.", "Di gereja.", "Sa simbahan.")])
+])
+
+u("a1_03_particles", "LESSON", "foundations", "Partikel dasar", "classroom",
+  ("Ang, ng, dan sa", "Ang, ng, dan sa", "Ang, ng, at sa"),
+  ("Memahami tiga penanda yang paling sering dipakai dalam kalimat Tagalog.", "Memahami tiga penanda yang paling sering dipakai dalam kalimat Tagalog.", "Unawain ang tatlong pinakakaraniwang pananda sa pangungusap na Tagalog."), [
+  ("Buku itu berada di atas meja.", "Buku itu berada di atas meja.", "Nasa mesa ang aklat."),
+  ("Mara membaca buku di perpustakaan.", "Mara membaca buku di perpustakaan.", "Nagbabasa ng aklat si Mara sa aklatan."),
+  ("Ang menandai fokus utama dalam kalimat.", "Ang menandai fokus utama dalam kalimat.", "Minamarkahan ng ang ang pangunahing pokus sa pangungusap."),
+  ("Ng sering menandai objek atau hubungan kepemilikan.", "Ng sering menandai objek atau hubungan kepemilikan.", "Madalas markahan ng ng ang layon o pagmamay-ari."),
+  ("Sa menandai tempat, arah, waktu, atau penerima.", "Sa menandai tempat, arah, waktu, atau penerima.", "Minamarkahan ng sa ang lugar, direksiyon, oras, o tatanggap."),
+  ("Di mana bukunya? Buku itu di meja, jawab Mara.", "Di mana bukunya? Buku itu di meja, jawab Mara.", "Nasaan ang aklat? Nasa mesa ang aklat, sagot ni Mara."),
+], [("focus marker", "penanda fokus", "panandang ang"), ("object marker", "penanda objek", "panandang ng"),
+    ("location marker", "penanda lokasi", "panandang sa")],
+  n("Pola dasar", "Gunakan seluruh kalimat untuk memahami fungsi penanda; jangan menerjemahkannya sebagai satu kata tetap.",
+    "Gunakan seluruh kalimat untuk memahami fungsi penanda; jangan menerjemahkannya sebagai satu kata tetap.",
+    "Gamitin ang buong pangungusap upang maunawaan ang pananda; wala itong iisang palaging salin."),
+  [q("Penanda mana yang menunjukkan tempat?", "Penanda mana yang menunjukkan tempat?", "Aling pananda ang ginagamit sa lugar?", "Sa.", "Sa.", "Sa.")],
+  speakers=(None, None, None, None, None, "Mara"),
+  pronunciation=("Ang dibaca /ang/, ng dibaca /nang/, dan sa dibaca /sa/.", "Ang dibaca /ang/, ng dibaca /nang/, dan sa dibaca /sa/.",
+                 "Binibigkas ang ang na /ang/, ang ng na /nang/, at ang sa na /sa/."))
+
+# Put the particle lesson immediately after pronouns while retaining every stable ID.
+UNITS.insert(3, UNITS.pop())
+for index, unit in enumerate(UNITS, 1): unit["order"] = index
+for unit in UNITS:
+    if unit["kind"] != "LESSON": continue
+    if not unit["speakers"]: unit["speakers"] = [None] * len(unit["sentences"])
+    unit["sentences"] += [
+        t("Apakah kita dapat berlatih sekarang?", "Apakah kita dapat berlatih sekarang?", "Maaari ba tayong magsanay ngayon?"),
+        t("Ya, mari gunakan kata baru dalam percakapan.", "Ya, mari gunakan kata baru dalam percakapan.", "Oo, gamitin natin ang bagong salita sa usapan."),
+    ]
+    unit["speakers"] += ["Mara", "Joel"]
+    if not unit["pronunciation"]["id"]:
+        unit["pronunciation"] = t("Baca perlahan, pertahankan setiap vokal, lalu ulangi dialog dengan suara lantang.",
+                                  "Baca perlahan, pertahankan setiap vokal, lalu ulangi dialog dengan suara lantang.",
+                                  "Basahin nang dahan-dahan, linawin ang bawat patinig, at ulitin nang malakas ang usapan.")
 
 # Additional controlled concepts. Aliases separated by ~ share a contextual A1 gloss.
 WORDS = r"""
@@ -730,6 +943,34 @@ iyan|that near you|itu di dekatmu|pronoun
 magkape|drink coffee|minum kopi|verb
 """
 
+# Contextual forms introduced by the longer chaptered readings. Core focus
+# expressions still receive full three-language entries above.
+TL_CONTEXT = {
+ "agad":"segera", "alam":"tahu", "araw":"hari", "binabayaran":"membayar",
+ "binili":"barang yang dibeli", "buo":"utuh", "buong":"sepanjang", "dahan-dahang":"perlahan-lahan",
+ "dalang":"membawa", "doon":"di sana", "gaanong":"terlalu", "gawain":"tugas",
+ "gumawa":"membuat", "gumugulong":"berguling", "habang":"sementara", "hawak":"dipegang",
+ "hinahawakan":"memegang", "indonesia":"Indonesia", "itinuturo":"menunjukkan", "itong":"ini",
+ "kang":"kamu", "laro":"permainan", "layon":"objek atau tujuan", "likod":"belakang",
+ "listahan":"daftar", "lugar":"tempat", "madalas":"sering", "mag-alala":"khawatir",
+ "mag-alas-singko":"mendekati pukul lima", "magluluto":"akan memasak", "mahalagang":"penting",
+ "makita":"menemukan atau melihat", "maligayang":"bahagia; selamat", "maraming":"banyak",
+ "markahan":"menandai", "matapang":"berani", "medyo":"agak", "minamarkahan":"menandai",
+ "mula":"dari", "muntik":"hampir", "munting":"kecil", "nagbabasa":"sedang membaca",
+ "nagiging":"menjadi", "nagkakaroon":"mendapatkan", "nakasulat":"tertulis", "nakikita":"melihat",
+ "nakita":"menemukan", "nanananghalian":"sedang makan siang", "nangangako":"berjanji",
+ "natin":"milik kita; kita", "ngumingiti":"tersenyum", "nilang":"milik mereka; mereka",
+ "nito":"milik ini; ini", "oras":"waktu", "pagdating":"kedatangan", "paglalagay":"memasukkan",
+ "paglilinis":"membersihkan", "pagmamay-ari":"kepemilikan", "panatag":"lega atau tenang",
+ "pangunahing":"utama", "pangungusap":"kalimat", "paumanhin":"maaf", "pokus":"fokus",
+ "pumunta":"pergi", "sabay":"bersama", "sagot":"jawaban", "sahig":"lantai",
+ "salita":"kata", "susunod":"berikutnya", "tagapag-ingat":"petugas", "tanggap":"diterima",
+ "tanong":"pertanyaan", "tatanggap":"penerima", "tinitingnan":"memeriksa", "tumatawa":"tertawa",
+ "tumutulong":"membantu", "tutulong":"akan membantu", "umuupo":"duduk", "umuuwi":"pulang",
+ "una":"pertama",
+ "maaari":"dapat", "magsanay":"berlatih", "gamitin":"gunakan", "usapan":"percakapan",
+}
+
 DEFAULT_NOTES = {
  "noun": t("Names a person, place, thing, or idea.", "Menamai orang, tempat, benda, atau gagasan.", "Ngalan ng tao, lugar, bagay, o ideya."),
  "verb": t("An action form; notice its aspect in the example.", "Bentuk tindakan; perhatikan aspeknya dalam contoh.", "Anyong kilos; pansinin ang aspekto sa halimbawa."),
@@ -779,8 +1020,9 @@ def build():
             "meanings": t(f"Contextual A1 meaning: {en}.", f"Makna A1 kontekstual: {id_}.", f"Kahulugang A1: {word}."),
             "pos": pos, "pronunciation": word, "notes": DEFAULT_NOTES[pos]}
     # Focus expressions are first-class lexemes and use the same SRS as tapped words.
-    for unit in UNITS:
-        for triple in zip(*(unit["focus"][lang] for lang in LANGS)):
+    learning_units = [part for unit in UNITS for part in [unit, *unit.get("chapters", [])]]
+    for unit in learning_units:
+        for triple in zip(*(unit.get("focus", {}).get(lang, []) for lang in LANGS)):
             primary = dict(zip(LANGS, triple))
             for lang, word in zip(LANGS, triple):
                 lex[(lang, word.lower())] = {"language": lang, "word": word.lower(), "translations": primary,
@@ -788,13 +1030,13 @@ def build():
                     "pos": "expression", "pronunciation": word, "notes": DEFAULT_NOTES["expression"]}
     missing = set()
     used = set()
-    for unit in UNITS:
+    for unit in learning_units:
         for lang in LANGS:
             for sentence in unit["sentences"]:
                 for word in TOKEN.findall(sentence[lang]):
                     key = (lang, word.lower()); used.add(key)
                     if key not in lex: missing.add((lang, word.lower(), unit["id"]))
-            for word in unit["focus"][lang]: used.add((lang, word.lower()))
+            for word in unit.get("focus", {}).get(lang, []): used.add((lang, word.lower()))
     # English and Indonesian remain fully tappable. Core course vocabulary has curated
     # concepts above; incidental function/inflected forms receive an explicit contextual gloss.
     contextual = [x for x in missing if x[0] != "tl"]
@@ -803,6 +1045,13 @@ def build():
         lex[(lang, word)] = {"language": lang, "word": word, "translations": reference,
             "meanings": reference, "pos": "expression", "pronunciation": word, "notes": DEFAULT_NOTES["expression"]}
     missing = {x for x in missing if x[0] == "tl"}
+    for _, word, _ in list(missing):
+        if word not in TL_CONTEXT: continue
+        id_ = TL_CONTEXT[word]
+        lex[("tl", word)] = {"language":"tl", "word":word,
+            "translations":t(id_, id_, word), "meanings":t(f"Makna kontekstual: {id_}.", f"Makna kontekstual: {id_}.", f"Kahulugang ayon sa konteksto: {word}."),
+            "pos":"expression", "pronunciation":word, "notes":DEFAULT_NOTES["expression"]}
+        used.add(("tl", word)); missing = {item for item in missing if item[1] != word}
     if missing:
         raise ValueError("Missing dictionary coverage:\n" + "\n".join(f"{a}:{b} in {c}" for a,b,c in sorted(missing)))
     assert [x["order"] for x in UNITS] == list(range(1, len(UNITS)+1))
@@ -812,8 +1061,40 @@ def build():
     for key in used:
         item = lex[key]; item.setdefault("pronunciation", item["word"])
         assert all(item[field][lang].strip() for field in ("translations", "meanings", "notes") for lang in LANGS)
-    ASSET.write_text(json.dumps({"version": 2, "course": "Tagalog A1", "stories": UNITS,
-                                "lexicon": [lex[k] for k in sorted(used)]}, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
-    print(f"Validated {len(UNITS)} ordered A1 units and {len(used)} dictionary entries in all three languages.")
+    categories = {
+        "Foundations": "Dasar bahasa", "Greetings & introductions": "Salam dan perkenalan",
+        "Pronouns & questions": "Pronomina dan pertanyaan", "Numbers, dates & time": "Angka, tanggal, dan waktu",
+        "Everyday life": "Kehidupan sehari-hari", "Family & relationships": "Keluarga dan hubungan",
+        "Objects & school": "Benda dan sekolah", "School life": "Kehidupan sekolah",
+        "Verbs & routines": "Verba dan rutinitas", "Negation & description": "Negasi dan deskripsi",
+        "Food & drink": "Makanan dan minuman", "Food & ordering": "Makanan dan pemesanan",
+        "Food & shopping": "Makanan dan belanja", "Places & directions": "Tempat dan petunjuk arah",
+        "Traveling": "Perjalanan", "Friendship & simple romance": "Persahabatan",
+        "Daily conversation": "Percakapan sehari-hari", "A1 final reading": "Bacaan akhir A1",
+    }
+    pos_id = {"noun":"nomina", "verb":"verba", "adjective":"adjektiva", "adverb":"adverbia",
+        "pronoun":"pronomina", "preposition":"preposisi", "expression":"ungkapan", "numeral":"numeralia",
+        "auxiliary":"verba bantu", "marker":"penanda", "particle":"partikel", "conjunction":"konjungsi",
+        "proper noun":"nama diri"}
+    output_units = json.loads(json.dumps(UNITS, ensure_ascii=False))
+    output_lexicon = json.loads(json.dumps([lex[k] for k in sorted(used)], ensure_ascii=False))
+    def indonesian_guidance(value):
+        if isinstance(value, dict):
+            if all(code in value for code in LANGS): value["en"] = value["id"]
+            for child in value.values(): indonesian_guidance(child)
+        elif isinstance(value, list):
+            for child in value: indonesian_guidance(child)
+    indonesian_guidance(output_units); indonesian_guidance(output_lexicon)
+    # The compatibility `en` channel intentionally mirrors Indonesian so no
+    # English learning prose leaks into this Indonesian-first course.
+    output_lexicon = [word for word in output_lexicon if word["language"] != "en"]
+    output_lexicon += [{**json.loads(json.dumps(word, ensure_ascii=False)), "language":"en"}
+                       for word in output_lexicon if word["language"] == "id"]
+    output_lexicon.sort(key=lambda word: (word["language"], word["word"]))
+    for unit in output_units: unit["category"] = categories.get(unit["category"], unit["category"])
+    for word in output_lexicon: word["pos"] = pos_id.get(word["pos"], word["pos"])
+    ASSET.write_text(json.dumps({"version": 3, "course": "Tagalog A1 untuk penutur bahasa Indonesia", "stories": output_units,
+                                "lexicon": output_lexicon}, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+    print(f"Validated {len(UNITS)} ordered A1 units and {len(output_lexicon)} dictionary entries in all three languages.")
 
 if __name__ == "__main__": build()

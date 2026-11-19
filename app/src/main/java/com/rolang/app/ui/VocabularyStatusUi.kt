@@ -37,7 +37,7 @@ fun VocabularyLegend() {
 @Composable
 fun VocabularyStatusSelector(status: VocabularyStatus, onChange: (VocabularyStatus) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Learning status: ${status.label}", style = MaterialTheme.typography.titleMedium)
+        Text("Status belajar: ${status.label}", style = MaterialTheme.typography.titleMedium)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VocabularyStatus.entries.forEach { value ->
                 val style = vocabularyStyle(value, MaterialTheme.colorScheme.onSurface)
@@ -46,8 +46,8 @@ fun VocabularyStatusSelector(status: VocabularyStatus, onChange: (VocabularyStat
                         selectedContainerColor = style.background, selectedLabelColor = style.color))
             }
         }
-        Text(if (status == VocabularyStatus.KNOWN) "Known words have no highlight and are paused in review."
-            else "Saved on this device. Practice will adapt the status and next review.",
+        Text(if (status == VocabularyStatus.KNOWN) "Kata yang dikuasai tidak disorot dan dijeda dari tinjauan."
+            else "Tersimpan di perangkat ini. Latihan akan menyesuaikan status dan jadwal tinjauan.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

@@ -22,12 +22,12 @@ import com.rolang.app.LearningViewModel
 
 private data class Destination(val route: String, val title: String, val icon: ImageVector)
 private val destinations = listOf(
-    Destination("home", "Home", Icons.Outlined.Home),
-    Destination("lessons", "Lessons", Icons.Outlined.School),
-    Destination("stories", "Stories", Icons.AutoMirrored.Outlined.MenuBook),
-    Destination("vocabulary", "Vocabulary", Icons.Outlined.Bookmarks),
-    Destination("review", "Review", Icons.Outlined.AutoAwesome),
-    Destination("profile", "Profile", Icons.Outlined.PersonOutline),
+    Destination("home", "Beranda", Icons.Outlined.Home),
+    Destination("lessons", "Pelajaran", Icons.Outlined.School),
+    Destination("stories", "Cerita", Icons.AutoMirrored.Outlined.MenuBook),
+    Destination("vocabulary", "Kosakata", Icons.Outlined.Bookmarks),
+    Destination("review", "Tinjauan", Icons.Outlined.AutoAwesome),
+    Destination("profile", "Profil", Icons.Outlined.PersonOutline),
 )
 
 @Composable
@@ -73,12 +73,12 @@ fun RoLangApp(viewModel: LearningViewModel) {
         ) { padding ->
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
                 if (state.error != null) {
-                    Box(Modifier.padding(24.dp)) { InfoCard("Local library unavailable", state.error!!) }
+                    Box(Modifier.padding(24.dp)) { InfoCard("Pustaka lokal tidak tersedia", state.error!!) }
                 } else if (!state.ready) {
                     Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         CircularProgressIndicator()
-                        Text("Preparing your library…")
+                        Text("Menyiapkan pustaka…")
                     }
                 } else NavHost(nav, startDestination = "home", modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
                     enterTransition = { fadeIn() }, exitTransition = { fadeOut() }) {

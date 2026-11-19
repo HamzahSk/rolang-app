@@ -42,9 +42,9 @@ when checks fail. This debug build requires no GitHub Secrets or signing keystor
 
 ## Learning flow
 
-1. In **Profile**, independently choose English, Indonesian, or Filipino (Tagalog)
-   as your learning and reference languages. Choose a reading level, text size,
-   and light or dark appearance. Preferences survive restart.
+1. A new installation starts with Indonesian as the reference language, Tagalog
+   as the learning language, and A1 as the level. These settings remain editable
+   in **Profile** and survive restart.
 2. Follow the ordered **Tagalog A1 Lessons** curriculum by unit and topic, with
    goals, vocabulary, grammar, examples, prerequisites, and graded final practice.
    Browse **Stories** independently by level, format, and topic.
@@ -189,14 +189,15 @@ on a clean installation so the UI scenario starts with its default language pair
 
 ## Content scope
 
-The migrated library contains nine structured lessons plus an independent reading
-library of six realistic dialogues and five coherent stories. Its 92 interactive
+The server-backed library contains ten structured lessons, six realistic dialogues,
+and five coherent stories. Four stories contain 13 substantial chapters; the full
+curriculum has 30 ordered chapter records and 150 interactive
 questions cover multiple choice, vocabulary translation, fill-in-the-blank,
 grammar, sentence construction, and reading comprehension. Topics cover pronunciation,
 introductions, pronouns, questions, numbers and time, family, school and everyday
 objects, verb aspect, negation, descriptions, food and shopping, directions,
 travel, daily conversation, friendship, and simple romance. Each unit includes
-complete Indonesian and English translations, focus vocabulary, grammar or usage
+complete Indonesian translations, focus vocabulary, grammar or usage
 notes, and comprehension checks where appropriate. Eight optimized Android vector
 illustrations provide a consistent offline visual identity.
 
@@ -215,7 +216,7 @@ manual downloads, cancellation, duplicate requests, interrupted chapter reuse,
 server changes, invalid revisions, offline fallback, removal, and database restart.
 Learning tests still cover word lookup, exercises, review guards, account sync,
 preferences, and migrations. A live Android HTTP-client contract test also reads
-all 20 migrated stories from real Express/PostgreSQL and reopens them offline:
+all 21 curriculum units from real Express/MongoDB and reopens them offline:
 
 ```sh
 # In rolang-server with a disposable DATABASE_URL configured:

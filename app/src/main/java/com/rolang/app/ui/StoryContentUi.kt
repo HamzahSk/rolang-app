@@ -14,10 +14,10 @@ import kotlinx.coroutines.CancellationException
 @Composable
 fun LibraryStatus(state: LearningState, viewModel: LearningViewModel?) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (state.catalogLoading) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Updating library…") }
+        if (state.catalogLoading) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Memperbarui pustaka…") }
         state.catalogError?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        if (state.stories.isEmpty() && !state.catalogLoading && state.catalogError == null) Text("No stories are published yet.")
-        viewModel?.let { TextButton(onClick = it::refreshCatalog, enabled = !state.catalogLoading) { Text("Refresh library") } }
+        if (state.stories.isEmpty() && !state.catalogLoading && state.catalogError == null) Text("Belum ada materi yang diterbitkan.")
+        viewModel?.let { TextButton(onClick = it::refreshCatalog, enabled = !state.catalogLoading) { Text("Perbarui pustaka") } }
     }
 }
 
@@ -30,17 +30,17 @@ fun DownloadControls(story: Story, state: LearningState, viewModel: LearningView
         if (active) {
             LinearProgressIndicator(progress = { if (download!!.total == 0) 0f else download.completed.toFloat() / download.total }, modifier = Modifier.fillMaxWidth())
             Text(when (download!!.status) {
-                "QUEUED" -> "Waiting for connection…"
-                "RETRYING" -> "Waiting to retry · ${download.completed}/${download.total} chapters saved"
-                else -> "Downloading · ${download.completed}/${download.total} chapters"
+                "QUEUED" -> "Menunggu koneksi…"
+                "RETRYING" -> "Menunggu percobaan ulang · ${download.completed}/${download.total} bab tersimpan"
+                else -> "Mengunduh · ${download.completed}/${download.total} bab"
             }, style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = { viewModel.cancelDownload(story.id) }) { Text("Cancel download") }
+            TextButton(onClick = { viewModel.cancelDownload(story.id) }) { Text("Batalkan unduhan") }
         } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (download?.status == "COMPLETE") Text("Downloaded", style = MaterialTheme.typography.labelMedium)
+            if (download?.status == "COMPLETE") Text("Sudah diunduh", style = MaterialTheme.typography.labelMedium)
             else TextButton(onClick = { viewModel.downloadStory(story.id) }) {
-                Text(if (download?.status in setOf("FAILED", "CANCELLED")) "Retry download" else "Download story")
+                Text(if (download?.status in setOf("FAILED", "CANCELLED")) "Ulangi unduhan" else "Unduh cerita")
             }
-            if (saved || download != null) TextButton(onClick = { viewModel.removeDownload(story.id) }) { Text("Remove saved content") }
+            if (saved || download != null) TextButton(onClick = { viewModel.removeDownload(story.id) }) { Text("Hapus materi tersimpan") }
         }
         download?.error?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
@@ -60,14 +60,14 @@ fun StoryContentRoute(id: String, viewModel: LearningViewModel, back: () -> Unit
             story = viewModel.cachedStory(id)
             story = viewModel.openStory(id)
         } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { error = "This story has not been saved yet. Connect to the server and retry." }
+        catch (_: Exception) { error = "Materi ini belum tersimpan. Sambungkan ke server lalu coba lagi." }
         finally { loading = false }
     }
     val snapshot = story
     if (snapshot != null) content(snapshot)
     else Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        TextButton(onClick = back) { Text("Back") }
-        if (loading) { CircularProgressIndicator(); Text("Loading story…") }
-        error?.let { Text(it); Button(onClick = { retry++ }) { Text("Retry") } }
+        TextButton(onClick = back) { Text("Kembali") }
+        if (loading) { CircularProgressIndicator(); Text("Memuat materi…") }
+        error?.let { Text(it); Button(onClick = { retry++ }) { Text("Coba lagi") } }
     }
 }

@@ -25,37 +25,37 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
                      delete: (VocabularyEntity) -> Unit, status: (VocabularyEntity, VocabularyStatus) -> Unit,
                      stories: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
-    var filter by rememberSaveable { mutableStateOf("All words") }
-    var group by rememberSaveable { mutableStateOf("Story") }
+    var filter by rememberSaveable { mutableStateOf("Semua kata") }
+    var group by rememberSaveable { mutableStateOf("Cerita") }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var remove by remember { mutableStateOf<VocabularyEntity?>(null) }
     val words = state.courseWords.filter {
-        (filter == "All words" || it.learningStatus().label == filter) &&
+        (filter == "Semua kata" || it.learningStatus().label == filter) &&
             (it.word.contains(query, true) || it.translation.contains(query, true) || it.storyTitle.contains(query, true))
     }
     LazyColumn(modifier = Modifier.testTag("vocabulary-list"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        item { SectionTitle("Words to keep", "${state.preferences.target.label} → ${state.preferences.native.label}") }
+        item { SectionTitle("Kosakata tersimpan", "${state.preferences.target.label} → ${state.preferences.native.label}") }
         item {
-            OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Search vocabulary") },
+            OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Cari kosakata") },
                 singleLine = true, leadingIcon = { Icon(Icons.Outlined.Search, null) })
         }
         item {
             Column {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    (listOf("All words") + VocabularyStatus.entries.map { it.label }).forEach { item ->
+                    (listOf("Semua kata") + VocabularyStatus.entries.map { it.label }).forEach { item ->
                         FilterChip(filter == item, { filter = item }, label = { Text(item) })
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Group by", style = MaterialTheme.typography.labelLarge)
-                    listOf("Story", "Category").forEach { item -> FilterChip(group == item, { group = item }, label = { Text(item) }) }
+                    Text("Kelompokkan", style = MaterialTheme.typography.labelLarge)
+                    listOf("Cerita", "Kategori").forEach { item -> FilterChip(group == item, { group = item }, label = { Text(item) }) }
                 }
             }
         }
         if (state.courseWords.isEmpty()) item {
-            InfoCard("Your collection starts with a story", "Tap a word in the reader, explore its translation, and save it for practice.", "Explore stories", stories)
-        } else if (words.isEmpty()) item { InfoCard("No matching words", "Try a different search or filter.") }
-        words.groupBy { if (group == "Story") it.storyTitle else it.category }.forEach { (title, grouped) ->
+            InfoCard("Koleksi dimulai dari cerita", "Ketuk kata dalam bacaan, lihat terjemahannya, lalu simpan untuk latihan.", "Lihat cerita", stories)
+        } else if (words.isEmpty()) item { InfoCard("Kata tidak ditemukan", "Coba pencarian atau filter lain.") }
+        words.groupBy { if (group == "Cerita") it.storyTitle else it.category }.forEach { (title, grouped) ->
             item(key = "group:$title") { Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary) }
             items(grouped, key = { it.id }) { word ->
                 Card(onClick = { selectedId = word.id }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
@@ -65,12 +65,12 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
                             Text(word.word, style = MaterialTheme.typography.titleLarge)
                             VocabularyStatusLabel(word.learningStatus())
                             Text(word.translation)
-                            Text(if (word.mastered) "Mastered" else if (word.dueAt <= now) "Ready for review" else "Next review: ${dueDate(word.dueAt)}",
+                            Text(if (word.mastered) "Dikuasai" else if (word.dueAt <= now) "Siap ditinjau" else "Tinjauan berikutnya: ${dueDate(word.dueAt)}",
                                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         IconButton(onClick = { mastery(word) }) {
                             Icon(if (word.mastered) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                                if (word.mastered) "Mark ${word.word} as learning" else "Mark ${word.word} as mastered")
+                                if (word.mastered) "Tandai ${word.word} sebagai dipelajari" else "Tandai ${word.word} sebagai dikuasai")
                         }
                     }
                 }
@@ -83,27 +83,27 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) { SectionTitle(selected.word, "${selected.translation} · ${selected.partOfSpeech}") }
-                    IconButton(onClick = { selectedId = null }) { Icon(Icons.Outlined.Close, "Close vocabulary details") }
+                    IconButton(onClick = { selectedId = null }) { Icon(Icons.Outlined.Close, "Tutup rincian kosakata") }
                 }
             }
-            item { DetailSection("Meaning", selected.meaning) }
-            item { DetailSection("In context", selected.explanation) }
-            item { DetailSection("Example", selected.example + "\n\n" + selected.exampleTranslation) }
-            item { DetailSection("From ${selected.storyTitle}", "${selected.category} · ${selected.repetitions} successful repetitions · ${selected.lapses} lapses") }
+            item { DetailSection("Makna", selected.meaning) }
+            item { DetailSection("Dalam konteks", selected.explanation) }
+            item { DetailSection("Contoh", selected.example + "\n\n" + selected.exampleTranslation) }
+            item { DetailSection("Dari ${selected.storyTitle}", "${selected.category} · ${selected.repetitions} pengulangan berhasil · ${selected.lapses} kesalahan") }
             item { VocabularyStatusSelector(selected.learningStatus()) { status(selected, it) } }
             item {
                 Button(onClick = { mastery(selected) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (selected.mastered) "Return to learning" else "Mark as mastered")
+                    Text(if (selected.mastered) "Kembalikan ke pembelajaran" else "Tandai sebagai dikuasai")
                 }
-                TextButton(onClick = { remove = selected }) { Text("Remove word", color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = { remove = selected }) { Text("Hapus kata", color = MaterialTheme.colorScheme.error) }
             }
         }
     }
     remove?.let { word ->
-        AlertDialog(onDismissRequest = { remove = null }, title = { Text("Remove ${word.word}?") },
-            text = { Text("This removes the saved word and its review schedule. You can save it again from the story.") },
-            confirmButton = { TextButton(onClick = { delete(word); remove = null; selectedId = null }) { Text("Remove") } },
-            dismissButton = { TextButton(onClick = { remove = null }) { Text("Keep word") } })
+        AlertDialog(onDismissRequest = { remove = null }, title = { Text("Hapus ${word.word}?") },
+            text = { Text("Kata tersimpan dan jadwal tinjauannya akan dihapus. Kata dapat disimpan lagi dari cerita.") },
+            confirmButton = { TextButton(onClick = { delete(word); remove = null; selectedId = null }) { Text("Hapus") } },
+            dismissButton = { TextButton(onClick = { remove = null }) { Text("Simpan") } })
     }
 }
 
