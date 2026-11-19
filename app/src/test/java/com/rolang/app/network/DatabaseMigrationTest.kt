@@ -1,5 +1,7 @@
 package com.rolang.app.network
 
+import com.rolang.app.TestCorpus
+
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -39,7 +41,7 @@ class DatabaseMigrationTest {
         }
         val upgraded = Room.databaseBuilder(context, LearningDatabase::class.java, name)
             .addMigrations(LearningDatabase.MIGRATION_1_2, LearningDatabase.MIGRATION_2_3,
-                LearningDatabase.MIGRATION_3_4).build()
+                LearningDatabase.MIGRATION_3_4, LearningDatabase.MIGRATION_4_5).build()
         try {
             assertEquals(1, upgraded.dao().storyCount())
             assertTrue(upgraded.dao().allReadings().single().completed)
@@ -82,7 +84,7 @@ class DatabaseMigrationTest {
             sqlite.version = 2
         }
         val upgraded = Room.databaseBuilder(context, LearningDatabase::class.java, name)
-            .addMigrations(LearningDatabase.MIGRATION_2_3, LearningDatabase.MIGRATION_3_4).build()
+            .addMigrations(LearningDatabase.MIGRATION_2_3, LearningDatabase.MIGRATION_3_4, LearningDatabase.MIGRATION_4_5).build()
         try {
             val words = upgraded.dao().allVocabulary().associateBy { it.word }
             assertEquals("LEARNING", words.getValue("new").status)
@@ -95,4 +97,40 @@ class DatabaseMigrationTest {
             assertTrue(upgraded.dao().allReadings().single().completed)
         } finally { upgraded.close(); context.deleteDatabase(name) }
     }
+    @Test fun upgradingVersionFourPreservesContentScoresAndPendingLearningEdits() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val name = "migration-content-test.db"
+        context.deleteDatabase(name)
+        val schema = JSONObject(File("schemas/com.rolang.app.data.LearningDatabase/4.json").readText()).getJSONObject("database")
+        val fixture = TestCorpus.load(context).first.first()
+        val operationId = UUID.randomUUID().toString()
+        context.openOrCreateDatabase(name, Context.MODE_PRIVATE, null).use { sqlite ->
+            val entities = schema.getJSONArray("entities")
+            for (index in 0 until entities.length()) {
+                val entity = entities.getJSONObject(index)
+                sqlite.execSQL(entity.getString("createSql").replace("\u0024{TABLE_NAME}", entity.getString("tableName")))
+                val indices = entity.getJSONArray("indices")
+                for (i in 0 until indices.length()) sqlite.execSQL(indices.getJSONObject(i).getString("createSql")
+                    .replace("\u0024{TABLE_NAME}", entity.getString("tableName")))
+            }
+            val setup = schema.getJSONArray("setupQueries")
+            for (index in 0 until setup.length()) sqlite.execSQL(setup.getString(index))
+            sqlite.execSQL("INSERT INTO stories VALUES(?,?,?,?,?,0,1)", arrayOf(fixture.id, fixture.family, fixture.category, fixture.level, fixture.content))
+            sqlite.execSQL("INSERT INTO exercise_results VALUES(?,'en','LESSON',2,5,4,6,'{}',1,1000)", arrayOf(fixture.id))
+            sqlite.execSQL("INSERT INTO reading VALUES(?,'en',2,1)", arrayOf(fixture.id))
+            sqlite.execSQL("INSERT INTO pending_changes VALUES('progress',?,?,?,0)", arrayOf("${fixture.id}:en", operationId, "{}"))
+            sqlite.version = 4
+        }
+        val upgraded = Room.databaseBuilder(context, LearningDatabase::class.java, name)
+            .addMigrations(LearningDatabase.MIGRATION_4_5).build()
+        try {
+            com.rolang.app.data.LearningRepository(upgraded).initialize(context)
+            assertEquals(fixture.content, upgraded.dao().allStories().single().content)
+            assertEquals(fixture.content, upgraded.dao().allCatalog().single().content)
+            assertEquals(5, upgraded.dao().exerciseResults().first().single().bestScore)
+            assertTrue(upgraded.dao().allReadings().single().completed)
+            assertEquals(operationId, upgraded.dao().pending().single().operationId)
+        } finally { upgraded.close(); context.deleteDatabase(name) }
+    }
+
 }

@@ -18,7 +18,12 @@ val copyServerConfig by tasks.registering(Copy::class) {
     from(rootProject.file("config.json"))
     into(generatedServerAssets)
 }
-tasks.named("preBuild").configure { dependsOn(copyServerConfig) }
+val copyTestCorpus by tasks.registering(Copy::class) {
+    from("src/main/assets/corpus.json")
+    rename { "story-fixture.json" }
+    into(layout.buildDirectory.dir("generated/testAssets"))
+}
+tasks.named("preBuild").configure { dependsOn(copyServerConfig, copyTestCorpus) }
 
 android {
     namespace = "com.rolang.app"
@@ -67,6 +72,8 @@ android {
             isUniversalApk = false
         }
     }
+    // Keep the original corpus in source control for migration verification, not in APKs.
+    androidResources { ignoreAssetsPattern = "corpus.json" }
     buildFeatures { compose = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -76,6 +83,8 @@ android {
     sourceSets {
         getByName("main").assets.srcDir(generatedServerAssets)
         getByName("test").java.srcDir("src/sharedTest/java")
+        getByName("test").resources.srcDir("src/main/assets")
+        getByName("androidTest").assets.srcDir(layout.buildDirectory.dir("generated/testAssets"))
         getByName("androidTest").java.srcDir("src/sharedTest/java")
     }
     testOptions {

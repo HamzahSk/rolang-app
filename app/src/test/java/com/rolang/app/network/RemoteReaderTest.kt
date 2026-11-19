@@ -1,5 +1,7 @@
 package com.rolang.app.network
 
+import com.rolang.app.TestCorpus
+
 import android.app.Application
 import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
@@ -25,7 +27,7 @@ class RemoteReaderTest {
 
     @Test fun staleSyncedPositionAndShortenedRemoteStoryRemainReadable() {
         val application = ApplicationProvider.getApplicationContext<Application>()
-        val initial = Corpus.story(Corpus.load(application).first.first())
+        val initial = Corpus.story(TestCorpus.load(application).first.first())
         var story by mutableStateOf(initial)
         val viewModel = LearningViewModel(application)
         val state = LearningState(readings = listOf(ReadingEntity(initial.id, "en", 299)), ready = true)
@@ -38,8 +40,8 @@ class RemoteReaderTest {
 
     @Test fun changingReferenceLanguageKeepsEveryWordLinkInteractive() {
         val application = ApplicationProvider.getApplicationContext<Application>()
-        runBlocking { AppServices.get(application).repository.initialize(application) }
-        val story = Corpus.story(Corpus.load(application).first.first())
+        runBlocking { TestCorpus.seed(AppServices.get(application).database.dao(), application) }
+        val story = Corpus.story(TestCorpus.load(application).first.first())
         val viewModel = LearningViewModel(application)
         var state by mutableStateOf(LearningState(ready = true))
         compose.setContent { RoLangTheme(false) { ReaderScreen(story, state, viewModel) {} } }

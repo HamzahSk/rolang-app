@@ -21,11 +21,12 @@ class ApiClient(private val config: ServerConfig) {
         .followRedirects(false).followSslRedirects(false).build()
 
     suspend fun request(path: String, method: String = "GET", body: JSONObject? = null,
-        token: String? = null, query: Map<String, String> = emptyMap()): JSONObject {
+        token: String? = null, query: Map<String, String> = emptyMap(), headers: Map<String, String> = emptyMap()): JSONObject {
         val url = config.apiUrl().newBuilder()
         path.split('/').filter { it.isNotEmpty() }.forEach(url::addPathSegment)
         query.forEach { (key, value) -> url.addQueryParameter(key, value) }
         val builder = Request.Builder().url(url.build()).header("Accept", "application/json")
+        headers.forEach { (name, value) -> builder.header(name, value) }
         if (token != null) builder.header("Authorization", "Bearer $token")
         val payload = body?.toString()?.toRequestBody("application/json; charset=utf-8".toMediaType())
         builder.method(method, if (method in setOf("POST", "PUT")) payload ?: "{}".toRequestBody("application/json".toMediaType()) else null)
@@ -42,6 +43,10 @@ class ApiClient(private val config: ServerConfig) {
                             val source = response.body?.source()
                             if (source?.request(8_388_609) == true) throw IOException("Server response is too large.")
                             val raw = source?.readUtf8().orEmpty()
+                            if (response.code == 304) {
+                                if (!continuation.isCancelled) continuation.resume(JSONObject().put("notModified", true))
+                                return
+                            }
                             if (!response.isSuccessful) {
                                 val code = runCatching { JSONObject(raw).getJSONObject("error").getString("code") }.getOrDefault("SERVER_ERROR")
                                 throw ApiException(response.code, code)

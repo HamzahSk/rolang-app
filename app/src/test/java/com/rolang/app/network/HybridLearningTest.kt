@@ -1,5 +1,7 @@
 package com.rolang.app.network
 
+import com.rolang.app.TestCorpus
+
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
@@ -42,7 +44,7 @@ class HybridLearningTest {
         context.deleteDatabase(databaseName)
         database = Room.databaseBuilder(context, LearningDatabase::class.java, databaseName).build()
         repository = LearningRepository(database)
-        repository.initialize(context)
+        TestCorpus.seed(repository.dao, context)
         server = MockWebServer().apply { start() }
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         preferenceFile = File(context.cacheDir, "hybrid-${UUID.randomUUID()}.preferences_pb")
@@ -69,7 +71,7 @@ class HybridLearningTest {
         .put("deleted", change.deleted).put("data", change.data?.let(::JSONObject) ?: JSONObject.NULL).put("revision", revision)
 
     @Test fun configurationLoadsPackagedSettingsAndRuntimeOverrideAndValidatesOrigins() {
-        assertFalse(ServerConfig.load(context).onlineEnabled)
+        assertTrue(ServerConfig.load(context).onlineEnabled)
         val file = File(context.filesDir, "config.json")
         try {
             val json = JSONObject(context.assets.open("config.json").bufferedReader().use { it.readText() })
@@ -82,15 +84,16 @@ class HybridLearningTest {
     }
 
     @Test fun publishedStoryAndDictionaryRemainReadableAfterDatabaseReopenAndConnectionFailure() = runBlocking {
-        val corpus = JSONObject(context.assets.open("corpus.json").bufferedReader().use { it.readText() })
+        val corpus = TestCorpus.json(context)
         val detail = corpus.getJSONArray("stories").getJSONObject(0).put("id", "remote_story")
             .put("status", "published").put("difficulty", "A1").put("updatedAt", "2026-01-01T00:00:00Z")
             .put("vocabulary", corpus.getJSONArray("lexicon"))
         server.enqueue(json(JSONObject().put("stories", JSONArray().put(detail)).put("next", JSONObject.NULL)))
         server.enqueue(json(detail))
         assertTrue(engine.synchronize())
+        StoryRepository(database, StoryRemoteSource { ServerConfig(serverBaseUrl = server.url("/").toString(), onlineEnabled = true) }).open("remote_story")
         assertEquals("/api/v1/stories?limit=30", server.takeRequest().path)
-        assertEquals("/api/v1/stories/remote_story", server.takeRequest().path)
+        assertEquals("/api/v1/stories/remote_story?view=manifest", server.takeRequest().path)
         database.close()
         database = Room.databaseBuilder(context, LearningDatabase::class.java, databaseName).build()
         repository = LearningRepository(database)
@@ -106,10 +109,11 @@ class HybridLearningTest {
     }
 
     @Test fun incompleteRemoteContentCannotReplaceTheOfflineCorpus() = runBlocking {
-        val corpus = JSONObject(context.assets.open("corpus.json").bufferedReader().use { it.readText() })
+        val corpus = TestCorpus.json(context)
         val detail = corpus.getJSONArray("stories").getJSONObject(0).put("updatedAt", "2026-01-01T00:00:00Z").put("vocabulary", JSONArray())
         server.enqueue(json(JSONObject().put("stories", JSONArray().put(detail)).put("next", JSONObject.NULL)))
         server.enqueue(json(detail))
+        // Catalog metadata is safe to retrieve; invalid content is rejected when opened.
         try { engine.synchronize(); fail("Expected incomplete dictionary rejection") } catch (_: IllegalArgumentException) { }
         assertEquals(20, database.dao().storyCount())
         val story = Corpus.story(database.dao().stories().first().first())

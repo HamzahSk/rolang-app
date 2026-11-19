@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.rolang.app.LearningViewModel
 import com.rolang.app.LearningState
 import com.rolang.app.data.Story
 import com.rolang.app.domain.Level
@@ -48,10 +49,11 @@ fun HomeScreen(
                     Text("Ro-Lang", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                     Text("${prefs.target.label} · ${prefs.level.label}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                AssistChip(onClick = {}, label = { Text("Offline ready") },
+                AssistChip(onClick = {}, label = { Text("${state.stories.count { it.sentences.isNotEmpty() }} saved offline") },
                     leadingIcon = { Icon(Icons.Outlined.OfflinePin, null, Modifier.size(18.dp)) })
             }
         }
+        item { LibraryStatus(state, null) }
         item { SectionTitle("Keep your momentum", "A clear next step, with reading practice alongside your course.") }
         nextLesson?.let { lesson -> item {
             val unitNumber = lessonItems.map { it.family }.distinct().indexOf(lesson.family) + 1
@@ -123,11 +125,12 @@ fun StatTile(value: String, label: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun LessonsScreen(state: LearningState, open: (String) -> Unit) {
+fun LessonsScreen(state: LearningState, viewModel: LearningViewModel? = null, open: (String) -> Unit) {
     val lessons = state.lessons
     val completed = lessons.filter { state.contentCompleted(it.id) }.map { it.id }.toSet()
     val groups = lessons.groupBy { it.family }
     LazyColumn(Modifier.testTag("lessons-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { LibraryStatus(state, viewModel) }
         item { SectionTitle("Tagalog A1 lessons", "A guided curriculum with clear goals, practice, and prerequisites.") }
         item { LinearProgressIndicator(progress = { if (lessons.isEmpty()) 0f else completed.size.toFloat() / lessons.size }, modifier = Modifier.fillMaxWidth()) }
         groups.entries.forEachIndexed { unitIndex, (family, unitLessons) ->
@@ -139,7 +142,10 @@ fun LessonsScreen(state: LearningState, open: (String) -> Unit) {
             items(unitLessons, key = { it.id }) { lesson ->
                 val number = lessons.indexOf(lesson) + 1
                 val prerequisite = lessons.getOrNull(number - 2)
-                LessonCard(lesson, number, lesson.id in completed, prerequisite?.takeUnless { it.id in completed }, state, open)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    LessonCard(lesson, number, lesson.id in completed, prerequisite?.takeUnless { it.id in completed }, state, open)
+                    viewModel?.let { DownloadControls(lesson, state, it) }
+                }
             }
         }
     }
@@ -174,7 +180,8 @@ private fun LessonCard(lesson: Story, number: Int, complete: Boolean, prerequisi
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun StoriesScreen(state: LearningState, read: (String) -> Unit) {
+fun StoriesScreen(state: LearningState, viewModel: LearningViewModel? = null, read: (String) -> Unit) {
+    var savedOnly by rememberSaveable { mutableStateOf(false) }
     var format by rememberSaveable { mutableStateOf("All formats") }
     var topic by rememberSaveable { mutableStateOf("All topics") }
     var level by rememberSaveable { mutableStateOf("All levels") }
@@ -184,20 +191,23 @@ fun StoriesScreen(state: LearningState, read: (String) -> Unit) {
     val topics = listOf("All topics") + stories.map { it.category }.distinct()
     val levels = listOf("All levels") + stories.map { it.level.label }.distinct()
     val filtered = stories.filter { story ->
+        (!savedOnly || story.sentences.isNotEmpty()) &&
         (format == "All formats" || story.kind.label == format) &&
         (topic == "All topics" || story.category == topic) &&
         (level == "All levels" || story.level.label == level) &&
         (story.title(state.preferences.target).contains(query, true) || story.summary(state.preferences.target).contains(query, true)) }
     LazyColumn(Modifier.testTag("stories-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        item { LibraryStatus(state, viewModel) }
+        item { FilterChip(savedOnly, { savedOnly = !savedOnly }, label = { Text("Saved offline") }) }
         item { SectionTitle("Stories", "Independent reading practice by level, genre, and topic.") }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), singleLine = true,
             label = { Text("Search stories") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }) }
         item { FilterGroup("Level", levels, level) { level = it } }
         item { FilterGroup("Format", formats, format) { format = it } }
         item { FilterGroup("Topic", topics, topic) { topic = it } }
-        item { Text("${filtered.size} offline readings", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
+        item { Text("${filtered.size} readings", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
         if (filtered.isEmpty()) item { InfoCard("No stories found", "Try another title, genre, or topic.") }
-        items(filtered, key = { it.id }) { story -> StoryCard(story, state, read) }
+        items(filtered, key = { it.id }) { story -> StoryCard(story, state, viewModel, read) }
     }
 }
 
@@ -213,7 +223,7 @@ private fun FilterGroup(label: String, values: List<String>, selected: String, c
 }
 
 @Composable
-fun StoryCard(story: Story, state: LearningState, read: (String) -> Unit) {
+fun StoryCard(story: Story, state: LearningState, viewModel: LearningViewModel? = null, read: (String) -> Unit) {
     val reading = state.storyReadings.firstOrNull { it.storyId == story.id }
     val result = state.courseResults.firstOrNull { it.contentId == story.id }
     Card(onClick = { read(story.id) }, modifier = Modifier.fillMaxWidth().animateContentSize(),
@@ -228,8 +238,9 @@ fun StoryCard(story: Story, state: LearningState, read: (String) -> Unit) {
                 Text(story.title(state.preferences.target), style = MaterialTheme.typography.titleLarge)
                 Text(story.summary(state.preferences.target), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 LinearProgressIndicator(progress = { when {
-                    state.contentCompleted(story.id) -> 1f; reading == null -> 0f; else -> (reading.sentence + 1f) / story.sentences.size
+                    state.contentCompleted(story.id) -> 1f; reading == null -> 0f; else -> ((reading.sentence + 1f) / story.sentenceCount.coerceAtLeast(1)).coerceIn(0f, 1f)
                 } }, Modifier.fillMaxWidth())
+                viewModel?.let { DownloadControls(story, state, it) }
                 Text(when { result?.completed == true -> "Completed · best ${result.bestScore}/${result.totalQuestions}"
                     state.contentCompleted(story.id) -> "Completed · practice available"
                     reading != null -> "Continue reading"; else -> "Start story" },

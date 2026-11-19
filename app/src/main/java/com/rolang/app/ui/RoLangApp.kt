@@ -74,11 +74,11 @@ fun RoLangApp(viewModel: LearningViewModel) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
                 if (state.error != null) {
                     Box(Modifier.padding(24.dp)) { InfoCard("Local library unavailable", state.error!!) }
-                } else if (!state.ready || state.stories.isEmpty()) {
+                } else if (!state.ready) {
                     Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         CircularProgressIndicator()
-                        Text("Preparing your offline library…")
+                        Text("Preparing your library…")
                     }
                 } else NavHost(nav, startDestination = "home", modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
                     enterTransition = { fadeIn() }, exitTransition = { fadeOut() }) {
@@ -86,8 +86,8 @@ fun RoLangApp(viewModel: LearningViewModel) {
                         HomeScreen(state, now, { navigate("lessons") }, { navigate("stories") }, { navigate("review") },
                             { nav.navigate("lesson/$it") }, { nav.navigate("reader/$it") })
                     }
-                    composable("lessons") { LessonsScreen(state) { nav.navigate("lesson/$it") } }
-                    composable("stories") { StoriesScreen(state) { nav.navigate("reader/$it") } }
+                    composable("lessons") { LessonsScreen(state, viewModel) { nav.navigate("lesson/$it") } }
+                    composable("stories") { StoriesScreen(state, viewModel) { nav.navigate("reader/$it") } }
                     composable("vocabulary") { VocabularyScreen(state, now, viewModel::mastery, viewModel::delete, viewModel::status) { navigate("stories") } }
                     composable("review") {
                         ReviewScreen(state, now, quiz, busy, viewModel::startQuiz, viewModel::answer, viewModel::reveal,
@@ -97,17 +97,17 @@ fun RoLangApp(viewModel: LearningViewModel) {
                         AccountCard(online, viewModel::authenticate, viewModel::sync, viewModel::logout)
                     } }
                     composable("reader/{id}") { backStack ->
-                        val story = state.stories.firstOrNull { it.id == backStack.arguments?.getString("id") }
-                        if (story != null) ReaderScreen(story, state, viewModel, onBack = { nav.popBackStack() })
+                        StoryContentRoute(backStack.arguments?.getString("id").orEmpty(), viewModel, { nav.popBackStack() }) { loaded ->
+                            ReaderScreen(loaded, state, viewModel, onBack = { nav.popBackStack() })
+                        }
                     }
                     composable("lesson/{id}") { backStack ->
-                        val lesson = state.lessons.firstOrNull { it.id == backStack.arguments?.getString("id") }
-                        if (lesson != null) {
-                            val index = state.lessons.indexOf(lesson)
+                        StoryContentRoute(backStack.arguments?.getString("id").orEmpty(), viewModel, { nav.popBackStack() }) { loaded ->
+                            val index = state.lessons.indexOfFirst { it.id == loaded.id }
                             val previous = state.lessons.getOrNull(index - 1)
                             val next = state.lessons.getOrNull(index + 1)
-                            LessonScreen(lesson, state, index + 1, onBack = { nav.popBackStack() },
-                                onComplete = { score, total, answers -> viewModel.completeExercises(lesson, score, total, answers) },
+                            LessonScreen(loaded, state, index + 1, onBack = { nav.popBackStack() },
+                                onComplete = { score, total, answers -> viewModel.completeExercises(loaded, score, total, answers) },
                                 onPrevious = previous?.let { previousLesson -> { nav.navigate("lesson/${previousLesson.id}") } },
                                 onNext = next?.let { nextLesson -> { nav.navigate("lesson/${nextLesson.id}") } })
                         }

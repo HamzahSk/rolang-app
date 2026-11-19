@@ -20,8 +20,10 @@ class AccountMismatch : IOException("This local library belongs to another accou
 class SyncEngine(
     private val context: Context, private val database: LearningDatabase,
     private val preferences: PreferencesRepository, private val sessions: Sessions,
+    storyRepository: StoryRepository? = null,
     private val configuration: () -> ServerConfig = { ServerConfig.load(context) },
 ) {
+    private val stories = storyRepository ?: StoryRepository(database, StoryRemoteSource(configuration))
     private val mutex = Mutex()
     private val dao = database.dao()
     suspend fun signIn(email: String, password: String, name: String? = null): AccountSession = mutex.withLock {
@@ -58,7 +60,8 @@ class SyncEngine(
             if (!config.onlineEnabled) return@withContext true
             val api = ApiClient(config)
             // Public stories are available without registration.
-            refreshStories(api, config)
+            stories.refreshCatalog()
+            stories.refreshUpdatedCaches()
             if (!includeLearning) return@withContext true
             val session = sessions.read() ?: return@withContext true
             val state = dao.syncState() ?: SyncState()
@@ -183,41 +186,4 @@ class SyncEngine(
         }
     }
 
-    private suspend fun refreshStories(api: ApiClient, config: ServerConfig) {
-        val existing = dao.allStories().associateBy { it.id }
-        val visible = mutableSetOf<String>()
-        var after: String? = null
-        do {
-            val query = mutableMapOf("limit" to config.storyPageSize.toString())
-            after?.let { query["after"] = it }
-            val response = api.request("stories", query = query)
-            val items = response.getJSONArray("stories")
-            for (index in 0 until items.length()) {
-                val item = items.getJSONObject(index)
-                val id = item.getString("id")
-                require(id.matches(Regex("[a-zA-Z0-9_-]{1,80}")))
-                val old = existing[id]
-                val unchanged = old != null && JSONObject(old.content).optString("updatedAt") == item.getString("updatedAt")
-                if (!unchanged) {
-                    val detail = api.request("stories/$id")
-                    val root = JSONObject().put("stories", JSONArray().put(detail)).put("lexicon", detail.getJSONArray("vocabulary"))
-                    // Reject incomplete remote content before it can affect the offline reader.
-                    val (stories, words) = Corpus.parse(root)
-                    database.withTransaction {
-                        dao.cacheStoryLexicon(words.map { StoryLexemeEntity(id, it.language, it.word, it.content) })
-                        dao.seedStories(stories.map { it.copy(remote = old?.remote ?: true) })
-                    }
-                } else if (!old!!.available) dao.seedStories(listOf(old.copy(available = true)))
-                visible.add(id)
-            }
-            val next = if (response.isNull("next")) null else response.getString("next")
-            require(next == null || after == null || next > after!!)
-            after = next
-        } while (after != null)
-        // Only hide removed remote stories after a complete successful catalog
-        // fetch. Offline failures retain every previously cached story and word.
-        database.withTransaction {
-            dao.seedStories(dao.allStories().filter { it.remote && it.id !in visible }.map { it.copy(available = false) })
-        }
-    }
 }

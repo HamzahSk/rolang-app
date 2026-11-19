@@ -5,6 +5,13 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.runBlocking
+import com.rolang.app.network.AppServices
+import androidx.test.core.app.ApplicationProvider
+import android.content.Context
+import java.io.File
+import org.json.JSONObject
+import org.junit.rules.ExternalResource
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -12,7 +19,16 @@ import org.junit.runner.RunWith
 /** Exercises navigation, actual word links, saving, translation, and vocabulary quiz grading. */
 @RunWith(AndroidJUnit4::class)
 class LearningFlowTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule(order = 0) val fixture = object : ExternalResource() {
+        override fun before() {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val config = JSONObject(context.assets.open("config.json").bufferedReader().use { it.readText() }).put("onlineEnabled", false)
+            File(context.filesDir, "config.json").writeText(config.toString())
+            runBlocking { TestCorpus.seed(AppServices.get(context).database.dao(), context) }
+        }
+        override fun after() { File(ApplicationProvider.getApplicationContext<Context>().filesDir, "config.json").delete() }
+    }
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun readSaveAndReviewAWordThroughTheInterface() {
         compose.waitUntil(30_000) { compose.onAllNodesWithText("Keep your momentum").fetchSemanticsNodes().isNotEmpty() }

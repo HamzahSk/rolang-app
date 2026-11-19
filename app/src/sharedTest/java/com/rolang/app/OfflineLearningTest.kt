@@ -33,8 +33,8 @@ class OfflineLearningTest {
     @After fun close() { database.close(); context.deleteDatabase(dbName) }
 
     @Test fun corpusCoversEveryWordAtEveryLevelAndLanguage() = runBlocking {
-        repository.initialize(context)
-        repository.initialize(context)
+        TestCorpus.seed(repository.dao, context)
+        TestCorpus.seed(repository.dao, context)
         val stories = repository.dao.stories().first().map(Corpus::story)
         assertEquals(20, stories.size)
         assertEquals((1..20).toList(), stories.sortedBy { it.order }.map { it.order })
@@ -61,7 +61,7 @@ class OfflineLearningTest {
     }
 
     @Test fun vocabularyReadingAndReviewSurviveReopeningAndCannotBeDoubleSubmitted() = runBlocking {
-        repository.initialize(context)
+        TestCorpus.seed(repository.dao, context)
         val story = Corpus.story(repository.dao.stories().first().first())
         val target = Language.ENGLISH
         val native = Language.INDONESIAN
@@ -126,7 +126,7 @@ class OfflineLearningTest {
     }
 
     @Test fun fourStatusesPersistProgressAndRejectReviewsAfterManualEdits() = runBlocking {
-        repository.initialize(context)
+        TestCorpus.seed(repository.dao, context)
         val story = Corpus.story(repository.dao.stories().first().first())
         val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
             Language.ENGLISH, Language.INDONESIAN)

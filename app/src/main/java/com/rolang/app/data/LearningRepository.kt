@@ -10,11 +10,12 @@ import org.json.JSONObject
 class LearningRepository(private val database: LearningDatabase) {
     val dao = database.dao()
     suspend fun initialize(context: Context) = withContext(Dispatchers.IO) {
+        // Upgrade existing installations without reading or reseeding packaged stories.
         database.withTransaction {
-            val (stories, words) = Corpus.load(context)
-            dao.hideObsoleteBundledStories(stories.map { it.id })
-            dao.seedLexicon(words)
-            dao.seedStories(stories)
+            val known = dao.allCatalog().map { it.id }.toSet()
+            dao.cacheCatalog(dao.allStories().filter { it.id !in known }.map {
+                StoryCatalogEntity(it.id, it.content, it.available)
+            })
         }
     }
     suspend fun lookup(story: Story, sentence: Int, word: String, target: Language, native: Language): WordDetail {

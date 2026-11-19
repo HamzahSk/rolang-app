@@ -3,7 +3,7 @@
   "apiVersion": "v1",
   "connectionTimeoutMs": 10000,
   "requestTimeoutMs": 30000,
-  "onlineEnabled": false,
+  "onlineEnabled": true,
   "automaticSyncEnabled": true,
   "syncIntervalMinutes": 15,
   "storyPageSize": 30

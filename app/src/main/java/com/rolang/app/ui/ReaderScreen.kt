@@ -29,6 +29,7 @@ import com.rolang.app.data.Story
 import com.rolang.app.data.WordDetail
 import com.rolang.app.domain.Words
 import com.rolang.app.domain.VocabularyStatus
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -37,6 +38,7 @@ private data class SelectedWord(val text: String, val paragraph: Int)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewModel, onBack: () -> Unit) {
+    val chapterScope = rememberCoroutineScope()
     val prefs = state.preferences
     val savedReading = state.courseReadings.firstOrNull { it.storyId == story.id }
     val listState = rememberSaveable(story.id, prefs.target.code, saver = LazyListState.Saver) {
@@ -90,6 +92,13 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                     Text(story.summary(prefs.target), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Tap any word to explore its meaning.", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    DownloadControls(story, state, viewModel)
+                    if (story.chapters.size > 1) {
+                        Text("Chapters", style = MaterialTheme.typography.titleMedium)
+                        story.chapters.forEach { chapter -> TextButton(onClick = {
+                            chapterScope.launch { listState.scrollToItem(chapter.start + 1) }
+                        }) { Text(chapter.title.getValue(prefs.target.code)) } }
+                    }
                     VocabularyLegend()
                     OutlinedButton(onClick = { translated = !translated }) {
                         Icon(Icons.Outlined.Translate, null, Modifier.size(18.dp))

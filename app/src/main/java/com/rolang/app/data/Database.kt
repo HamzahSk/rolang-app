@@ -19,6 +19,18 @@ data class StoryEntity(
     @ColumnInfo(defaultValue = "1") val available: Boolean = true,
 )
 
+@Entity(tableName = "story_catalog")
+data class StoryCatalogEntity(@PrimaryKey val id: String, val content: String,
+    @ColumnInfo(defaultValue = "1") val available: Boolean = true)
+
+@Entity(tableName = "chapter_cache", primaryKeys = ["storyId", "chapterId"])
+data class ChapterCacheEntity(val storyId: String, val chapterId: String, val version: String, val content: String)
+
+@Entity(tableName = "story_downloads")
+data class StoryDownloadEntity(@PrimaryKey val storyId: String, val status: String = "QUEUED",
+    val completed: Int = 0, val total: Int = 0, val version: String = "", val error: String? = null,
+    val requestId: String = UUID.randomUUID().toString())
+
 @Entity(tableName = "lexicon", primaryKeys = ["language", "word"])
 data class LexemeEntity(val language: String, val word: String, val content: String)
 
@@ -99,6 +111,36 @@ data class SyncState(@PrimaryKey val id: Int = 1, val owner: String? = null,
 
 @Dao
 interface LearningDao {
+    @Query("SELECT * FROM story_catalog WHERE available=1 OR id IN (SELECT id FROM stories) ORDER BY id")
+    fun catalog(): Flow<List<StoryCatalogEntity>>
+    @Query("SELECT * FROM story_catalog")
+    suspend fun allCatalog(): List<StoryCatalogEntity>
+    @Query("SELECT * FROM story_catalog WHERE id=:id")
+    suspend fun catalogStory(id: String): StoryCatalogEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun cacheCatalog(items: List<StoryCatalogEntity>)
+    @Query("SELECT * FROM stories WHERE id=:id")
+    suspend fun cachedStory(id: String): StoryEntity?
+    @Query("DELETE FROM stories WHERE id=:id")
+    suspend fun removeStoryCache(id: String)
+    @Query("DELETE FROM story_lexicon WHERE storyId=:id")
+    suspend fun removeStoryLexicon(id: String)
+    @Query("SELECT * FROM chapter_cache WHERE storyId=:id AND chapterId=:chapterId")
+    suspend fun cachedChapter(id: String, chapterId: String): ChapterCacheEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun cacheChapter(chapter: ChapterCacheEntity)
+    @Query("DELETE FROM chapter_cache WHERE storyId=:id")
+    suspend fun removeChapters(id: String)
+    @Query("DELETE FROM chapter_cache WHERE storyId=:id AND chapterId NOT IN (:ids)")
+    suspend fun pruneChapters(id: String, ids: List<String>)
+    @Query("SELECT * FROM story_downloads")
+    fun downloads(): Flow<List<StoryDownloadEntity>>
+    @Query("SELECT * FROM story_downloads WHERE storyId=:id")
+    suspend fun download(id: String): StoryDownloadEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveDownload(download: StoryDownloadEntity)
+    @Query("DELETE FROM story_downloads WHERE storyId=:id")
+    suspend fun removeDownload(id: String)
     @Query("SELECT * FROM stories WHERE available = 1 ORDER BY family, level")
     fun stories(): Flow<List<StoryEntity>>
     @Query("SELECT * FROM stories")
@@ -177,11 +219,19 @@ interface LearningDao {
     suspend fun saveSyncState(state: SyncState)
 }
 
-@Database(entities = [StoryEntity::class, LexemeEntity::class, StoryLexemeEntity::class, VocabularyEntity::class,
-    ReadingEntity::class, ExerciseResultEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 4, exportSchema = true)
+@Database(entities = [StoryEntity::class, StoryCatalogEntity::class, ChapterCacheEntity::class, StoryDownloadEntity::class, LexemeEntity::class, StoryLexemeEntity::class, VocabularyEntity::class,
+    ReadingEntity::class, ExerciseResultEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 5, exportSchema = true)
 abstract class LearningDatabase : RoomDatabase() {
     abstract fun dao(): LearningDao
     companion object {
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS story_catalog (id TEXT NOT NULL, content TEXT NOT NULL, available INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(id))")
+                db.execSQL("INSERT INTO story_catalog(id,content,available) SELECT id,content,available FROM stories")
+                db.execSQL("CREATE TABLE IF NOT EXISTS chapter_cache (storyId TEXT NOT NULL, chapterId TEXT NOT NULL, version TEXT NOT NULL, content TEXT NOT NULL, PRIMARY KEY(storyId,chapterId))")
+                db.execSQL("CREATE TABLE IF NOT EXISTS story_downloads (storyId TEXT NOT NULL, status TEXT NOT NULL, completed INTEGER NOT NULL, total INTEGER NOT NULL, version TEXT NOT NULL, error TEXT, requestId TEXT NOT NULL, PRIMARY KEY(storyId))")
+            }
+        }
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""CREATE TABLE IF NOT EXISTS exercise_results (

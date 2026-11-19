@@ -19,6 +19,9 @@ data class LearningState(
     val reviews: List<ReviewEntity> = emptyList(),
     val ready: Boolean = false,
     val error: String? = null,
+    val catalogLoading: Boolean = false,
+    val catalogError: String? = null,
+    val downloads: List<StoryDownloadEntity> = emptyList(),
 ) {
     val courseWords get() = vocabulary.filter {
         it.language == preferences.target.code && it.reference == preferences.native.code
@@ -69,14 +72,24 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     val busy = _busy.asStateFlow()
     private var languageGeneration = 0
     private val contentBase = combine(preferences.preferences,
-        repository.dao.stories().map { rows -> withContext(Dispatchers.Default) { rows.map(Corpus::story).sortedBy { it.order } } },
+        combine(services.stories.catalog, repository.dao.stories()) { catalog, cached ->
+            withContext(Dispatchers.Default) {
+                val snapshots = cached.associateBy { it.id }
+                catalog.map { item -> snapshots[item.id]?.let(Corpus::story) ?: JSONObject(item.content).let { json ->
+                    Corpus.story(StoryEntity(item.id, json.getString("family"), json.getString("category"), json.getString("level"), item.content))
+                } }.sortedBy { it.order }
+            }
+        },
         repository.dao.vocabulary(), repository.dao.readings(), repository.dao.reviews()) { prefs, stories, words, reading, reviews ->
         LearningState(preferences = prefs, stories = stories, vocabulary = words, readings = reading, reviews = reviews)
     }
     private val content = combine(contentBase, repository.dao.exerciseResults()) { base, results ->
         base.copy(exerciseResults = results)
     }
-    val state = combine(content, ready, error) { content, ready, error -> content.copy(ready = ready, error = error) }
+    private val library = combine(content, services.stories.catalogState, services.stories.downloads) { content, catalog, downloads ->
+        content.copy(catalogLoading = catalog.loading, catalogError = catalog.error, downloads = downloads)
+    }
+    val state = combine(library, ready, error) { content, ready, error -> content.copy(ready = ready, error = error) }
         .catch { emit(LearningState(error = "Unable to load local learning data. Restart the app to retry.")) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, LearningState())
 
@@ -87,6 +100,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
                 preferences.preferences.first()
                 ready.value = true
                 services.configure()
+                refreshCatalog()
             } catch (_: Exception) {
                 error.value = "Unable to prepare the offline library. Restart the app to retry."
             }
@@ -99,6 +113,15 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+    fun refreshCatalog() { viewModelScope.launch {
+        try { services.stories.refreshCatalog() } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { /* Catalog state exposes a retry action. */ }
+    } }
+    suspend fun cachedStory(id: String) = services.stories.cached(id)
+    suspend fun openStory(id: String) = services.stories.open(id)
+    fun downloadStory(id: String) { viewModelScope.launch { services.downloadStory(id) } }
+    fun cancelDownload(id: String) { viewModelScope.launch { services.cancelDownload(id) } }
+    fun removeDownload(id: String) { viewModelScope.launch { services.removeDownload(id) } }
     fun clearMessage() { _message.value = null }
     private fun work(action: suspend () -> Unit) = viewModelScope.launch {
         try { action(); services.schedulePending() } catch (cancelled: CancellationException) { throw cancelled }

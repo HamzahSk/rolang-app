@@ -1,128 +1,107 @@
-Task: Migrate Ro-Lang Stories to Online Server with Offline Support
+Task: Diagnose and Fix Ro-Lang Server Vercel HTTP 500 Errors
 
-Read and inspect both repositories before making changes:
+Focus primarily on "rolang-server/". The deployed Vercel server currently returns HTTP 500 errors even though the required environment variables have already been configured.
 
-- Android app: current workspace ("rolang-app").
-- Backend server: "rolang-server/".
+Perform a thorough investigation and fix the actual root cause.
 
-Main Goal
+1. Inspect the Server
 
-Transform Ro-Lang into an online-first language-learning application. All story content should be managed and stored on the backend server and its database instead of being bundled directly inside the Android application.
+- Inspect the entire "rolang-server/" project structure.
+- Read package.json, Vercel configuration, API routes, database configuration, environment variable usage, and deployment scripts.
+- Identify the backend framework, runtime, database provider, and deployment architecture.
+- Check for incorrect imports, missing modules, incompatible dependencies, invalid configurations, and runtime-specific issues.
 
-The app must still support offline reading through downloaded content.
+2. Diagnose HTTP 500 Errors
 
-1. Backend & Database
+Investigate possible causes, including:
 
-Inspect the existing backend architecture, database, and API implementation before modifying anything.
+- Incorrect environment variable names or access.
+- Database connection failures.
+- Invalid database URLs or connection settings.
+- Database schema and migration mismatches.
+- Incorrect serverless function configuration.
+- Runtime incompatibilities with Vercel.
+- Initialization errors and unhandled exceptions.
+- Incorrect API route exports or request handling.
+- Build-time versus runtime environment configuration.
 
-- Move existing story data into the server database.
-- Create or update database models and migrations as needed.
-- Implement APIs to retrieve story lists, story details, chapters, and story content.
-- Support pagination and efficient data retrieval.
-- Provide story metadata such as title, description, language, difficulty, cover, chapters, and other existing fields.
-- Avoid duplicate records when importing existing stories.
-- Preserve existing story content and structure.
-- Implement appropriate validation and error handling.
+Do not assume environment variables are missing simply because the server returns HTTP 500.
 
-Do not unnecessarily replace the existing backend stack or database.
+3. Verify Database Connectivity
 
-2. Android App Integration
+- Inspect the existing database connection implementation.
+- Verify that the application initializes database connections correctly in Vercel serverless environments.
+- Fix connection pooling and initialization issues where necessary.
+- Verify that required tables and migrations exist.
+- Ensure database queries work correctly in production.
+- Avoid creating unnecessary database connections on every request.
 
-Connect the Android application to "rolang-server".
+Never expose database credentials or secret environment variable values in logs.
 
-- Replace local story loading with server API integration.
-- Fetch story catalogs and content from the backend.
-- Implement loading, empty, and error states.
-- Add retry handling and appropriate network timeouts.
-- Keep the existing UI/UX and navigation wherever possible.
-- Ensure API configuration is centralized and easy to change.
+4. Fix All Backend Issues
 
-3. Automatic Offline Saving
+After identifying the root cause:
 
-Implement automatic local caching:
+- Fix the actual source code and configuration.
+- Ensure all API routes work correctly.
+- Fix incorrect request and response handling.
+- Add proper error handling.
+- Return meaningful HTTP status codes.
+- Ensure server initialization does not crash.
+- Preserve the existing API structure and functionality.
 
-- Whenever a user opens a story or chapter, automatically save its content locally.
-- Save downloaded content in a persistent local database or storage.
-- Avoid unnecessary downloads when content is already cached and up to date.
-- Use versioning or updated timestamps to detect changed content.
-- Preserve downloaded content even after the app is closed or restarted.
-- If the device is offline, automatically load previously cached content.
+Do not hide errors by returning HTTP 200 for failed operations.
 
-4. Manual Download Feature
+5. Vercel Deployment Compatibility
 
-Add a download option to the story interface.
+Ensure the project is properly configured for Vercel:
 
-Users should be able to:
+- Correct build configuration.
+- Correct function entrypoints and routing.
+- Compatible Node.js runtime.
+- Correct dependency installation.
+- Correct environment variable access.
+- Proper production database initialization.
+- No reliance on persistent local filesystem storage.
 
-- Download an entire story, including all its chapters.
-- View download progress.
-- Cancel an active download.
-- See which stories are already downloaded.
-- Remove downloaded content to free up storage.
-- Access downloaded stories without an internet connection.
+If the current architecture is incompatible with Vercel, adapt it without unnecessarily replacing the existing backend stack.
 
-The download process must handle interruptions and resume or retry safely when possible.
+6. Testing and Verification
 
-5. Online and Offline Synchronization
+Perform all available checks:
 
-Implement a reliable content synchronization strategy:
+- Install dependencies.
+- Run the production build.
+- Run backend tests.
+- Test database connectivity when credentials are available.
+- Test all API endpoints locally.
+- Verify health-check and database-dependent routes.
+- Inspect Vercel deployment configuration.
 
-- Online: retrieve the latest available story data from the server.
-- Offline: use locally cached or downloaded data.
-- Automatically update outdated cached content when appropriate.
-- Never delete downloaded content just because a network request fails.
-- Avoid blocking the reading experience while background synchronization occurs.
+Create or improve a lightweight "/health" endpoint that reports server status and database connectivity without exposing secrets or internal infrastructure details.
 
-6. Architecture & Data Integrity
+If Vercel CLI or deployment access is available, inspect deployment logs and verify the deployed application.
 
-- Separate remote data sources from local data sources.
-- Implement a repository layer to coordinate server and local storage.
-- Use the existing Android architecture and libraries where possible.
-- Handle concurrent requests and duplicate downloads safely.
-- Ensure database migrations preserve existing user data.
-- Do not hardcode story content or server responses in the application.
+If deployment access is unavailable, clearly identify what remains unverified and provide the exact checks needed.
 
-7. Migration
+Important Rules
 
-Inspect all existing story assets and data in "rolang-app".
+- Work directly inside "rolang-server/".
+- Do not modify "rolang-app" unless an API compatibility fix is absolutely necessary.
+- Do not blindly rewrite the backend.
+- Do not replace the database or framework without a strong technical reason.
+- Do not invent environment variables or assume their names.
+- Never print secret values in logs or reports.
+- Preserve existing story APIs and database data.
+- Do not delete migrations or existing database records.
+- Fix root causes instead of applying temporary workarounds.
 
-Create a reliable migration/import process to transfer the existing stories into "rolang-server" and its database.
+Finally, provide a concise report containing:
 
-Verify that:
+1. Actual root cause of the HTTP 500 error.
+2. Files modified.
+3. Fixes implemented.
+4. Build and test results.
+5. Any remaining manual Vercel configuration or deployment steps.
 
-- All existing stories are imported.
-- Chapter ordering is preserved.
-- Text, translations, vocabulary, exercises, and other related content remain intact.
-- Existing story identifiers and relationships are handled consistently.
-
-Do not remove the original local story assets until the server migration has been verified and the application can retrieve the migrated content successfully.
-
-8. Testing
-
-Test both repositories.
-
-Verify:
-
-- Story catalog retrieval.
-- Story detail and chapter retrieval.
-- Automatic saving when opening a story.
-- Manual story downloads.
-- Offline reading.
-- Cache updates after server content changes.
-- App restart and persistent storage.
-- Network failures and interrupted downloads.
-
-Run relevant backend tests and Android unit tests, lint, and build checks.
-
-Important Instructions
-
-- Work directly in both repositories.
-- Do not merely provide implementation suggestions; implement the actual changes.
-- Inspect existing code and documentation before deciding the architecture.
-- Do not rewrite unrelated features or unnecessarily redesign the UI.
-- Keep the Android application and backend API compatible.
-- Preserve all existing story content and learning features.
-- Update API documentation and project documentation where necessary.
-- Commit-ready implementation, without placeholders or unfinished mock APIs.
-
-The final result should be an online-first Ro-Lang application where stories are served by the backend, automatically cached when opened, and available offline through manual downloads.
+The goal is a fully functional Ro-Lang backend deployed on Vercel, with working database connectivity and API endpoints.

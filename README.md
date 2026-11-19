@@ -1,6 +1,6 @@
 # Ro-Lang for Android
 
-A standalone, hybrid offline/online language-learning app built with Kotlin, Jetpack Compose,
+An online-first language-learning app with persistent offline reading built with Kotlin, Jetpack Compose,
 Material 3, Room, DataStore, and Navigation Compose. Android 8.0 (API 26) or newer.
 
 ## Build and run
@@ -14,10 +14,13 @@ checksum. No API keys or service accounts are needed.
 ./gradlew :app:installDebug
 ```
 
-The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
+APKs are generated per ABI under `app/build/outputs/apk/debug/`, for example
+`app-arm64-v8a-debug.apk`.
 The first build needs internet to download build dependencies; the installed app
-keeps its bundled library and learning data available without a network connection.
-Online features are optional and disabled in the default configuration.
+fetches its library from the configured Ro-Lang server. Opening a story saves it
+for offline reading; **Download story** saves every chapter through a durable
+background job. A fresh installation needs a connection to obtain content.
+An account is optional. Online content is enabled in the default configuration.
 
 ## Build with GitHub Actions
 
@@ -71,27 +74,27 @@ when checks fail. This debug build requires no GitHub Secrets or signing keystor
 Vocabulary and review statistics are separated by target/reference language pair.
 Reading progress is separated by story variant and target language. Database writes
 and review logs use transactions; duplicate saves and stale quiz submissions are
-rejected. Quizzes left without a rating do not change the schedule. Everything is
-stored on the device. An optional account synchronizes it with the independent
-backend in `../rolang-server`; offline learning needs no account or download.
+rejected. Quizzes left without a rating do not change the schedule. Learning data is
+stored on the device. An optional account synchronizes it with the backend in
+`rolang-server/`; offline reading uses automatically saved or manually downloaded content.
 
 ## Server configuration and synchronization
 
 Edit the root `config.json` in this Android project. Gradle copies this one source
 into generated app assets at build time. Set `serverBaseUrl` to the deployment
-origin (for example `https://YOUR-DEPLOYMENT.vercel.app`, without `/api/v1`) and set
-`onlineEnabled` to true. The app reads configuration at runtime, including on each
+origin (for example `https://YOUR-DEPLOYMENT.vercel.app`, without `/api/v1`) and keep
+`onlineEnabled` set to true. The app reads configuration at runtime, including on each
 worker run. A complete private `files/config.json` override takes precedence over
 the packaged configuration; managed deployments can provision it without changing
 URLs in Kotlin. Invalid configuration disables networking and keeps local data.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| `serverBaseUrl` | Empty | Server origin; HTTPS required outside local development |
+| `serverBaseUrl` | `https://rolang-server.vercel.app` | Server origin; HTTPS required outside local development |
 | `apiVersion` | `v1` | API path version |
 | `connectionTimeoutMs` | 10000 | Connection timeout (1000–120000 ms) |
 | `requestTimeoutMs` | 30000 | Whole-request and read timeout (1000–120000 ms) |
-| `onlineEnabled` | false | Enable public story downloads and account actions |
+| `onlineEnabled` | true | Enable public story downloads and account actions |
 | `automaticSyncEnabled` | true | Synchronize learning changes automatically |
 | `syncIntervalMinutes` | 15 | Background sync interval (15–1440 minutes) |
 | `storyPageSize` | 30 | Number of catalog entries per request (1–100) |
@@ -113,15 +116,29 @@ retries do not duplicate review events. Acknowledgements only remove the exact
 uploaded operation, preserving edits made during a request. Downloaded records
 and the revision cursor commit together. Deletions propagate as tombstones.
 
-Published stories and per-story dictionaries cache in Room, so word lookup and
-reading remain local after download. A failed or partial catalog refresh retains
-cached content. A complete successful refresh hides removed/unpublished remote
-stories without deleting learning history. Bundled stories remain available.
-The existing version-1 database upgrades through version 4 with explicit
-migrations preserving vocabulary, reading, reviews, schedules, and pending edits
-while adding persistent lesson/story exercise results;
-new installs also work entirely offline. Legacy mastery fields map to the new
-statuses. Deploy the updated backend before distributing this app build.
+Catalog metadata persists separately from content. Opening a story retrieves its
+latest manifest and chapters, validates dictionary coverage, and saves the complete
+reading snapshot and dictionaries in Room. Cached content renders immediately while
+the reader checks for updates. Versioned conditional requests avoid downloading
+unchanged stories; chapter hashes let downloads reuse unchanged chapters. Background
+sync refreshes metadata and updates previously cached stories, without downloading
+unopened stories.
+
+**Stories → Saved offline** filters automatically cached and manually downloaded
+stories. Each story/lesson offers **Download story**, chapter progress, **Cancel
+download**, **Retry download**, and **Remove saved content**. WorkManager persists
+jobs across restart, waits for connectivity, and retries transient failures with
+exponential backoff (up to nine attempts). Cancellation retains saved chapters for
+retry. Removing content deletes its reading cache and unused dictionary data while
+keeping vocabulary, review schedules, exercise scores, and reading progress.
+Downloaded stories remain accessible even if the server removes or unpublishes them.
+A failed request never deletes a reading snapshot; an incomplete or mixed revision
+never replaces the previous complete snapshot.
+
+Room version 5 upgrades versions 1–4 through explicit migrations. Existing local
+stories remain readable after upgrade, and existing learning data and pending
+operations are preserved. New installations do not seed the legacy corpus.
+Deploy the backend migration and import before distributing this app build.
 
 Each local library remains bound to the first account that signs in. Reconnecting
 the same account preserves its pending edits; signing into another account is
@@ -145,14 +162,14 @@ shipping manifest.
 - `network`: Runtime configuration, bounded HTTP requests, Keystore sessions,
   synchronization, shared services, and connected-network background jobs.
 - `app/src/main/java/com/rolang/app/ui`: Navigation, theme, and functional screens.
-- `app/src/main/assets/corpus.json`: All stories and multilingual dictionary data.
+- `app/src/main/assets/corpus.json`: Preserved migration/test fixture, excluded from app assets.
 - `app/schemas`: Exported Room schema for future explicit migrations.
 - `tools/build_corpus.py`: Authoring source and complete word-coverage validation.
 - `app/src/sharedTest`: The same persistence and UI scenarios for Robolectric and
   device instrumentation; `app/src/test` contains scheduler and tokenizer tests.
 
-The database is seeded atomically on first launch. It persists independently of
-the ViewModel. There is no destructive migration fallback. Clearing app data or
+The catalog and content are saved transactionally as they are retrieved. Room
+persists independently of the ViewModel. There is no destructive migration fallback. Clearing app data or
 uninstalling removes learning data; backups are disabled.
 
 ## Checks
@@ -172,7 +189,7 @@ on a clean installation so the UI scenario starts with its default language pair
 
 ## Content scope
 
-The bundled library contains nine structured lessons plus an independent reading
+The migrated library contains nine structured lessons plus an independent reading
 library of six realistic dialogues and five coherent stories. Its 92 interactive
 questions cover multiple choice, vocabulary translation, fill-in-the-blank,
 grammar, sentence construction, and reading comprehension. Topics cover pronunciation,
@@ -186,22 +203,31 @@ illustrations provide a consistent offline visual identity.
 Built-in translations are curated contextual glosses; grammatical markers and
 multiword expressions do not always have exact one-word equivalents, so sentence
 translations supply the complete meaning. There is no arbitrary-text translator.
-Further bundled units can be authored in the corpus generator; remote stories can
-be published through the backend API. Both must pass multilingual coverage checks.
+New content is authored and published through the backend API. The corpus
+generator and original assets are retained as migration/test fixtures. Content
+must pass multilingual dictionary coverage checks.
 
 The existing JavaScript Ro-Lang tutor under `../roccky_bot/ro-lang` is independent
 of this app.
 
-Hybrid tests additionally cover runtime configuration, cached remote content,
-reopen persistence, failed uploads, tombstones, concurrent local edits, review
-identity, preference restoration, account isolation, and version-1 migration.
-An optional two-device contract test runs the actual Android HTTP client against
-the Node API and PostgreSQL. Start the server against a disposable database, then:
+Content tests cover lightweight catalogs, opening/automatic caching, complete
+manual downloads, cancellation, duplicate requests, interrupted chapter reuse,
+server changes, invalid revisions, offline fallback, removal, and database restart.
+Learning tests still cover word lookup, exercises, review guards, account sync,
+preferences, and migrations. A live Android HTTP-client contract test also reads
+all 20 migrated stories from real Express/PostgreSQL and reopens them offline:
 
 ```sh
-./gradlew :app:testDebugUnitTest -ProlangIntegrationUrl=http://127.0.0.1:3000
+# In rolang-server with a disposable DATABASE_URL configured:
+npm ci
+npm run migrate
+npm run import:corpus
+npm start
+# In the app repository:
+JAVA_HOME=/path/to/jdk17 bash gradlew :app:testDebugUnitTest \
+  -ProlangIntegrationUrl=http://127.0.0.1:3000
 ```
 
-This optional test registers an isolated fixture account in that disposable
-database. It is skipped when the property is absent. Physical-device/emulator
-checks remain useful for real Keystore, connectivity, and WorkManager behavior.
+Physical-device/emulator checks remain useful for OS connectivity, Keystore,
+battery policies, and background job scheduling. See [migration instructions](rolang-server/docs/MIGRATION.md)
+for import conflicts, verification, deployment order, and content ownership.

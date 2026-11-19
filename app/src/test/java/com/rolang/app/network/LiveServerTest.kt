@@ -1,5 +1,7 @@
 package com.rolang.app.network
 
+import com.rolang.app.TestCorpus
+
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
@@ -36,7 +38,7 @@ class LiveServerTest {
         val engines = databases.mapIndexed { i, db -> SyncEngine(context, db,
             PreferencesRepository(PreferenceDataStoreFactory.create(scope = scope) { files[i] }), sessions()) { config } }
         try {
-            databases.forEach { LearningRepository(it).initialize(context) }
+            databases.forEach { TestCorpus.seed(it.dao(), context) }
             val email = "android.${UUID.randomUUID()}@example.test"
             engines[0].signIn(email, "test-fixture-password", "Android contract test")
             engines[1].signIn(email, "test-fixture-password")
@@ -79,4 +81,35 @@ class LiveServerTest {
             files.forEach { it.delete() }
         }
     }
+    @Test fun everyMigratedStoryCanBeReadAndReopenedOfflineThroughTheActualApi() = runBlocking {
+        val origin = System.getProperty("rolang.integration.url")
+        assumeTrue("Supply a disposable server with npm run import:corpus", origin != null)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val name = "live-content-test.db"
+        context.deleteDatabase(name)
+        var db = Room.databaseBuilder(context, LearningDatabase::class.java, name).build()
+        val config = ServerConfig(serverBaseUrl = origin!!, onlineEnabled = true, storyPageSize = 3)
+        var stories = StoryRepository(db, StoryRemoteSource { config })
+        try {
+            stories.refreshCatalog()
+            assertEquals(20, db.dao().allCatalog().size)
+            assertEquals(0, db.dao().storyCount())
+            val original = TestCorpus.load(context).first.map(Corpus::story)
+            for (expected in original) {
+                val actual = stories.open(expected.id)
+                assertEquals(expected.sentences, actual.sentences)
+                assertEquals(expected.exercises, actual.exercises)
+                assertEquals(expected.notes, actual.notes)
+                assertEquals(expected.focus, actual.focus)
+                assertEquals(expected.pronunciation, actual.pronunciation)
+                assertEquals(expected.speakers, actual.speakers)
+            }
+            assertEquals(20, db.dao().storyCount())
+            db.close()
+            db = Room.databaseBuilder(context, LearningDatabase::class.java, name).build()
+            stories = StoryRepository(db, StoryRemoteSource { config.copy(onlineEnabled = false) })
+            for (expected in original) assertEquals(expected.sentences, stories.open(expected.id).sentences)
+        } finally { db.close(); context.deleteDatabase(name) }
+    }
+
 }

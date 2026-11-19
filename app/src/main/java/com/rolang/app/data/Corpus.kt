@@ -1,6 +1,5 @@
 package com.rolang.app.data
 
-import android.content.Context
 import com.rolang.app.domain.Language
 import com.rolang.app.domain.Level
 import com.rolang.app.domain.Words
@@ -34,6 +33,8 @@ data class Exercise(
     fun tokens(language: Language) = tokens[language.code].orEmpty()
 }
 
+data class Chapter(val id: String, val title: Map<String, String>, val start: Int, val count: Int)
+
 data class Story(
     val id: String, val family: String, val category: String, val level: Level,
     val titles: Map<String, String>, val summaries: Map<String, String>,
@@ -42,6 +43,7 @@ data class Story(
     val speakers: List<String?> = emptyList(), val objectives: List<Map<String, String>> = emptyList(),
     val notes: List<LearningNote> = emptyList(), val exercises: List<Exercise> = emptyList(),
     val focus: Map<String, List<String>> = emptyMap(), val pronunciation: Map<String, String> = emptyMap(),
+    val chapters: List<Chapter> = emptyList(), val sentenceCount: Int = sentences.size,
 ) {
     fun title(language: Language) = titles.getValue(language.code)
     fun summary(language: Language) = summaries.getValue(language.code)
@@ -58,7 +60,7 @@ object Corpus {
     private fun translations(obj: JSONObject) = Language.entries.associate { it.code to obj.getString(it.code) }
     fun story(entity: StoryEntity): Story {
         val json = JSONObject(entity.content)
-        val sentences = json.getJSONArray("sentences")
+        val sentences = json.optJSONArray("sentences") ?: org.json.JSONArray()
         fun localizedList(field: String): List<Map<String, String>> = json.optJSONArray(field)?.let { array ->
             (0 until array.length()).map { translations(array.getJSONObject(it)) }
         }.orEmpty()
@@ -102,12 +104,15 @@ object Corpus {
             json.optJSONArray("speakers")?.let { array -> (0 until array.length()).map {
                 if (array.isNull(it)) null else array.getString(it)
             } }.orEmpty(), localizedList("objectives"), notes(), exercises(), focus,
-            json.optJSONObject("pronunciation")?.let(::translations).orEmpty())
-    }
-
-    fun load(context: Context): Pair<List<StoryEntity>, List<LexemeEntity>> {
-        val root = JSONObject(context.assets.open("corpus.json").bufferedReader().use { it.readText() })
-        return parse(root)
+            json.optJSONObject("pronunciation")?.let(::translations).orEmpty(),
+            json.optJSONArray("chapters")?.let { array ->
+                var start = 0
+                (0 until array.length()).map { index ->
+                    val item = array.getJSONObject(index)
+                    val count = item.optInt("sentenceCount", item.optJSONArray("sentences")?.length() ?: 0)
+                    Chapter(item.getString("id"), translations(item.getJSONObject("title")), start, count).also { start += count }
+                }
+            }.orEmpty(), json.optInt("sentenceCount", sentences.length()))
     }
 
     fun parse(root: JSONObject): Pair<List<StoryEntity>, List<LexemeEntity>> {
@@ -152,7 +157,6 @@ object Corpus {
                         "Missing ${language.code} focus expression $expression in ${row.id}"
                     }
                 }
-                require(story.exercises.isNotEmpty()) { "${row.id} needs interactive exercises" }
                 story.exercises.forEach { exercise ->
                     require(exercise.question(language).isNotBlank())
                     require(exercise.answer(language).isNotBlank())

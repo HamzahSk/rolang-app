@@ -17,11 +17,12 @@ data class OnlineState(val enabled: Boolean = false, val signedIn: Boolean = fal
 class AppServices private constructor(private val context: Context) {
     val database = Room.databaseBuilder(context, LearningDatabase::class.java, "ro-lang.db")
         .addMigrations(LearningDatabase.MIGRATION_1_2, LearningDatabase.MIGRATION_2_3,
-            LearningDatabase.MIGRATION_3_4).build()
+            LearningDatabase.MIGRATION_3_4, LearningDatabase.MIGRATION_4_5).build()
     val repository = LearningRepository(database)
+    val stories = StoryRepository(database, StoryRemoteSource { ServerConfig.load(context) })
     val preferences = PreferencesRepository(context.learningPreferences, database)
     private val sessions = SessionStore(context)
-    private val engine = SyncEngine(context, database, preferences, sessions)
+    private val engine = SyncEngine(context, database, preferences, sessions, storyRepository = stories)
     private val status = MutableStateFlow(OnlineState())
     val online = status.asStateFlow()
 
@@ -35,8 +36,20 @@ class AppServices private constructor(private val context: Context) {
             SyncScheduler.configure(context, config)
             if (config.onlineEnabled) SyncScheduler.enqueue(context)
         } catch (_: Exception) {
-            status.value = OnlineState(message = "Online configuration is unavailable. Your offline library is ready.")
+            status.value = OnlineState(message = "Online configuration is unavailable. Saved stories remain available.")
         }
+    }
+    suspend fun downloadStory(id: String) {
+        val download = stories.queueDownload(id)
+        StoryDownloadScheduler.enqueue(context, id, download.requestId)
+    }
+    suspend fun cancelDownload(id: String) {
+        stories.cancelDownload(id)
+        StoryDownloadScheduler.cancel(context, id)
+    }
+    suspend fun removeDownload(id: String) {
+        cancelDownload(id)
+        stories.remove(id)
     }
     fun schedulePending() {
         val config = runCatching { ServerConfig.load(context) }.getOrNull() ?: return
