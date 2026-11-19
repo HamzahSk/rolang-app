@@ -1,298 +1,141 @@
-Task: Build Complete Tagalog A1 Learning Content and Integrate with Server
+Task: Implement Tagalog A1 Content and Server Integration
 
 Work directly in both repositories:
 
 - "rolang-app/" — Android application.
-- "rolang-server/" — Backend API and MongoDB database.
+- "rolang-server/" — Backend and MongoDB.
 
-The goal is to populate Ro-Lang with high-quality beginner learning content and engaging stories, then ensure the Android application retrieves everything directly from the server.
+1. Learning Configuration
 
-1. Language Configuration
+Set the default learning language:
 
-Set the learning configuration as follows:
+- Native language: Indonesian ("id").
+- Target language: Tagalog ("tl").
+- Level: A1 (Beginner).
 
-- Native language: Indonesian ("id")
-- Target language: Tagalog ("tl")
-- Learning level: A1 (Beginner)
+Use Indonesian for all explanations, translations, and learning instructions. Do not mix English into the learning materials.
 
-Indonesian must be the primary explanation language. Tagalog is the language being learned.
+2. Create Complete A1 Lessons
 
-All lesson instructions, grammar explanations, translations, and learning guidance must be written in clear, natural Indonesian.
-
-Do not mix English into the learning materials.
-
-2. Build a Complete A1 Lesson Curriculum
-
-Create a structured A1 curriculum covering essential beginner Tagalog skills.
-
-Organize lessons into modules and progressive learning units.
-
-Include topics such as:
+Build a structured A1 curriculum with progressive modules covering:
 
 - Greetings and introductions.
-- Pronouns and personal information.
-- Basic sentence structures.
-- The particles "ang", "ng", and "sa".
-- Common nouns and everyday objects.
+- Pronouns and sentence structures.
+- Basic grammar and particles ("ang", "ng", "sa").
 - Numbers, dates, and time.
 - Family and relationships.
-- Food, drinks, and ordering.
-- Daily routines and activities.
+- Food, drinks, and daily activities.
 - Places and directions.
-- Basic questions and answers.
-- Common verbs and everyday actions.
-- Describing people and objects.
-- Possession and ownership.
-- Negation and simple expressions.
-- Everyday conversations.
+- Common verbs and expressions.
+- Questions, negation, and everyday conversations.
 
-Cover the essential A1 foundations comprehensively without introducing advanced grammar prematurely.
+Each lesson should include:
 
-Lesson Structure
+- Learning objectives.
+- Tagalog vocabulary and Indonesian meanings.
+- Example sentences and translations.
+- Grammar explanations in Indonesian.
+- Natural dialogues.
+- Pronunciation guidance.
+- Interactive exercises and answer explanations.
+- Short review.
 
-Every lesson must contain:
+Ensure the lessons are progressive, accurate, and suitable for absolute beginners.
 
-1. Title and description
-2. Learning objectives.
-3. New vocabulary.
-4. Tagalog example sentences.
-5. Indonesian translations.
-6. Clear grammar explanations in Indonesian.
-7. Natural everyday dialogues.
-8. Pronunciation guidance using Tagalog spelling and syllable breakdown where useful.
-9. Practical examples and contextual usage.
-10. Interactive exercises.
-11. Answer keys and explanations.
-12. Short lesson review.
+3. Create Engaging A1 Stories
 
-Exercises should include:
+Create original, interesting, and reasonably long Tagalog stories.
 
-- Multiple choice.
-- Vocabulary matching.
-- Fill in the blanks.
-- Sentence ordering.
-- Translation exercises.
-- Conversation completion.
+Use themes such as friendship, school, adventure, mystery, family, and everyday life.
 
-Ensure answers are accurate and consistent with the lesson material.
+Each story should have multiple chapters, coherent plots, consistent characters, and natural dialogue.
 
-Organize lessons progressively so learners understand basic concepts before encountering more complex ones.
+Every chapter must include:
 
-3. Story Library — Tagalog A1
+- Original Tagalog text.
+- Complete Indonesian translation.
+- Important vocabulary and meanings.
+- Useful expressions.
+- Grammar observations.
+- Reading comprehension questions and answers.
 
-Create an engaging collection of original Tagalog A1 stories.
+Keep vocabulary and grammar appropriate for A1 learners. Stories should teach useful words naturally through context.
 
-Stories must be genuinely interesting, coherent, and significantly longer than simple beginner reading passages.
+4. MongoDB Integration
 
-Each story should:
+Inspect the existing MongoDB architecture and store all learning content in the database.
 
-- Have a compelling title and premise.
-- Contain multiple chapters.
-- Have a clear beginning, development, and conclusion.
-- Include interesting characters and natural dialogue.
-- Use beginner-friendly Tagalog vocabulary and grammar.
-- Introduce useful everyday expressions.
-- Maintain consistent characters and story continuity.
-- Avoid unnecessarily advanced vocabulary and grammar.
-
-Create engaging themes such as:
-
-- Friendship and school life.
-- Everyday adventures.
-- Family and relationships.
-- Mystery and exploration.
-- Traveling and discovering new places.
-- Unexpected encounters.
-- Everyday challenges and problem-solving.
-
-Do not make all stories repetitive or follow the same plot.
-
-Story Chapter Structure
-
-Every chapter should contain:
-
-1. Chapter title.
-2. Original Tagalog story text.
-3. Complete Indonesian translation.
-4. Important vocabulary with Indonesian meanings.
-5. Useful expressions.
-6. Grammar observations.
-7. Reading comprehension questions.
-8. Answer keys.
-
-Keep Tagalog and Indonesian content aligned paragraph by paragraph or sentence by sentence.
-
-Stories should teach vocabulary naturally through context rather than simply listing unrelated words.
-
-Maintain consistent character names, relationships, and events between chapters.
-
-4. Vocabulary System
-
-Build a reusable vocabulary structure.
-
-Each vocabulary entry should support:
-
-- Tagalog word or expression.
-- Indonesian meaning.
-- Word category.
-- Pronunciation or syllable breakdown.
-- Example sentence in Tagalog.
-- Indonesian example translation.
-- Related lesson or story references.
-
-Avoid duplicate vocabulary entries where possible.
-
-Reuse vocabulary across lessons and stories to reinforce learning.
-
-5. Populate MongoDB
-
-Inspect the existing MongoDB schema and backend architecture before creating content.
-
-Then:
-
-- Insert all A1 lessons into MongoDB.
-- Insert all A1 stories and chapters.
-- Store vocabulary and exercises.
-- Maintain relationships between lessons, stories, chapters, and vocabulary.
+- Save lessons, modules, stories, chapters, vocabulary, and exercises.
+- Maintain proper relationships and ordering.
 - Use stable identifiers.
-- Create appropriate indexes.
-- Avoid duplicate records when seeding is executed repeatedly.
+- Prevent duplicate records when seeding repeatedly.
+- Create a reusable seed script.
+- Preserve existing user data and content.
 
-Create a reliable seed script that can safely be executed multiple times.
+Do not use mock data or hardcoded story content as the primary data source.
 
-Do not create mock data or leave the actual database empty.
+5. Backend API
 
-Do not expose MongoDB credentials in source code or logs.
+Ensure the server provides working APIs for:
 
-6. Verify Backend APIs
+- Learning curriculum and modules.
+- Lesson details.
+- Story catalogs and details.
+- Chapter content.
+- Vocabulary.
+- Exercises and answers.
 
-Inspect the existing API implementation and ensure endpoints support:
+Preserve existing API compatibility where possible.
 
-- Retrieving available learning languages.
-- Retrieving the A1 curriculum.
-- Retrieving modules and lessons.
-- Retrieving lesson details.
-- Retrieving story catalogs.
-- Retrieving story details and chapters.
-- Retrieving vocabulary.
-- Retrieving exercises and answers.
+6. Android Integration
 
-Preserve existing API contracts where possible.
+Ensure "rolang-app" actually retrieves content from "rolang-server".
 
-If additional endpoints are necessary, implement them properly.
+- Replace hardcoded learning content with real API responses.
+- Display modules, lessons, stories, chapters, and vocabulary.
+- Implement loading, empty, and error states.
+- Add retry handling.
+- Preserve existing UI/UX and navigation.
+- Set Indonesian → Tagalog A1 as the default configuration.
 
-Ensure API responses include all information required by the Android application.
+Verify that the app displays actual MongoDB content, not placeholders.
 
-7. Android Server Integration
+7. Offline Support
 
-Inspect "rolang-app" and verify that the application actually retrieves learning content from "rolang-server".
-
-Do not assume the existing integration works.
-
-Implement or fix:
-
-- Centralized server API configuration.
-- HTTP client and serialization.
-- Lesson catalog retrieval.
-- Lesson detail retrieval.
-- Story catalog retrieval.
-- Story and chapter retrieval.
-- Vocabulary retrieval.
-- Exercise retrieval.
-
-Ensure the application uses real API responses instead of hardcoded or placeholder content.
-
-Required UI Behavior
-
-- Display actual lessons retrieved from MongoDB.
-- Display actual stories retrieved from MongoDB.
-- Show lesson modules and progress.
-- Display chapter content and Indonesian translations.
-- Display vocabulary and exercises.
-- Handle loading, empty, and error states.
-- Implement retry behavior.
-- Preserve existing UI/UX wherever possible.
-
-The default learning configuration should be Indonesian → Tagalog, A1.
-
-8. Offline Compatibility
-
-Preserve the existing offline architecture.
+Preserve existing offline functionality:
 
 - Automatically cache lessons and stories when opened.
-- Allow users to download complete stories.
-- Allow downloaded content to be accessed offline.
-- Synchronize updated content when online.
-- Never erase cached content because of a failed network request.
+- Allow downloading complete stories.
+- Show download status and progress.
+- Support offline reading.
+- Synchronize outdated content when online.
+- Never delete cached content because of network failures.
 
-9. Content Quality Requirements
+8. Testing
 
-Content quality is a priority.
+Test both repositories:
 
-- Use natural, grammatically correct Tagalog.
-- Use natural Indonesian translations.
-- Avoid literal translations that sound unnatural.
-- Ensure all explanations are understandable to Indonesian beginners.
-- Avoid mixing English into the curriculum.
-- Keep content appropriate for A1 learners.
-- Avoid repetitive or artificially generated filler.
-- Ensure exercises have correct answer keys.
-
-Prioritize complete, high-quality lessons and coherent stories over generating a large amount of shallow content.
-
-10. Testing and Verification
-
-Test both repositories.
-
-Backend:
-
-- MongoDB connectivity.
-- Seed script execution.
+- MongoDB connectivity and seed execution.
 - Duplicate prevention.
 - Lesson and story API responses.
-- Chapter ordering.
-- Vocabulary and exercise retrieval.
+- Chapter ordering and translations.
+- Android server connectivity.
+- Automatic caching and offline reading.
+- Relevant backend tests, Android tests, lint, and build.
 
-Android:
-
-- Actual server connectivity.
-- Lesson catalog loading.
-- Story catalog loading.
-- Lesson and chapter details.
-- Indonesian translations.
-- Error and retry handling.
-- Offline caching.
-
-Run relevant backend tests, Android unit tests, lint, and build checks.
-
-If deployment access is available, verify the deployed Vercel API and confirm that seeded data can be retrieved from production.
-
-Do not claim successful server integration without actual verification.
+If deployment access is available, verify the production API on Vercel.
 
 Important Rules
 
-- Work directly in both repositories.
-- Implement actual content and code changes.
-- Do not merely provide suggestions or sample JSON.
+- Implement actual code and content in both repositories.
+- Do not merely provide suggestions or sample data.
 - Do not modify unrelated features.
-- Do not replace MongoDB with another database.
-- Do not remove existing user data.
-- Preserve existing API compatibility where possible.
-- Do not use placeholder lessons or stories.
-- Do not claim that content was uploaded unless MongoDB insertion was verified.
+- Do not replace MongoDB.
+- Do not delete existing user data.
+- Prioritize content quality over quantity.
+- Do not claim successful uploads or integration without verification.
+- Work incrementally and fix errors before proceeding.
 
 Final Report
 
-Provide:
-
-1. A1 modules and lessons created.
-2. Stories and chapters created.
-3. Vocabulary and exercises created.
-4. MongoDB seed results.
-5. API endpoints verified.
-6. Android integration results.
-7. Offline functionality test results.
-8. Build and deployment status.
-9. Any remaining manual steps.
-
-The final result should be a functional Indonesian-to-Tagalog A1 learning platform with complete lessons, engaging stories, real MongoDB-backed content, and working online/offline support.
+Summarize the lessons, stories, chapters, vocabulary, MongoDB seed results, API verification, Android integration, and test results.
