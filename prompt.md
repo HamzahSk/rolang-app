@@ -1,124 +1,298 @@
-Task: Completely Remove PostgreSQL and Use MongoDB Only
+Task: Build Complete Tagalog A1 Learning Content and Integrate with Server
 
-Work directly inside "rolang-server/".
+Work directly in both repositories:
 
-The backend is already connected to MongoDB, but the application currently displays:
+- "rolang-app/" — Android application.
+- "rolang-server/" — Backend API and MongoDB database.
 
-"The database is not ready for this release."
+The goal is to populate Ro-Lang with high-quality beginner learning content and engaging stories, then ensure the Android application retrieves everything directly from the server.
 
-This may be caused by the existing PostgreSQL migration or database readiness checks.
+1. Language Configuration
 
-I no longer want PostgreSQL support or any PostgreSQL migration process. Simplify the backend and use MongoDB as the only database.
+Set the learning configuration as follows:
 
-1. Remove PostgreSQL Completely
+- Native language: Indonesian ("id")
+- Target language: Tagalog ("tl")
+- Learning level: A1 (Beginner)
 
-- Remove PostgreSQL dependencies, drivers, ORM integrations, and connection logic.
-- Remove PostgreSQL-specific environment variables and configuration.
-- Remove obsolete PostgreSQL migration scripts and database readiness checks.
-- Remove Prisma or other PostgreSQL-specific tooling if it is no longer needed.
-- Remove any release checks that require PostgreSQL migrations or PostgreSQL schema initialization.
-- Clean up obsolete scripts and configuration files.
+Indonesian must be the primary explanation language. Tagalog is the language being learned.
 
-Do not leave unused PostgreSQL code or dependencies behind.
+All lesson instructions, grammar explanations, translations, and learning guidance must be written in clear, natural Indonesian.
 
-2. Make MongoDB the Only Database
+Do not mix English into the learning materials.
 
-Use the existing MongoDB connection that is already configured.
+2. Build a Complete A1 Lesson Curriculum
 
-- Use "MONGODB_URI" and "MONGODB_DB_NAME".
-- Centralize MongoDB connection management.
-- Reuse connections safely in Vercel serverless environments.
-- Ensure every database-dependent API route uses MongoDB.
-- Initialize collections and indexes automatically when necessary.
-- Do not require PostgreSQL setup, migrations, or database readiness checks.
+Create a structured A1 curriculum covering essential beginner Tagalog skills.
 
-3. Fix Database Readiness Error
+Organize lessons into modules and progressive learning units.
 
-Investigate why the application displays:
+Include topics such as:
 
-"The database is not ready for this release."
+- Greetings and introductions.
+- Pronouns and personal information.
+- Basic sentence structures.
+- The particles "ang", "ng", and "sa".
+- Common nouns and everyday objects.
+- Numbers, dates, and time.
+- Family and relationships.
+- Food, drinks, and ordering.
+- Daily routines and activities.
+- Places and directions.
+- Basic questions and answers.
+- Common verbs and everyday actions.
+- Describing people and objects.
+- Possession and ownership.
+- Negation and simple expressions.
+- Everyday conversations.
 
-Identify and remove the actual PostgreSQL-related dependency causing this error.
+Cover the essential A1 foundations comprehensively without introducing advanced grammar prematurely.
 
-Implement proper MongoDB readiness checks instead:
+Lesson Structure
 
-- Verify MongoDB connectivity.
-- Ensure required collections and indexes are available.
-- Handle database initialization correctly.
-- Do not block the application because of obsolete PostgreSQL migration states.
-- Return meaningful errors if MongoDB is genuinely unavailable.
+Every lesson must contain:
 
-Do not simply bypass the error or force the application to report that the database is ready.
+1. Title and description
+2. Learning objectives.
+3. New vocabulary.
+4. Tagalog example sentences.
+5. Indonesian translations.
+6. Clear grammar explanations in Indonesian.
+7. Natural everyday dialogues.
+8. Pronunciation guidance using Tagalog spelling and syllable breakdown where useful.
+9. Practical examples and contextual usage.
+10. Interactive exercises.
+11. Answer keys and explanations.
+12. Short lesson review.
 
-4. Story Data
+Exercises should include:
 
-Keep the existing story APIs and learning features working.
+- Multiple choice.
+- Vocabulary matching.
+- Fill in the blanks.
+- Sentence ordering.
+- Translation exercises.
+- Conversation completion.
 
-- Store stories, chapters, translations, vocabulary, exercises, and related content in MongoDB.
-- Preserve existing data structures and API response compatibility.
-- Ensure story retrieval, search, pagination, and chapter ordering work correctly.
-- If existing story data is stored in local files or other sources, import it into MongoDB where necessary.
-- Avoid duplicate records during initialization.
-- Do not silently discard existing story content.
+Ensure answers are accurate and consistent with the lesson material.
 
-If no data migration is required, do not create an unnecessary PostgreSQL-to-MongoDB migration system.
+Organize lessons progressively so learners understand basic concepts before encountering more complex ones.
 
-5. Vercel Compatibility
+3. Story Library — Tagalog A1
 
-Ensure the backend works correctly on Vercel:
+Create an engaging collection of original Tagalog A1 stories.
 
-- Remove PostgreSQL-specific build and deployment requirements.
-- Use a compatible Node.js runtime.
-- Handle serverless database connections correctly.
-- Ensure all API routes initialize MongoDB properly.
-- Avoid persistent local filesystem dependencies.
-- Add or update a "/health" endpoint to report server and MongoDB connectivity without exposing secrets.
+Stories must be genuinely interesting, coherent, and significantly longer than simple beginner reading passages.
 
-6. Environment Configuration
+Each story should:
 
-Update ".env.example" and deployment documentation.
+- Have a compelling title and premise.
+- Contain multiple chapters.
+- Have a clear beginning, development, and conclusion.
+- Include interesting characters and natural dialogue.
+- Use beginner-friendly Tagalog vocabulary and grammar.
+- Introduce useful everyday expressions.
+- Maintain consistent characters and story continuity.
+- Avoid unnecessarily advanced vocabulary and grammar.
 
-Only retain the required MongoDB configuration:
+Create engaging themes such as:
 
-- "MONGODB_URI"
-- "MONGODB_DB_NAME"
+- Friendship and school life.
+- Everyday adventures.
+- Family and relationships.
+- Mystery and exploration.
+- Traveling and discovering new places.
+- Unexpected encounters.
+- Everyday challenges and problem-solving.
 
-Inspect actual environment variable usage before removing anything.
+Do not make all stories repetitive or follow the same plot.
 
-Never print credentials or connection strings in logs.
+Story Chapter Structure
 
-7. Testing and Cleanup
+Every chapter should contain:
 
-- Install updated dependencies.
-- Remove unused PostgreSQL packages.
-- Run the production build.
-- Test MongoDB connectivity.
-- Test database readiness.
-- Test all existing story and chapter APIs.
-- Verify that no PostgreSQL references remain in active application code or deployment scripts.
-- Verify Vercel compatibility.
+1. Chapter title.
+2. Original Tagalog story text.
+3. Complete Indonesian translation.
+4. Important vocabulary with Indonesian meanings.
+5. Useful expressions.
+6. Grammar observations.
+7. Reading comprehension questions.
+8. Answer keys.
 
-Do not claim successful deployment unless it has actually been tested.
+Keep Tagalog and Indonesian content aligned paragraph by paragraph or sentence by sentence.
+
+Stories should teach vocabulary naturally through context rather than simply listing unrelated words.
+
+Maintain consistent character names, relationships, and events between chapters.
+
+4. Vocabulary System
+
+Build a reusable vocabulary structure.
+
+Each vocabulary entry should support:
+
+- Tagalog word or expression.
+- Indonesian meaning.
+- Word category.
+- Pronunciation or syllable breakdown.
+- Example sentence in Tagalog.
+- Indonesian example translation.
+- Related lesson or story references.
+
+Avoid duplicate vocabulary entries where possible.
+
+Reuse vocabulary across lessons and stories to reinforce learning.
+
+5. Populate MongoDB
+
+Inspect the existing MongoDB schema and backend architecture before creating content.
+
+Then:
+
+- Insert all A1 lessons into MongoDB.
+- Insert all A1 stories and chapters.
+- Store vocabulary and exercises.
+- Maintain relationships between lessons, stories, chapters, and vocabulary.
+- Use stable identifiers.
+- Create appropriate indexes.
+- Avoid duplicate records when seeding is executed repeatedly.
+
+Create a reliable seed script that can safely be executed multiple times.
+
+Do not create mock data or leave the actual database empty.
+
+Do not expose MongoDB credentials in source code or logs.
+
+6. Verify Backend APIs
+
+Inspect the existing API implementation and ensure endpoints support:
+
+- Retrieving available learning languages.
+- Retrieving the A1 curriculum.
+- Retrieving modules and lessons.
+- Retrieving lesson details.
+- Retrieving story catalogs.
+- Retrieving story details and chapters.
+- Retrieving vocabulary.
+- Retrieving exercises and answers.
+
+Preserve existing API contracts where possible.
+
+If additional endpoints are necessary, implement them properly.
+
+Ensure API responses include all information required by the Android application.
+
+7. Android Server Integration
+
+Inspect "rolang-app" and verify that the application actually retrieves learning content from "rolang-server".
+
+Do not assume the existing integration works.
+
+Implement or fix:
+
+- Centralized server API configuration.
+- HTTP client and serialization.
+- Lesson catalog retrieval.
+- Lesson detail retrieval.
+- Story catalog retrieval.
+- Story and chapter retrieval.
+- Vocabulary retrieval.
+- Exercise retrieval.
+
+Ensure the application uses real API responses instead of hardcoded or placeholder content.
+
+Required UI Behavior
+
+- Display actual lessons retrieved from MongoDB.
+- Display actual stories retrieved from MongoDB.
+- Show lesson modules and progress.
+- Display chapter content and Indonesian translations.
+- Display vocabulary and exercises.
+- Handle loading, empty, and error states.
+- Implement retry behavior.
+- Preserve existing UI/UX wherever possible.
+
+The default learning configuration should be Indonesian → Tagalog, A1.
+
+8. Offline Compatibility
+
+Preserve the existing offline architecture.
+
+- Automatically cache lessons and stories when opened.
+- Allow users to download complete stories.
+- Allow downloaded content to be accessed offline.
+- Synchronize updated content when online.
+- Never erase cached content because of a failed network request.
+
+9. Content Quality Requirements
+
+Content quality is a priority.
+
+- Use natural, grammatically correct Tagalog.
+- Use natural Indonesian translations.
+- Avoid literal translations that sound unnatural.
+- Ensure all explanations are understandable to Indonesian beginners.
+- Avoid mixing English into the curriculum.
+- Keep content appropriate for A1 learners.
+- Avoid repetitive or artificially generated filler.
+- Ensure exercises have correct answer keys.
+
+Prioritize complete, high-quality lessons and coherent stories over generating a large amount of shallow content.
+
+10. Testing and Verification
+
+Test both repositories.
+
+Backend:
+
+- MongoDB connectivity.
+- Seed script execution.
+- Duplicate prevention.
+- Lesson and story API responses.
+- Chapter ordering.
+- Vocabulary and exercise retrieval.
+
+Android:
+
+- Actual server connectivity.
+- Lesson catalog loading.
+- Story catalog loading.
+- Lesson and chapter details.
+- Indonesian translations.
+- Error and retry handling.
+- Offline caching.
+
+Run relevant backend tests, Android unit tests, lint, and build checks.
+
+If deployment access is available, verify the deployed Vercel API and confirm that seeded data can be retrieved from production.
+
+Do not claim successful server integration without actual verification.
 
 Important Rules
 
-- MongoDB must be the only database.
-- Do not retain PostgreSQL as a fallback.
-- Do not create a new PostgreSQL migration system.
-- Do not replace the existing backend framework unnecessarily.
+- Work directly in both repositories.
+- Implement actual content and code changes.
+- Do not merely provide suggestions or sample JSON.
 - Do not modify unrelated features.
-- Do not delete existing story data.
-- Implement actual code changes, not just recommendations.
+- Do not replace MongoDB with another database.
+- Do not remove existing user data.
+- Preserve existing API compatibility where possible.
+- Do not use placeholder lessons or stories.
+- Do not claim that content was uploaded unless MongoDB insertion was verified.
 
 Final Report
 
-Summarize:
+Provide:
 
-1. PostgreSQL components removed.
-2. MongoDB implementation retained or updated.
-3. Root cause of the database readiness error.
-4. Files modified.
-5. Build and API test results.
-6. Any remaining manual Vercel configuration.
+1. A1 modules and lessons created.
+2. Stories and chapters created.
+3. Vocabulary and exercises created.
+4. MongoDB seed results.
+5. API endpoints verified.
+6. Android integration results.
+7. Offline functionality test results.
+8. Build and deployment status.
+9. Any remaining manual steps.
 
-The final backend must start and serve requests using MongoDB directly, without requiring PostgreSQL, PostgreSQL migrations, or PostgreSQL release readiness checks.
+The final result should be a functional Indonesian-to-Tagalog A1 learning platform with complete lessons, engaging stories, real MongoDB-backed content, and working online/offline support.
