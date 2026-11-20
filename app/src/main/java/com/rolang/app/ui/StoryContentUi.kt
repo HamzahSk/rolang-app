@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.rolang.app.LearningState
 import com.rolang.app.LearningViewModel
+import com.rolang.app.data.CatalogStatus
 import com.rolang.app.data.Story
 import kotlinx.coroutines.CancellationException
 
@@ -16,7 +17,11 @@ fun LibraryStatus(state: LearningState, viewModel: LearningViewModel?) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (state.catalogLoading) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Memperbarui pustaka…") }
         state.catalogError?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        if (state.stories.isEmpty() && !state.catalogLoading && state.catalogError == null) Text("Belum ada materi yang diterbitkan.")
+        if (state.stories.isEmpty() && !state.catalogLoading && state.catalogError == null) Text(when (state.catalogStatus) {
+            CatalogStatus.EMPTY -> "Server terhubung, tetapi belum ada materi yang diterbitkan."
+            CatalogStatus.READY -> "Materi daring diterima, tetapi tidak ada entri yang dapat ditampilkan dengan aman."
+            else -> "Menghubungkan ke pustaka daring…"
+        })
         viewModel?.let { TextButton(onClick = it::refreshCatalog, enabled = !state.catalogLoading) { Text("Perbarui pustaka") } }
     }
 }

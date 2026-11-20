@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import com.rolang.app.diagnostics.DiagnosticLogger
 import org.json.JSONObject
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -32,14 +33,20 @@ class SessionStore(context: Context) : Sessions {
         }.generateKey()
     }
     override fun read(): AccountSession? {
-        val encoded = preferences.getString("session", null) ?: return null
         return try {
+            val encoded = preferences.getString("session", null) ?: return null
             val bytes = Base64.decode(encoded, Base64.NO_WRAP)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, bytes.copyOfRange(0, 12)))
             val json = JSONObject(String(cipher.doFinal(bytes.copyOfRange(12, bytes.size)), Charsets.UTF_8))
             AccountSession(json.getString("userId"), json.getString("displayName"), json.getString("token"), json.getString("expiresAt"))
-        } catch (_: Exception) { clear(); null }
+        } catch (error: Exception) {
+            DiagnosticLogger.error("SESSION", "The saved account session was invalid and will be discarded.", error)
+            runCatching { clear() }.onFailure {
+                DiagnosticLogger.error("SESSION", "The invalid account session could not be removed.", it)
+            }
+            null
+        }
     }
     override fun save(session: AccountSession) {
         val json = JSONObject().put("userId", session.userId).put("displayName", session.displayName)

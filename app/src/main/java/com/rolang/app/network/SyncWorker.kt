@@ -2,6 +2,7 @@ package com.rolang.app.network
 
 import android.content.Context
 import androidx.work.*
+import com.rolang.app.diagnostics.DiagnosticLogger
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.TimeUnit
 
@@ -15,11 +16,18 @@ class SyncWorker(context: Context, parameters: WorkerParameters) : CoroutineWork
             if (complete) Result.success() else Result.retry()
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: ApiException) {
+            DiagnosticLogger.error("SYNC_WORKER", "Background synchronization received HTTP ${error.status}.", error)
             if (error.status in setOf(400, 401, 403) || (error.status == 409 && error.code != "CURSOR_INVALID")) Result.failure()
             else Result.retry()
-        } catch (_: IllegalArgumentException) { Result.failure() }
-        catch (_: AccountMismatch) { Result.failure() }
-        catch (_: Exception) { Result.retry() }
+        } catch (error: IllegalArgumentException) {
+            DiagnosticLogger.error("SYNC_WORKER", "Background synchronization received invalid data.", error); Result.failure()
+        }
+        catch (error: AccountMismatch) {
+            DiagnosticLogger.error("SYNC_WORKER", "Background synchronization rejected an account mismatch.", error); Result.failure()
+        }
+        catch (error: Exception) {
+            DiagnosticLogger.error("SYNC_WORKER", "Background synchronization will be retried.", error); Result.retry()
+        }
     }
 }
 

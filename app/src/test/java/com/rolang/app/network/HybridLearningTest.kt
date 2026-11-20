@@ -80,6 +80,8 @@ class HybridLearningTest {
             assertEquals("https://example.test/api/v1/", ServerConfig.load(context).apiUrl().toString())
             assertThrows(IllegalArgumentException::class.java) { ServerConfig.parse(json.put("serverBaseUrl", "http://example.test").toString()) }
             assertThrows(IllegalArgumentException::class.java) { ServerConfig.parse(json.put("serverBaseUrl", "https://example.test/api/v1").toString()) }
+            file.writeText("{invalid")
+            assertEquals("https://rolang-server.vercel.app/api/v1/", ServerConfig.load(context).apiUrl().toString())
         } finally { file.delete() }
     }
 

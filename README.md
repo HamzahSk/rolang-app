@@ -86,7 +86,9 @@ origin (for example `https://YOUR-DEPLOYMENT.vercel.app`, without `/api/v1`) and
 `onlineEnabled` set to true. The app reads configuration at runtime, including on each
 worker run. A complete private `files/config.json` override takes precedence over
 the packaged configuration; managed deployments can provision it without changing
-URLs in Kotlin. Invalid configuration disables networking and keeps local data.
+URLs in Kotlin. A malformed private override is logged and ignored in favor of the
+packaged configuration. A valid override with `onlineEnabled=false` still disables
+networking, and an invalid packaged configuration keeps local data available.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
@@ -134,6 +136,19 @@ keeping vocabulary, review schedules, exercise scores, and reading progress.
 Downloaded stories remain accessible even if the server removes or unpublishes them.
 A failed request never deletes a reading snapshot; an incomplete or mixed revision
 never replaces the previous complete snapshot.
+
+## Diagnostics
+
+The app writes bounded, rotating diagnostic logs to
+`Android/data/com.rolang.app/files/logs/`. Entries include UTC timestamps, exception
+stack traces, sanitized API request URLs, HTTP status codes, catalog/configuration
+failures, and background-worker errors. Request bodies, passwords, session tokens,
+and authorization headers are never logged. The process-level uncaught-exception
+handler writes synchronously before delegating to Android's crash handler.
+
+Use **Profile → Diagnostik → Ekspor log diagnostik** to send a combined text export
+through Android's share sheet. If shared storage is temporarily unavailable, logging
+falls back to the app's private files directory without failing the app.
 
 Room version 5 upgrades versions 1–4 through explicit migrations. Existing local
 stories remain readable after upgrade, and existing learning data and pending

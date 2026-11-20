@@ -94,7 +94,10 @@ fun RoLangApp(viewModel: LearningViewModel) {
                             viewModel::rate, viewModel::exitQuiz) { navigate("stories") }
                     }
                     composable("profile") { ProfileScreen(state, viewModel::target, viewModel::native, viewModel::level, viewModel::font, viewModel::dark) {
-                        AccountCard(online, viewModel::authenticate, viewModel::sync, viewModel::logout)
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            AccountCard(online, viewModel::authenticate, viewModel::sync, viewModel::logout)
+                            DiagnosticLogCard()
+                        }
                     } }
                     composable("reader/{id}") { backStack ->
                         StoryContentRoute(backStack.arguments?.getString("id").orEmpty(), viewModel, { nav.popBackStack() }) { loaded ->

@@ -1,10 +1,14 @@
 package com.rolang.app.network
 
 import android.content.Context
+import com.rolang.app.diagnostics.DiagnosticLogger
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONObject
 import java.io.File
+import java.io.IOException
+
+class ServerConfigurationException(message: String, cause: Throwable) : IOException(message, cause)
 
 data class ServerConfig(
     val serverBaseUrl: String = "", val apiVersion: String = "v1",
@@ -36,9 +40,24 @@ data class ServerConfig(
             // A private app-files override can be provisioned without rebuilding.
             // Read it on every sync; configuration never contains authentication.
             val override = File(context.filesDir, "config.json")
-            val json = if (override.exists()) override.readText()
-                else context.assets.open("config.json").bufferedReader().use { it.readText() }
-            return parse(json)
+            if (override.isFile) {
+                runCatching { parse(override.readText()) }
+                    .onSuccess {
+                        DiagnosticLogger.info("CONFIG", "Loaded the private server configuration for ${it.serverBaseUrl}.")
+                        return it
+                    }
+                    .onFailure {
+                        DiagnosticLogger.error("CONFIG", "The private server configuration is invalid; using the packaged configuration.", it)
+                    }
+            }
+            return try {
+                context.assets.open("config.json").bufferedReader().use { parse(it.readText()) }.also {
+                    DiagnosticLogger.info("CONFIG", "Loaded the packaged server configuration for ${it.serverBaseUrl}.")
+                }
+            } catch (error: Exception) {
+                DiagnosticLogger.error("CONFIG", "The packaged server configuration is invalid.", error)
+                throw ServerConfigurationException("The packaged server configuration is invalid.", error)
+            }
         }
     }
 }

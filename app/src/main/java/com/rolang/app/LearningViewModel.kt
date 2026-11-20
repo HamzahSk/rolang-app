@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rolang.app.data.*
+import com.rolang.app.diagnostics.DiagnosticLogger
 import com.rolang.app.domain.*
 import com.rolang.app.network.AppServices
 import kotlinx.coroutines.*
@@ -21,6 +22,7 @@ data class LearningState(
     val error: String? = null,
     val catalogLoading: Boolean = false,
     val catalogError: String? = null,
+    val catalogStatus: CatalogStatus = CatalogStatus.IDLE,
     val downloads: List<StoryDownloadEntity> = emptyList(),
 ) {
     val courseWords get() = vocabulary.filter {
@@ -75,9 +77,20 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         combine(services.stories.catalog, repository.dao.stories()) { catalog, cached ->
             withContext(Dispatchers.Default) {
                 val snapshots = cached.associateBy { it.id }
-                catalog.map { item -> snapshots[item.id]?.let(Corpus::story) ?: JSONObject(item.content).let { json ->
-                    Corpus.story(StoryEntity(item.id, json.getString("family"), json.getString("category"), json.getString("level"), item.content))
-                } }.sortedBy { it.order }
+                catalog.mapNotNull { item ->
+                    val snapshot = snapshots[item.id]?.let { entity ->
+                        runCatching { Corpus.story(entity) }.onFailure {
+                            DiagnosticLogger.error("LOCAL_DATA", "Cached content ${entity.id} is invalid; using catalog metadata.", it)
+                        }.getOrNull()
+                    }
+                    snapshot ?: runCatching {
+                        JSONObject(item.content).let { json ->
+                            Corpus.story(StoryEntity(item.id, json.getString("family"), json.getString("category"), json.getString("level"), item.content))
+                        }
+                    }.onFailure {
+                        DiagnosticLogger.error("LOCAL_DATA", "Catalog item ${item.id} is invalid and was skipped.", it)
+                    }.getOrNull()
+                }.sortedBy { it.order }
             }
         },
         repository.dao.vocabulary(), repository.dao.readings(), repository.dao.reviews()) { prefs, stories, words, reading, reviews ->
@@ -87,10 +100,13 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         base.copy(exerciseResults = results)
     }
     private val library = combine(content, services.stories.catalogState, services.stories.downloads) { content, catalog, downloads ->
-        content.copy(catalogLoading = catalog.loading, catalogError = catalog.error, downloads = downloads)
+        content.copy(catalogLoading = catalog.loading, catalogError = catalog.error, catalogStatus = catalog.status, downloads = downloads)
     }
     val state = combine(library, ready, error) { content, ready, error -> content.copy(ready = ready, error = error) }
-        .catch { emit(LearningState(error = "Data belajar lokal tidak dapat dimuat. Mulai ulang aplikasi untuk mencoba lagi.")) }
+        .catch {
+            DiagnosticLogger.error("STATE", "The local learning-state stream failed.", it)
+            emit(LearningState(error = "Data belajar lokal tidak dapat dimuat. Mulai ulang aplikasi untuk mencoba lagi."))
+        }
         .stateIn(viewModelScope, SharingStarted.Eagerly, LearningState())
 
     init {
@@ -101,31 +117,49 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
                 ready.value = true
                 services.configure()
                 refreshCatalog()
-            } catch (_: Exception) {
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) {
+                DiagnosticLogger.error("STARTUP", "The local learning library could not be initialized.", failure)
                 error.value = "Pustaka luring tidak dapat disiapkan. Mulai ulang aplikasi untuk mencoba lagi."
             }
         }
         viewModelScope.launch { while (isActive) { _now.value = System.currentTimeMillis(); delay(30_000) } }
         viewModelScope.launch {
-            preferences.preferences.map { it.target to it.native }.distinctUntilChanged().drop(1).collect {
-                languageGeneration++
-                _quiz.value = null
-            }
+            try {
+                preferences.preferences.map { it.target to it.native }.distinctUntilChanged().drop(1).collect {
+                    languageGeneration++
+                    _quiz.value = null
+                }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { DiagnosticLogger.error("PREFERENCES", "Preference observation stopped unexpectedly.", failure) }
         }
     }
     fun refreshCatalog() { viewModelScope.launch {
         try { services.stories.refreshCatalog() } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { /* Catalog state exposes a retry action. */ }
+        catch (_: Exception) { /* Repository state and persistent diagnostics expose the failure. */ }
     } }
-    suspend fun cachedStory(id: String) = services.stories.cached(id)
-    suspend fun openStory(id: String) = services.stories.open(id)
-    fun downloadStory(id: String) { viewModelScope.launch { services.downloadStory(id) } }
-    fun cancelDownload(id: String) { viewModelScope.launch { services.cancelDownload(id) } }
-    fun removeDownload(id: String) { viewModelScope.launch { services.removeDownload(id) } }
+    suspend fun cachedStory(id: String) = try { services.stories.cached(id) }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (error: Exception) { DiagnosticLogger.error("STORY", "Cached story $id could not be read.", error); null }
+    suspend fun openStory(id: String) = try { services.stories.open(id) } catch (cancelled: CancellationException) { throw cancelled }
+        catch (error: Exception) { DiagnosticLogger.error("STORY", "Story $id could not be opened.", error); throw error }
+    fun downloadStory(id: String) { safeAction("Unduhan belum dapat dimulai. Silakan coba lagi.") { services.downloadStory(id) } }
+    fun cancelDownload(id: String) { safeAction("Unduhan belum dapat dibatalkan. Silakan coba lagi.") { services.cancelDownload(id) } }
+    fun removeDownload(id: String) { safeAction("Materi tersimpan belum dapat dihapus. Silakan coba lagi.") { services.removeDownload(id) } }
     fun clearMessage() { _message.value = null }
     private fun work(action: suspend () -> Unit) = viewModelScope.launch {
         try { action(); services.schedulePending() } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { _message.value = "Perubahan belum dapat disimpan. Silakan coba lagi." }
+        catch (failure: Exception) {
+            DiagnosticLogger.error("ACTION", "A local learning change failed.", failure)
+            _message.value = "Perubahan belum dapat disimpan. Silakan coba lagi."
+        }
+    }
+    private fun safeAction(message: String, action: suspend () -> Unit) = viewModelScope.launch {
+        try { action() } catch (cancelled: CancellationException) { throw cancelled }
+        catch (failure: Exception) {
+            DiagnosticLogger.error("ACTION", message, failure)
+            _message.value = message
+        }
     }
     fun target(language: Language) {
         languageGeneration++
@@ -141,15 +175,19 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     fun font(size: Float) { work { preferences.font(size) } }
     fun dark(value: Boolean) { work { preferences.dark(value) } }
     fun authenticate(email: String, password: String, name: String?) { viewModelScope.launch { services.authenticate(email, password, name) } }
-    fun logout() { viewModelScope.launch { services.logout() } }
+    fun logout() { safeAction("Keluar akun belum berhasil. Silakan coba lagi.") { services.logout() } }
     fun sync() { viewModelScope.launch {
         try { services.synchronize() } catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { /* The account card displays the recoverable error. */ }
     } }
-    suspend fun lookup(story: Story, index: Int, word: String, prefs: LearningPreferences) =
+    suspend fun lookup(story: Story, index: Int, word: String, prefs: LearningPreferences) = try {
         repository.lookup(story, index, word, prefs.target, prefs.native)
-    suspend fun lookup(story: Story, word: String, prefs: LearningPreferences) =
+    } catch (cancelled: CancellationException) { throw cancelled }
+    catch (failure: Exception) { DiagnosticLogger.error("LOOKUP", "A word lookup failed in story ${story.id}.", failure); throw failure }
+    suspend fun lookup(story: Story, word: String, prefs: LearningPreferences) = try {
         repository.lookup(story, word, prefs.target, prefs.native)
+    } catch (cancelled: CancellationException) { throw cancelled }
+    catch (failure: Exception) { DiagnosticLogger.error("LOOKUP", "A vocabulary lookup failed in story ${story.id}.", failure); throw failure }
     fun save(story: Story, word: WordDetail, prefs: LearningPreferences) { work {
         val saved = repository.save(story, word, prefs.target, prefs.native, System.currentTimeMillis())
         _now.value = System.currentTimeMillis()

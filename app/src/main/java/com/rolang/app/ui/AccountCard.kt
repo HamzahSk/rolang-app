@@ -5,9 +5,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
+import com.rolang.app.diagnostics.DiagnosticLogger
 import com.rolang.app.network.OnlineState
 
 @Composable
@@ -50,6 +53,21 @@ fun AccountCard(state: OnlineState, authenticate: (String, String, String?) -> U
                 }
                 if (state.busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
+        }
+    }
+}
+
+@Composable
+fun DiagnosticLogCard() {
+    val context = LocalContext.current
+    Card {
+        Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Diagnostik", style = MaterialTheme.typography.titleLarge)
+            Text("Kesalahan aplikasi dan permintaan API disimpan di ${DiagnosticLogger.displayPath(context)}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = {
+                if (!DiagnosticLogger.share(context)) Toast.makeText(context, "Log diagnostik belum dapat diekspor.", Toast.LENGTH_LONG).show()
+            }) { Text("Ekspor log diagnostik") }
         }
     }
 }

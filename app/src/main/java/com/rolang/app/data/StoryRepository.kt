@@ -1,6 +1,10 @@
 package com.rolang.app.data
 
 import androidx.room.withTransaction
+import com.rolang.app.diagnostics.DiagnosticLogger
+import com.rolang.app.network.ApiException
+import com.rolang.app.network.ApiResponseException
+import com.rolang.app.network.ServerConfigurationException
 import com.rolang.app.network.StoryRemoteSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +19,9 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 class ContentChanged : IOException("Cerita berubah saat diunduh. Percobaan ulang akan memakai versi terbaru.")
-data class CatalogState(val loading: Boolean = false, val error: String? = null)
+enum class CatalogStatus { IDLE, LOADING, READY, EMPTY, OFFLINE, SERVER_ERROR, INVALID_RESPONSE, CONFIGURATION_ERROR }
+data class CatalogState(val loading: Boolean = false, val error: String? = null,
+    val status: CatalogStatus = if (loading) CatalogStatus.LOADING else CatalogStatus.IDLE)
 
 class StoryRepository(private val database: LearningDatabase, private val remote: StoryRemoteSource) {
     private val local = StoryLocalSource(database)
@@ -30,13 +36,17 @@ class StoryRepository(private val database: LearningDatabase, private val remote
 
     suspend fun refreshCatalog() = catalogLock.withLock {
         withContext(Dispatchers.IO) {
-            _catalogState.value = CatalogState(loading = true)
+            _catalogState.value = CatalogState(loading = true, status = CatalogStatus.LOADING)
             try {
                 val seen = mutableSetOf<String>()
+                val catalog = mutableListOf<StoryCatalogEntity>()
                 var after: String? = null
+                var pages = 0
                 do {
                     val response = remote.catalog(after)
                     val array = response.getJSONArray("stories")
+                    require(array.length() <= 100) { "The server returned too many catalog entries." }
+                    require(++pages <= 100) { "The server returned too many catalog pages." }
                     val items = (0 until array.length()).map { index ->
                         val item = array.getJSONObject(index)
                         val id = item.getString("id")
@@ -48,21 +58,40 @@ class StoryRepository(private val database: LearningDatabase, private val remote
                         Corpus.story(StoryEntity(id, item.getString("family"), item.getString("category"), item.getString("level"), metadata.toString()))
                         StoryCatalogEntity(id, metadata.toString())
                     }
-                    dao.cacheCatalog(items)
+                    catalog.addAll(items)
                     val next = if (response.isNull("next")) null else response.getString("next")
                     require(next == null || next != after && (after == null || next > after!!))
                     after = next
                 } while (after != null)
                 database.withTransaction {
+                    dao.cacheCatalog(catalog)
                     dao.cacheCatalog(dao.allCatalog().filter { it.id !in seen }.map { it.copy(available = false) })
                 }
-                _catalogState.value = CatalogState()
+                val status = if (seen.isEmpty()) CatalogStatus.EMPTY else CatalogStatus.READY
+                _catalogState.value = CatalogState(status = status)
+                DiagnosticLogger.info("CATALOG", "Catalog refresh completed with ${seen.size} published items across $pages page(s).")
             } catch (cancelled: CancellationException) { _catalogState.value = CatalogState(); throw cancelled }
             catch (error: Exception) {
-                _catalogState.value = CatalogState(error = "Pustaka daring tidak dapat dijangkau. Materi tersimpan tetap tersedia luring. Coba lagi setelah terhubung.")
+                _catalogState.value = failureState(error)
+                DiagnosticLogger.error("CATALOG", "Catalog refresh failed.", error)
                 throw error
             }
         }
+    }
+
+    private fun failureState(error: Exception): CatalogState = when (error) {
+        is ServerConfigurationException, is IllegalStateException -> CatalogState(
+            error = "Konfigurasi server tidak dapat digunakan. Materi tersimpan tetap tersedia luring.",
+            status = CatalogStatus.CONFIGURATION_ERROR)
+        is ApiException -> CatalogState(error = "Server mengembalikan kesalahan HTTP ${error.status}. Materi tersimpan tetap aman.",
+            status = CatalogStatus.SERVER_ERROR)
+        is ApiResponseException, is org.json.JSONException, is IllegalArgumentException -> CatalogState(
+            error = "Respons server tidak dapat dibaca dengan aman. Materi tersimpan tetap tersedia.",
+            status = CatalogStatus.INVALID_RESPONSE)
+        is IOException -> CatalogState(error = "Tidak dapat terhubung ke internet. Materi tersimpan tetap tersedia luring.",
+            status = CatalogStatus.OFFLINE)
+        else -> CatalogState(error = "Pustaka daring sedang tidak tersedia. Materi tersimpan tetap tersedia luring.",
+            status = CatalogStatus.SERVER_ERROR)
     }
 
     /** UI calls cached() first, so validation and synchronization never delay an existing reader. */
@@ -137,7 +166,9 @@ class StoryRepository(private val database: LearningDatabase, private val remote
                             if (chapter.getString("storyVersion") != revision || chapter.getString("version") != meta.getString("version")) throw ContentChanged()
                             // Validate an individual chapter before durable resumable storage.
                             val check = JSONObject(detail.toString())
-                            listOf("sentences", "exercises", "focus").forEach { key -> check.remove(key); if (chapter.has(key)) check.put(key, chapter.get(key)) }
+                            listOf("sentences", "exercises", "focus", "chapters", "sentenceCount").forEach(check::remove)
+                            listOf("sentences", "exercises", "focus").forEach { key -> if (chapter.has(key)) check.put(key, chapter.get(key)) }
+                            check.put("sentenceCount", chapter.getJSONArray("sentences").length())
                             check.put("vocabulary", chapter.getJSONArray("vocabulary"))
                             Corpus.parse(JSONObject().put("stories", JSONArray().put(check)).put("lexicon", chapter.getJSONArray("vocabulary")))
                             dao.cacheChapter(ChapterCacheEntity(id, chapterId, chapter.getString("version"), chapter.toString()))

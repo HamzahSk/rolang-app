@@ -95,6 +95,24 @@ object Corpus {
                 (0 until array.length()).map(array::getString)
             }.orEmpty()
         } }.orEmpty()
+        var chapterSentenceCount = 0
+        val chapters = json.optJSONArray("chapters")?.let { array ->
+            var start = 0
+            (0 until array.length()).map { index ->
+                val item = array.getJSONObject(index)
+                val count = item.optInt("sentenceCount", item.optJSONArray("sentences")?.length() ?: 0)
+                require(count in 1..300)
+                Chapter(item.getString("id"), translations(item.getJSONObject("title")), start, count).also { start += count }
+            }.also { chapterSentenceCount = start }
+        }.orEmpty()
+        val declaredSentenceCount = when {
+            json.has("sentenceCount") -> json.getInt("sentenceCount")
+            sentences.length() > 0 -> sentences.length()
+            else -> chapterSentenceCount
+        }
+        require(declaredSentenceCount in 0..300)
+        require(sentences.length() == 0 || declaredSentenceCount == sentences.length())
+        if (chapters.isNotEmpty()) require(chapterSentenceCount == declaredSentenceCount)
         return Story(entity.id, entity.family, entity.category, Level.valueOf(entity.level),
             translations(json.getJSONObject("title")), translations(json.getJSONObject("summary")),
             (0 until sentences.length()).map { translations(sentences.getJSONObject(it)) },
@@ -104,15 +122,7 @@ object Corpus {
             json.optJSONArray("speakers")?.let { array -> (0 until array.length()).map {
                 if (array.isNull(it)) null else array.getString(it)
             } }.orEmpty(), localizedList("objectives"), notes(), exercises(), focus,
-            json.optJSONObject("pronunciation")?.let(::translations).orEmpty(),
-            json.optJSONArray("chapters")?.let { array ->
-                var start = 0
-                (0 until array.length()).map { index ->
-                    val item = array.getJSONObject(index)
-                    val count = item.optInt("sentenceCount", item.optJSONArray("sentences")?.length() ?: 0)
-                    Chapter(item.getString("id"), translations(item.getJSONObject("title")), start, count).also { start += count }
-                }
-            }.orEmpty(), json.optInt("sentenceCount", sentences.length()))
+            json.optJSONObject("pronunciation")?.let(::translations).orEmpty(), chapters, declaredSentenceCount)
     }
 
     fun parse(root: JSONObject): Pair<List<StoryEntity>, List<LexemeEntity>> {

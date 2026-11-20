@@ -2,6 +2,7 @@ package com.rolang.app.network
 
 import android.content.Context
 import androidx.work.*
+import com.rolang.app.diagnostics.DiagnosticLogger
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.TimeUnit
 
@@ -17,6 +18,7 @@ class StoryDownloadWorker(context: Context, parameters: WorkerParameters) : Coro
             Result.success()
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: Exception) {
+            DiagnosticLogger.error("DOWNLOAD", "Story download $id failed on attempt ${runAttemptCount + 1}.", error)
             val retry = runAttemptCount < 8 && (error !is ApiException || error.status in setOf(408, 409, 429) || error.status >= 500)
                 && error !is IllegalArgumentException
             stories.failDownload(id, requestId, retry)

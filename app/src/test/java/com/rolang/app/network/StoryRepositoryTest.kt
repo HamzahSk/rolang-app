@@ -221,6 +221,19 @@ class StoryRepositoryTest {
         repository.refreshCatalog()
         assertFalse(repository.catalogState.value.loading)
         assertNull(repository.catalogState.value.error)
+        assertEquals(CatalogStatus.EMPTY, repository.catalogState.value.status)
         assertTrue(repository.catalog.first().isEmpty())
+    }
+
+    @Test fun invalidCatalogResponsesBecomeRecoverableStateAndNeverReplaceCachedMetadata() = runBlocking {
+        repository.refreshCatalog()
+        val before = database.dao().allCatalog()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest) = json(JSONObject().put("stories", "invalid").put("next", JSONObject.NULL))
+        }
+        runCatching { repository.refreshCatalog() }
+        assertEquals(CatalogStatus.INVALID_RESPONSE, repository.catalogState.value.status)
+        assertNotNull(repository.catalogState.value.error)
+        assertEquals(before, database.dao().allCatalog())
     }
 }
