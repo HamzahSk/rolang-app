@@ -1,33 +1,23 @@
-Fix the Android app's online data loading and crash issues.
-
-Problems:
-
-- The app does not send any network requests to the online server.
-- Online content is never loaded, so the learning library always displays "Pustaka belajar tidak tersedia".
-- This issue can also cause the app to crash or force close.
+Upload and populate all learning lessons and stories to the existing online server.
 
 Tasks:
 
-1. Trace the complete data-loading flow from the Android UI to the API layer.
-2. Find out why no HTTP requests are being made. Check API configuration, base URL, repositories, ViewModels, network permissions, request triggers, and error handling.
-3. Fix the actual cause and ensure the app correctly connects to the existing backend and loads real data from MongoDB through its APIs.
-4. Make sure loading, empty, offline, and server-error states are handled safely. A failed request must never cause a crash.
-5. Fix any related force-close issues and prevent null data, parsing errors, or unexpected API responses from crashing the app.
-6. Add persistent crash and error logging. Save logs to:
-
-"Android/data/<app.package.name>/files/logs/"
-
-Include timestamps, exception details, stack traces, API request URLs, HTTP status codes, and relevant error information. Do not log passwords, tokens, or other sensitive data.
-
-7. Ensure logs are saved even when an uncaught exception causes the app to terminate. Use a safe logging mechanism and avoid introducing additional crashes.
-8. Add a way to inspect or export diagnostic logs if practical.
+1. Inspect the existing Android app and backend to understand the current lesson and story data structures.
+2. Collect all existing lessons, stories, chapters, vocabulary, and exercises from the project.
+3. Upload all content to MongoDB through the existing backend APIs or a proper seed script.
+4. Ensure every lesson and story has complete content, stable IDs, correct ordering, and valid relationships.
+5. Keep the learning configuration as Indonesian ("id") → Tagalog ("tl"), A1 level.
+6. Preserve the existing content. Do not replace complete lessons or stories with short placeholders.
+7. Make the seed process safe to run multiple times without creating duplicate records or deleting user data.
+8. Verify that all content is actually stored in MongoDB and can be retrieved through the production API.
+9. Ensure the Android app loads the uploaded content from the server correctly.
 
 Important:
 
-- Inspect the existing code before making changes.
-- Do not replace the existing backend or use mock data.
-- Preserve the current UI and unrelated features.
-- Test actual API requests and verify that online content appears in the app.
-- Build the Android app and fix any compilation errors.
+- Work in both "rolang-app/" and "rolang-server/".
+- Use MongoDB only. Do not reintroduce PostgreSQL.
+- Do not use mock data or hardcoded content as a substitute for server data.
+- Preserve existing UI and unrelated features.
+- Do not claim completion until the content has been uploaded and verified through actual API requests.
 
-Focus on making online data loading work reliably and preventing crashes. Do not simply hide the error message.
+Prioritize completeness and data integrity over simply increasing the number of records.
