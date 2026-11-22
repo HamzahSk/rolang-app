@@ -1,6 +1,6 @@
 # Ro-Lang for Android
 
-An online-first language-learning app with persistent offline reading built with Kotlin, Jetpack Compose,
+An Indonesian-to-Tagalog language-learning app with a complete offline A1 corpus, built with Kotlin, Jetpack Compose,
 Material 3, Room, DataStore, and Navigation Compose. Android 8.0 (API 26) or newer.
 
 ## Build and run
@@ -17,9 +17,11 @@ checksum. No API keys or service accounts are needed.
 APKs are generated per ABI under `app/build/outputs/apk/debug/`, for example
 `app-arm64-v8a-debug.apk`.
 The first build needs internet to download build dependencies; the installed app
-fetches its library from the configured Ro-Lang server. Opening a story saves it
+starts with the bundled Indonesian → Tagalog library. When online, it also refreshes
+content from the configured Ro-Lang server. Opening a remote story saves it
 for offline reading; **Download story** saves every chapter through a durable
-background job. A fresh installation needs a connection to obtain content.
+background job. The bundled lessons, stories, dictionary, exercises, and Filipino
+pronunciation all work offline when Android's Filipino voice data is installed.
 An account is optional. Online content is enabled in the default configuration.
 
 ## Build with GitHub Actions
@@ -42,9 +44,9 @@ when checks fail. This debug build requires no GitHub Secrets or signing keystor
 
 ## Learning flow
 
-1. A new installation starts with Indonesian as the reference language, Tagalog
-   as the learning language, and A1 as the level. These settings remain editable
-   in **Profile** and survive restart.
+1. Indonesian is the fixed reference/interface language, Tagalog is the learning
+   language, and the exposed course is A1. **Profile** contains display,
+   pronunciation, account, and diagnostic settings rather than a language picker.
 2. Follow the ordered **Tagalog A1 Lessons** curriculum by unit and topic, with
    goals, vocabulary, grammar, examples, prerequisites, and graded final practice.
    Browse **Stories** independently by level, format, and topic.
@@ -70,6 +72,13 @@ when checks fail. This debug build requires no GitHub Secrets or signing keystor
 6. **Home** and **Profile** show separate lesson/story completion, the next lesson,
    reading progress, collected words, daily activity, upcoming reviews, mastery,
    review accuracy, and a calendar-day review streak.
+
+Every Tagalog word, example, lesson line, dialogue line, story paragraph,
+flashcard, and pronunciation exercise has a speaker control. A single lifecycle-
+owned Android `TextToSpeech` instance uses `fil-PH`, verifies an offline Filipino
+voice, prevents overlapping speech, and supports stop, replay, sequences, speed,
+and pitch. It never substitutes English pronunciation. If voice data is missing,
+the app links to Android's Text-to-Speech installation/settings screen.
 
 Vocabulary and review statistics are separated by target/reference language pair.
 Reading progress is separated by story variant and target language. Database writes
@@ -150,10 +159,13 @@ Use **Profile → Diagnostik → Ekspor log diagnostik** to send a combined text
 through Android's share sheet. If shared storage is temporarily unavailable, logging
 falls back to the app's private files directory without failing the app.
 
-Room version 5 upgrades versions 1–4 through explicit migrations. Existing local
-stories remain readable after upgrade, and existing learning data and pending
-operations are preserved. New installations do not seed the legacy corpus.
-Deploy the backend migration and import before distributing this app build.
+Room version 6 upgrades versions 1–5 through explicit migrations. Existing
+Indonesian → Tagalog records using the legacy `tl` code are merged into `fil`
+without losing vocabulary, schedules, reviews, reading positions, exercise scores,
+or pending operations. Unrelated historical course records remain stored but are
+not exposed by this focused course. New installations seed the bundled corpus.
+Deploy the backend language-pair migration and focused import before distributing
+this app build.
 
 Each local library remains bound to the first account that signs in. Reconnecting
 the same account preserves its pending edits; signing into another account is
@@ -177,9 +189,9 @@ shipping manifest.
 - `network`: Runtime configuration, bounded HTTP requests, Keystore sessions,
   synchronization, shared services, and connected-network background jobs.
 - `app/src/main/java/com/rolang/app/ui`: Navigation, theme, and functional screens.
-- `app/src/main/assets/corpus.json`: Preserved migration/test fixture, excluded from app assets.
+- `app/src/main/assets/corpus.json`: Bundled Indonesian → Tagalog offline corpus.
 - `app/schemas`: Exported Room schema for future explicit migrations.
-- `tools/build_corpus.py`: Authoring source and complete word-coverage validation.
+- `tools/build_corpus.py`: Idempotent language normalization and complete Filipino word-coverage validation.
 - `app/src/sharedTest`: The same persistence and UI scenarios for Robolectric and
   device instrumentation; `app/src/test` contains scheduler and tokenizer tests.
 
@@ -197,14 +209,14 @@ python3 tools/build_corpus.py
 ```
 
 Local tests run the scheduler and answer matching plus real Room persistence,
-full corpus coverage in every language pair, transactional review guards, DataStore
+full Indonesian → Tagalog corpus coverage, transactional review guards, DataStore
 restart persistence, and the Compose read/save/translate/finish/review flow using
 Robolectric. Device tests exercise those same shared scenarios. Run device tests
 on a clean installation so the UI scenario starts with its default language pair.
 
 ## Content scope
 
-The server-backed library contains ten structured lessons, six realistic dialogues,
+The bundled and server-synchronized library contains ten structured lessons, six realistic dialogues,
 and five coherent stories. Four stories contain 13 substantial chapters; the full
 curriculum has 30 ordered chapter records and 150 interactive
 questions cover multiple choice, vocabulary translation, fill-in-the-blank,
@@ -213,7 +225,8 @@ introductions, pronouns, questions, numbers and time, family, school and everyda
 objects, verb aspect, negation, descriptions, food and shopping, directions,
 travel, daily conversation, friendship, and simple romance. Each unit includes
 complete Indonesian translations, focus vocabulary, grammar or usage
-notes, and comprehension checks where appropriate. Eight optimized Android vector
+notes, and comprehension checks where appropriate. The dictionary contains 494
+Filipino entries with Indonesian glosses. Eight optimized Android vector
 illustrations provide a consistent offline visual identity.
 
 Built-in translations are curated contextual glosses; grammatical markers and
@@ -221,7 +234,7 @@ multiword expressions do not always have exact one-word equivalents, so sentence
 translations supply the complete meaning. There is no arbitrary-text translator.
 New content is authored and published through the backend API. The corpus
 generator and original assets are retained as migration/test fixtures. Content
-must pass multilingual dictionary coverage checks.
+must pass Filipino dictionary coverage and Indonesian-reference checks.
 
 The existing JavaScript Ro-Lang tutor under `../roccky_bot/ro-lang` is independent
 of this app.

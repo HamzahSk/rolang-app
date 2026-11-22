@@ -33,7 +33,7 @@ class LearningFlowTest {
     @Test fun readSaveAndReviewAWordThroughTheInterface() {
         compose.waitUntil(30_000) { compose.onAllNodesWithText("Lanjutkan kemajuan").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Cerita", useUnmergedTree = true).performClick()
-        scrollClick("stories-list", "Ang palengke sa umaga")
+        scrollClick("stories-list", "Pasar pagi")
         compose.onNodeWithTag("reader-content").performScrollToNode(hasText("Kailangan ng nanay niya ng kamatis, sibuyas, saging, at sariwang isda."))
         val text = compose.onNodeWithText("Kailangan ng nanay niya ng kamatis, sibuyas, saging, at sariwang isda.")
         val layouts = mutableListOf<TextLayoutResult>()
@@ -72,7 +72,9 @@ class LearningFlowTest {
         compose.onNodeWithText("Jawaban diingat").performScrollTo().assertIsDisplayed()
         scrollClick("review-content", "Baik · 1 hari")
         compose.onNodeWithTag("review-content").performScrollToIndex(0)
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Semua tinjauan selesai").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("quiz-question").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithTag("review-content").performScrollToNode(hasText("Semua tinjauan selesai"))
+        compose.onNodeWithText("Semua tinjauan selesai").assertIsDisplayed()
         compose.onNodeWithText("Profil", useUnmergedTree = true).performClick()
         compose.onNodeWithTag("profile-content").performScrollToNode(hasText("Pelajaran selesai: 0 · Cerita selesai: 0"))
         compose.onNodeWithText("Pelajaran selesai: 0 · Cerita selesai: 0").assertIsDisplayed()

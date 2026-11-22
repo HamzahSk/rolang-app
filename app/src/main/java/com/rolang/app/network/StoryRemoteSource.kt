@@ -16,7 +16,7 @@ class StoryRemoteSource(private val configuration: () -> ServerConfig) {
     }
     suspend fun catalog(after: String? = null): JSONObject {
         val query = mutableMapOf("limit" to configuration().storyPageSize.toString(),
-            "language" to "tl", "difficulty" to "A1")
+            "language" to "fil", "difficulty" to "A1")
         after?.let { query["after"] = it }
         return api().request("stories", query = query)
     }

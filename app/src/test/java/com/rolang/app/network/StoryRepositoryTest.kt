@@ -97,8 +97,8 @@ class StoryRepositoryTest {
         assertEquals(firstDownloads, chapterCalls.get())
         assertEquals(2, detailCalls.get())
         val learning = LearningRepository(database)
-        val word = Words.tokens(story.sentence(0, Language.ENGLISH)).first().text
-        assertTrue(learning.lookup(story, 0, word, Language.ENGLISH, Language.TAGALOG).translation.isNotBlank())
+        val word = Words.tokens(story.sentence(0, Language.FILIPINO)).first().text
+        assertTrue(learning.lookup(story, 0, word, Language.FILIPINO, Language.INDONESIAN).translation.isNotBlank())
         database.close()
         database = Room.databaseBuilder(context, LearningDatabase::class.java, name).build()
         reopenRepository()
@@ -126,9 +126,9 @@ class StoryRepositoryTest {
         assertEquals(3, chapterCalls.get()) // first chapter was fetched only once
         assertEquals("COMPLETE", database.dao().download(id)!!.status)
         val learning = LearningRepository(database)
-        val token = Words.tokens(story.sentence(0, Language.ENGLISH)).first().text
-        learning.save(story, learning.lookup(story, 0, token, Language.ENGLISH, Language.INDONESIAN), Language.ENGLISH, Language.INDONESIAN, 1000)
-        learning.reading(story, Language.ENGLISH, 1, true)
+        val token = Words.tokens(story.sentence(0, Language.FILIPINO)).first().text
+        learning.save(story, learning.lookup(story, 0, token, Language.FILIPINO, Language.INDONESIAN), Language.FILIPINO, Language.INDONESIAN, 1000)
+        learning.reading(story, Language.FILIPINO, 1, true)
         offline = true
         assertEquals(story, repository.open(id))
         assertEquals("COMPLETE", database.dao().download(id)!!.status)
@@ -146,7 +146,7 @@ class StoryRepositoryTest {
         val first = repository.open(id)
         detail.put("version", "2")
         chapters = chapters.mapIndexed { index, chapter -> JSONObject(chapter.toString()).put("storyVersion", "2").apply {
-            if (index == 1) put("version", "chapter-1-v2").getJSONArray("sentences").getJSONObject(0).put("en", first.sentence(0, Language.ENGLISH))
+            if (index == 1) put("version", "chapter-1-v2").getJSONArray("sentences").getJSONObject(0).put("fil", first.sentence(0, Language.FILIPINO))
         } }
         updateMetadata()
         repository.refreshCatalog()
@@ -186,11 +186,11 @@ class StoryRepositoryTest {
         val existing = detail.getJSONArray("exercises").getJSONObject(0)
         val extra = JSONObject(existing.toString()).put("id", "chapter_extra")
         chapters[0].put("exercises", JSONArray().put(existing)).put("speakers", JSONArray().put("Maya").put("Joel"))
-        chapters[1].put("exercises", JSONArray().put(extra)).put("pronunciation", JSONObject().put("en", "Extra guide").put("id", "Panduan tambahan").put("tl", "Dagdag na gabay"))
+        chapters[1].put("exercises", JSONArray().put(extra)).put("pronunciation", JSONObject().put("id", "Panduan tambahan").put("fil", "Dagdag na gabay"))
         val story = repository.open(detail.getString("id"))
         assertEquals(7, story.exercises.size)
         assertEquals(listOf("Maya", "Joel", null, null), story.speakers)
-        assertTrue(story.pronunciation.getValue("en").contains("Extra guide"))
+        assertTrue(story.pronunciation.getValue("id").contains("Panduan tambahan"))
         offline = true
         assertEquals(story, repository.open(story.id))
     }
@@ -211,10 +211,10 @@ class StoryRepositoryTest {
         assertEquals("COMPLETE", database.dao().download(id)!!.status)
     }
 
-    @Test fun freshInitializationHasNoBundledLibraryAndEmptyCatalogDoesNotSpinForever() = runBlocking {
+    @Test fun freshInitializationSeedsBundledLibraryAndEmptyServerDoesNotRemoveIt() = runBlocking {
         LearningRepository(database).initialize(context)
-        assertEquals(0, database.dao().storyCount())
-        assertTrue(database.dao().allCatalog().isEmpty())
+        assertEquals(21, database.dao().storyCount())
+        assertEquals(21, database.dao().allCatalog().size)
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest) = json(JSONObject().put("stories", JSONArray()).put("next", JSONObject.NULL))
         }
@@ -222,7 +222,7 @@ class StoryRepositoryTest {
         assertFalse(repository.catalogState.value.loading)
         assertNull(repository.catalogState.value.error)
         assertEquals(CatalogStatus.EMPTY, repository.catalogState.value.status)
-        assertTrue(repository.catalog.first().isEmpty())
+        assertEquals(21, repository.catalog.first().size)
     }
 
     @Test fun invalidCatalogResponsesBecomeRecoverableStateAndNeverReplaceCachedMetadata() = runBlocking {

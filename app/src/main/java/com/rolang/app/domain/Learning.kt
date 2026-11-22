@@ -6,10 +6,23 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 enum class Language(val code: String, val label: String) {
-    ENGLISH("en", "Inggris"), INDONESIAN("id", "Indonesia"), TAGALOG("tl", "Tagalog");
+    INDONESIAN("id", "Indonesia"), FILIPINO("fil", "Tagalog");
+
     companion object {
-        fun from(code: String) = entries.firstOrNull { it.code == code } ?: ENGLISH
+        /** Accept the former Android/server code while all new records use ISO 639-2 `fil`. */
+        fun from(code: String) = when (code.lowercase(Locale.ROOT)) {
+            "fil", "tl" -> FILIPINO
+            else -> INDONESIAN
+        }
     }
+}
+
+data class LanguagePair(val reference: Language, val target: Language)
+
+/** Only this course is exposed today; the pair model remains ready for future courses. */
+object Courses {
+    val INDONESIAN_TO_FILIPINO = LanguagePair(Language.INDONESIAN, Language.FILIPINO)
+    val exposed = listOf(INDONESIAN_TO_FILIPINO)
 }
 
 enum class Level(val label: String) {

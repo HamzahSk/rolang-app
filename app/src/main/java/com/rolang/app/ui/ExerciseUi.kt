@@ -59,6 +59,7 @@ fun ExerciseSession(
     }
     Column(Modifier.widthIn(max = 720.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SectionTitle("Latihan akhir", "Jawab semua pertanyaan. Umpan balik muncul setelah jawaban diperiksa.")
+        PronunciationAvailabilityNotice()
         story.exercises.forEachIndexed { index, exercise ->
             val language = if (exercise.type == ExerciseType.FILL_BLANK ||
                 exercise.type == ExerciseType.SENTENCE_CONSTRUCTION) state.preferences.target else state.preferences.native
@@ -92,7 +93,11 @@ private fun ExerciseQuestion(
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("SOAL ${index + 1} · ${exercise.type.label()}", style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.secondary)
-            Text(exercise.question(language), style = MaterialTheme.typography.titleMedium)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text(exercise.question(language), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                PronunciationButton(exercise.spoken(com.rolang.app.domain.Language.FILIPINO),
+                    "exercise-${exercise.id}", "latihan ${index + 1}")
+            }
             when (exercise.type) {
                 ExerciseType.MULTIPLE_CHOICE, ExerciseType.GRAMMAR -> exercise.choices(language).forEach { choice ->
                     FilterChip(selected = response == choice, onClick = { if (!checked) onAnswer(choice) }, enabled = !checked,

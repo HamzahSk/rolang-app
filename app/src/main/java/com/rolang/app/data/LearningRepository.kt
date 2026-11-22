@@ -10,12 +10,21 @@ import org.json.JSONObject
 class LearningRepository(private val database: LearningDatabase) {
     val dao = database.dao()
     suspend fun initialize(context: Context) = withContext(Dispatchers.IO) {
-        // Upgrade existing installations without reading or reseeding packaged stories.
+        val root = context.assets.open("corpus.json").bufferedReader().use { JSONObject(it.readText()) }
+        val (bundledStories, bundledWords) = Corpus.parse(root)
         database.withTransaction {
-            val known = dao.allCatalog().map { it.id }.toSet()
-            dao.cacheCatalog(dao.allStories().filter { it.id !in known }.map {
-                StoryCatalogEntity(it.id, it.content, it.available)
+            val currentStories = dao.allStories().associateBy { it.id }
+            val currentCatalog = dao.allCatalog().associateBy { it.id }
+            dao.seedStories(bundledStories.filter { currentStories[it.id]?.remote != true })
+            // Replace legacy cached entries so obsolete English localization
+            // fields do not survive after the focused corpus is installed.
+            dao.seedLexicon(bundledWords)
+            dao.cacheCatalog(bundledStories.map { story ->
+                if (currentStories[story.id]?.remote == true) currentCatalog[story.id]
+                    ?: StoryCatalogEntity(story.id, story.content)
+                else StoryCatalogEntity(story.id, story.content)
             })
+            dao.hideObsoleteBundledStories(bundledStories.map { it.id })
         }
     }
     suspend fun lookup(story: Story, sentence: Int, word: String, target: Language, native: Language): WordDetail {
@@ -36,7 +45,7 @@ class LearningRepository(private val database: LearningDatabase) {
             val word = VocabularyEntity(language = target.code, reference = native.code,
                 word = Words.key(detail.word), translation = detail.translation, meaning = detail.meaning,
                 partOfSpeech = detail.partOfSpeech, explanation = detail.explanation, example = detail.example,
-                exampleTranslation = detail.exampleTranslation, storyId = story.id, storyTitle = story.title(target),
+                exampleTranslation = detail.exampleTranslation, storyId = story.id, storyTitle = story.title(native),
                 category = story.category, createdAt = now, dueAt = now)
             val saved = dao.saveWord(word) != -1L
             if (saved) dao.enqueue(SyncCodec.vocabulary(word))

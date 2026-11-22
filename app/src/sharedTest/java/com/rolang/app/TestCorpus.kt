@@ -5,7 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.rolang.app.data.*
 import org.json.JSONObject
 
-/** Legacy assets are test/migration fixtures; production initialization never loads them. */
+/** The same validated offline corpus is used by production, Robolectric, and device tests. */
 object TestCorpus {
     fun json(context: Context): JSONObject {
         val stream = TestCorpus::class.java.classLoader?.getResourceAsStream("corpus.json")

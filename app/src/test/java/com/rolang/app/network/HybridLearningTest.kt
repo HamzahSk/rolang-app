@@ -94,20 +94,20 @@ class HybridLearningTest {
         server.enqueue(json(detail))
         assertTrue(engine.synchronize())
         StoryRepository(database, StoryRemoteSource { ServerConfig(serverBaseUrl = server.url("/").toString(), onlineEnabled = true) }).open("remote_story")
-        assertEquals("/api/v1/stories?limit=30&language=tl&difficulty=A1", server.takeRequest().path)
+        assertEquals("/api/v1/stories?limit=30&language=fil&difficulty=A1", server.takeRequest().path)
         assertEquals("/api/v1/stories/remote_story?view=manifest", server.takeRequest().path)
         database.close()
         database = Room.databaseBuilder(context, LearningDatabase::class.java, databaseName).build()
         repository = LearningRepository(database)
         val story = Corpus.story(database.dao().stories().first().first { it.id == "remote_story" })
-        val token = Words.tokens(story.sentence(0, Language.ENGLISH)).first().text
-        assertTrue(repository.lookup(story, 0, token, Language.ENGLISH, Language.TAGALOG).translation.isNotBlank())
+        val token = Words.tokens(story.sentence(0, Language.FILIPINO)).first().text
+        assertTrue(repository.lookup(story, 0, token, Language.FILIPINO, Language.INDONESIAN).translation.isNotBlank())
         // An unavailable server must not alter the cached catalog or dictionary.
         server.enqueue(MockResponse().setResponseCode(503).setBody("{}"))
         val reopenedEngine = SyncEngine(context, database, preferences, sessions) { ServerConfig(serverBaseUrl = server.url("/").toString(), onlineEnabled = true) }
         try { reopenedEngine.synchronize(); fail("Expected a server error") } catch (_: ApiException) { }
         assertTrue(database.dao().stories().first().any { it.id == "remote_story" })
-        assertTrue(repository.lookup(story, 0, token, Language.ENGLISH, Language.INDONESIAN).translation.isNotBlank())
+        assertTrue(repository.lookup(story, 0, token, Language.FILIPINO, Language.INDONESIAN).translation.isNotBlank())
     }
 
     @Test fun incompleteRemoteContentCannotReplaceTheOfflineCorpus() = runBlocking {
@@ -119,19 +119,19 @@ class HybridLearningTest {
         try { engine.synchronize(); fail("Expected incomplete dictionary rejection") } catch (_: IllegalArgumentException) { }
         assertEquals(21, database.dao().storyCount())
         val story = Corpus.story(database.dao().stories().first().first())
-        assertTrue(repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
-            Language.ENGLISH, Language.INDONESIAN).translation.isNotBlank())
+        assertTrue(repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.FILIPINO)).first().text,
+            Language.FILIPINO, Language.INDONESIAN).translation.isNotBlank())
     }
 
     @Test fun pendingEditsAndDeletesPersistAndFailedUploadsDoNotClearTheQueue() = runBlocking {
         bind()
         val story = Corpus.story(database.dao().stories().first().first())
-        val token = Words.tokens(story.sentence(0, Language.ENGLISH)).first().text
-        repository.save(story, repository.lookup(story, 0, token, Language.ENGLISH, Language.INDONESIAN),
-            Language.ENGLISH, Language.INDONESIAN, 1000)
+        val token = Words.tokens(story.sentence(0, Language.FILIPINO)).first().text
+        repository.save(story, repository.lookup(story, 0, token, Language.FILIPINO, Language.INDONESIAN),
+            Language.FILIPINO, Language.INDONESIAN, 1000)
         val word = database.dao().allVocabulary().single()
         repository.review(word, Rating.GOOD, true, 1001)
-        repository.reading(story, Language.ENGLISH, 1, true)
+        repository.reading(story, Language.FILIPINO, 1, true)
         repository.delete(word.id)
         assertEquals(setOf("vocabulary", "review", "progress"), database.dao().pending().map { it.kind }.toSet())
         assertTrue(database.dao().pending().first { it.kind == "vocabulary" }.deleted)
@@ -147,32 +147,52 @@ class HybridLearningTest {
         assertEquals(1, database.dao().allReviews().size)
     }
 
+    @Test fun obsoleteCourseOperationsStayPreservedWithoutBlockingFocusedSync() = runBlocking {
+        bind()
+        val legacy = PendingChange("progress", "legacy_story:en", data = JSONObject()
+            .put("storyId", "legacy_story").put("language", "en")
+            .put("sentence", 2).put("completed", true).toString())
+        val supported = SyncCodec.progress(ReadingEntity("market_beginner", "fil", 1, true))
+        database.dao().enqueue(legacy)
+        database.dao().enqueue(supported)
+        emptyCatalog()
+        server.enqueue(json(syncResponse(cursor = 1, acknowledged = listOf(supported.operationId))))
+
+        assertTrue(engine.synchronize())
+        server.takeRequest()
+        val upload = JSONObject(server.takeRequest().body.readUtf8()).getJSONArray("operations")
+        assertEquals(1, upload.length())
+        assertEquals(supported.key, upload.getJSONObject(0).getString("key"))
+        assertEquals(listOf(legacy.operationId), database.dao().pending().map { it.operationId })
+        assertTrue(database.dao().pendingForSupportedCourse().isEmpty())
+    }
+
     @Test fun acknowledgedSnapshotCannotDiscardAnEditMadeDuringUploadAndRemoteTombstonesAreApplied() = runBlocking {
         bind()
         val dao = database.dao()
-        val original = SyncCodec.progress(ReadingEntity("market_beginner", "en", 0))
-        val newer = SyncCodec.progress(ReadingEntity("market_beginner", "en", 2, true))
-        dao.saveReading(ReadingEntity("market_beginner", "en", 2, true))
+        val original = SyncCodec.progress(ReadingEntity("market_beginner", "fil", 0))
+        val newer = SyncCodec.progress(ReadingEntity("market_beginner", "fil", 2, true))
+        dao.saveReading(ReadingEntity("market_beginner", "fil", 2, true))
         dao.enqueue(newer)
         engine.applyResponse(syncResponse(JSONArray().put(record(original)), acknowledged = listOf(original.operationId)), listOf(original))
         assertEquals(newer.operationId, dao.pendingFor("progress", newer.key)!!.operationId)
-        assertEquals(2, dao.reading("market_beginner", "en")!!.sentence)
+        assertEquals(2, dao.reading("market_beginner", "fil")!!.sentence)
         val deleted = PendingChange("progress", newer.key, deleted = true)
         engine.applyResponse(syncResponse(JSONArray().put(record(deleted, 2)), 2, listOf(newer.operationId)), listOf(newer))
         assertNull(dao.pendingFor("progress", newer.key))
-        assertNull(dao.reading("market_beginner", "en"))
+        assertNull(dao.reading("market_beginner", "fil"))
         assertEquals(2L, dao.syncState()!!.cursor)
     }
 
     @Test fun downloadsKeepReviewKeysStableAndMapVocabularyToDeviceLocalIds() = runBlocking {
         bind()
         val story = Corpus.story(database.dao().stories().first().first())
-        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text, Language.ENGLISH, Language.INDONESIAN)
-        val word = VocabularyEntity(language = "en", reference = "id", word = Words.key(detail.word), translation = detail.translation,
+        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.FILIPINO)).first().text, Language.FILIPINO, Language.INDONESIAN)
+        val word = VocabularyEntity(language = "fil", reference = "id", word = Words.key(detail.word), translation = detail.translation,
             meaning = detail.meaning, partOfSpeech = detail.partOfSpeech, explanation = detail.explanation, example = detail.example,
-            exampleTranslation = detail.exampleTranslation, storyId = story.id, storyTitle = story.title(Language.ENGLISH), category = story.category,
+            exampleTranslation = detail.exampleTranslation, storyId = story.id, storyTitle = story.title(Language.INDONESIAN), category = story.category,
             createdAt = 1000, dueAt = 2000)
-        val review = ReviewEntity(vocabularyId = 9999, language = "en", reference = "id", reviewedAt = 1001, correct = true, rating = "GOOD")
+        val review = ReviewEntity(vocabularyId = 9999, language = "fil", reference = "id", reviewedAt = 1001, correct = true, rating = "GOOD")
         val records = JSONArray().put(record(SyncCodec.review(review, SyncCodec.key(word)), 2)).put(record(SyncCodec.vocabulary(word)))
         engine.applyResponse(syncResponse(JSONArray().put(record(SyncCodec.review(review, SyncCodec.key(word)))), 1), emptyList())
         assertEquals(0L, database.dao().allReviews().single().vocabularyId)
@@ -187,10 +207,14 @@ class HybridLearningTest {
 
     @Test fun restoredPreferencesAndAuthenticationExpiryKeepLocalLearningData() = runBlocking {
         bind()
-        val change = SyncCodec.preferences(LearningPreferences(Language.TAGALOG, Language.ENGLISH, Level.ADVANCED, 26f, true))
+        val change = PendingChange("profile", "preferences", data = JSONObject()
+            .put("target", "tl").put("native", "en").put("level", "ADVANCED")
+            .put("fontSize", 26.0).put("dark", true).toString())
         engine.applyResponse(syncResponse(JSONArray().put(record(change))), emptyList())
-        assertEquals(Language.TAGALOG, preferences.preferences.first().target)
-        val pending = SyncCodec.progress(ReadingEntity("market_beginner", "en", 1))
+        assertEquals(Language.FILIPINO, preferences.preferences.first().target)
+        assertEquals(Language.INDONESIAN, preferences.preferences.first().native)
+        assertEquals(Level.BEGINNER, preferences.preferences.first().level)
+        val pending = SyncCodec.progress(ReadingEntity("market_beginner", "fil", 1))
         database.dao().enqueue(pending)
         emptyCatalog()
         server.enqueue(json(JSONObject().put("error", JSONObject().put("code", "UNAUTHENTICATED"))).setResponseCode(401))
@@ -214,11 +238,11 @@ class HybridLearningTest {
 
     @Test fun localPreferenceEditsRemainQueuedWhenServerPreferencesArrive() = runBlocking {
         bind()
-        preferences.target(Language.TAGALOG)
+        preferences.dark(true)
         val pending = database.dao().pendingFor("profile", "preferences")!!
-        val remote = SyncCodec.preferences(LearningPreferences(Language.ENGLISH, Language.INDONESIAN))
+        val remote = SyncCodec.preferences(LearningPreferences())
         engine.applyResponse(syncResponse(JSONArray().put(record(remote))), emptyList())
-        assertEquals(Language.TAGALOG, preferences.preferences.first().target)
+        assertEquals(Language.FILIPINO, preferences.preferences.first().target)
         assertEquals(pending.operationId, database.dao().pendingFor("profile", "preferences")!!.operationId)
     }
 
@@ -226,9 +250,9 @@ class HybridLearningTest {
         bind()
         val dao = database.dao()
         val story = Corpus.story(dao.stories().first().first())
-        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
-            Language.ENGLISH, Language.INDONESIAN)
-        repository.save(story, detail, Language.ENGLISH, Language.INDONESIAN, 1000)
+        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.FILIPINO)).first().text,
+            Language.FILIPINO, Language.INDONESIAN)
+        repository.save(story, detail, Language.FILIPINO, Language.INDONESIAN, 1000)
         val old = dao.allVocabulary().single()
         val uploaded = dao.pendingFor("vocabulary", SyncCodec.key(old))!!
         repository.status(old.id, VocabularyStatus.KNOWN, 2000)

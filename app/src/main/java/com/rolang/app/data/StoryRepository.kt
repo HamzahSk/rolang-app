@@ -183,11 +183,16 @@ class StoryRepository(private val database: LearningDatabase, private val remote
                     current.getJSONArray("vocabulary").let { words -> (0 until words.length()).forEach {
                         val w = words.getJSONObject(it); lexicon["${w.getString("language")}:${w.getString("word")}"] = w
                     } }
-                    for (code in listOf("en", "id", "tl")) {
-                        current.optJSONObject("focus")?.optJSONArray(code)?.let { values ->
-                            (0 until values.length()).forEach { focus.getOrPut(code) { mutableListOf() }.add(values.getString(it)) }
+                    for (code in listOf("id", "fil")) {
+                        val values = current.optJSONObject("focus")?.let { localized ->
+                            localized.optJSONArray(code) ?: if (code == "fil") localized.optJSONArray("tl") else null
                         }
-                        current.optJSONObject("pronunciation")?.optString(code)?.takeIf { it.isNotBlank() }?.let {
+                        values?.let {
+                            (0 until it.length()).forEach { index -> focus.getOrPut(code) { mutableListOf() }.add(it.getString(index)) }
+                        }
+                        current.optJSONObject("pronunciation")?.let { localized ->
+                            localized.optString(code).ifBlank { if (code == "fil") localized.optString("tl") else "" }
+                        }?.takeIf { it.isNotBlank() }?.let {
                             pronunciation.getOrPut(code) { mutableListOf() }.add(it)
                         }
                     }
@@ -209,10 +214,14 @@ class StoryRepository(private val database: LearningDatabase, private val remote
                     .put("objectives", merged("objectives", objectives))
                 val combinedFocus = JSONObject()
                 val combinedPronunciation = JSONObject()
-                for (code in listOf("en", "id", "tl")) {
-                    val rootFocus = detail.optJSONObject("focus")?.optJSONArray(code)?.let { array -> (0 until array.length()).map(array::getString) }.orEmpty()
+                for (code in listOf("id", "fil")) {
+                    val rootFocus = detail.optJSONObject("focus")?.let { localized ->
+                        localized.optJSONArray(code) ?: if (code == "fil") localized.optJSONArray("tl") else null
+                    }?.let { array -> (0 until array.length()).map(array::getString) }.orEmpty()
                     combinedFocus.put(code, JSONArray((rootFocus + focus[code].orEmpty()).distinct()))
-                    val rootGuide = detail.optJSONObject("pronunciation")?.optString(code).orEmpty()
+                    val rootGuide = detail.optJSONObject("pronunciation")?.let { localized ->
+                        localized.optString(code).ifBlank { if (code == "fil") localized.optString("tl") else "" }
+                    }.orEmpty()
                     combinedPronunciation.put(code, (listOf(rootGuide) + pronunciation[code].orEmpty()).filter { it.isNotBlank() }.distinct().joinToString("\n\n"))
                 }
                 complete.put("focus", combinedFocus).put("pronunciation", combinedPronunciation)

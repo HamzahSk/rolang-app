@@ -23,6 +23,7 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
     BackHandler(quiz != null) { exit() }
     LazyColumn(modifier = Modifier.testTag("review-content"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         item { SectionTitle("Kuatkan ingatan kata", "Latihan singkat membantu mengingat lebih lama.") }
+        item { PronunciationAvailabilityNotice() }
         if (quiz == null) {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -37,6 +38,7 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
                     else if (next != null) "Tinjauan berikutnya: ${dueDate(next.dueAt)}. Bacalah cerita baru sambil menunggu."
                     else "Semua kata sudah dikuasai. Teruslah membaca untuk menambah koleksi.", "Lihat cerita", stories)
             } else {
+                item { ListeningPracticeCard(due.first()) }
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Pilih latihan", style = MaterialTheme.typography.titleMedium)
@@ -55,7 +57,15 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
                 Card(modifier = Modifier.testTag("quiz-question"), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(quiz.mode.label.uppercase(), style = MaterialTheme.typography.labelLarge)
-                        Text(quiz.prompt, style = MaterialTheme.typography.headlineMedium)
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text(quiz.prompt, Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
+                            val spoken = when (quiz.mode) {
+                                PracticeMode.RECOGNITION, PracticeMode.RECALL -> quiz.word.word
+                                PracticeMode.CONTEXT -> quiz.word.example
+                                else -> ""
+                            }
+                            if (spoken.isNotBlank()) PronunciationButton(spoken, "flashcard-prompt-${quiz.word.id}", quiz.word.word)
+                        }
                         VocabularyStatusLabel(quiz.word.learningStatus())
                         Text("${quiz.word.partOfSpeech} · ${quiz.word.storyTitle}")
                     }
@@ -71,6 +81,14 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
             } else {
                 item { InfoCard(if (quiz.correct) "Jawaban diingat" else "Kata ini perlu ditinjau lagi",
                     "Jawaban: ${quiz.expected}\n\n${quiz.word.word} → ${quiz.word.translation}\n\n${quiz.word.example}\n\n${quiz.word.exampleTranslation}") }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        PronunciationButton(quiz.word.word, "flashcard-word-${quiz.word.id}", quiz.word.word)
+                        Text("Dengarkan kata")
+                        PronunciationButton(quiz.word.example, "flashcard-example-${quiz.word.id}", "contoh ${quiz.word.word}")
+                        Text("Dengarkan contoh")
+                    }
+                }
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(if (quiz.correct) "Seberapa mudah?" else "Latih lagi dalam 10 menit.", style = MaterialTheme.typography.titleMedium)

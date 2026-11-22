@@ -9,15 +9,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.rolang.app.LearningState
-import com.rolang.app.domain.*
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Language) -> Unit, level: (Level) -> Unit,
-                  font: (Float) -> Unit, dark: (Boolean) -> Unit, account: @Composable () -> Unit = {}) {
+fun ProfileScreen(state: LearningState, font: (Float) -> Unit, dark: (Boolean) -> Unit,
+                  account: @Composable () -> Unit = {}) {
     val prefs = state.preferences
     val reviews = state.courseReviews
     val mastered = state.courseWords.count { it.mastered }
@@ -45,14 +43,9 @@ fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Lan
                 }
             }
         }
-        item {
-            LanguagePicker("Saya mempelajari", prefs.target, target)
-        }
-        item {
-            LanguagePicker("Terjemahkan ke", prefs.native, native)
-            Text("Kosakata dan tinjauan dipisahkan untuk setiap pasangan bahasa.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item { InfoCard("Kursus saat ini: Tagalog A1", "Kursus ini berfokus pada dasar lengkap untuk pemula berbahasa Indonesia.") }
+        item { InfoCard("Kursus tetap: Indonesia → Tagalog A1",
+            "Bahasa Indonesia digunakan untuk antarmuka, petunjuk, terjemahan, dan penjelasan. Tagalog adalah satu-satunya bahasa yang dipelajari.") }
+        item { PronunciationSettingsCard() }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Ukuran teks bacaan", style = MaterialTheme.typography.titleMedium)
@@ -69,16 +62,5 @@ fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Lan
         item { account() }
         item { InfoCard("Pustaka selalu tersedia", "Cerita, terjemahan, kata tersimpan, kemajuan, dan tinjauan disimpan di perangkat. Ro-Lang tetap dapat dibaca luring dan dapat disinkronkan saat daring.") }
         item { Text("Ro-Lang · Versi 1.0", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun LanguagePicker(title: String, selected: Language, choose: (Language) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Language.entries.forEach { language -> FilterChip(selected == language, { choose(language) }, label = { Text(language.label) }) }
-        }
     }
 }

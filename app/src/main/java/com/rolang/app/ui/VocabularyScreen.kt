@@ -35,6 +35,7 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
     }
     LazyColumn(modifier = Modifier.testTag("vocabulary-list"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { SectionTitle("Kosakata tersimpan", "${state.preferences.target.label} → ${state.preferences.native.label}") }
+        item { PronunciationAvailabilityNotice() }
         item {
             OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Cari kosakata") },
                 singleLine = true, leadingIcon = { Icon(Icons.Outlined.Search, null) })
@@ -68,6 +69,7 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
                             Text(if (word.mastered) "Dikuasai" else if (word.dueAt <= now) "Siap ditinjau" else "Tinjauan berikutnya: ${dueDate(word.dueAt)}",
                                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                        PronunciationButton(word.word, "vocabulary-word-${word.id}", word.word)
                         IconButton(onClick = { mastery(word) }) {
                             Icon(if (word.mastered) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
                                 if (word.mastered) "Tandai ${word.word} sebagai dipelajari" else "Tandai ${word.word} sebagai dikuasai")
@@ -83,12 +85,21 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) { SectionTitle(selected.word, "${selected.translation} · ${selected.partOfSpeech}") }
+                    PronunciationButton(selected.word, "vocabulary-detail-${selected.id}", selected.word)
                     IconButton(onClick = { selectedId = null }) { Icon(Icons.Outlined.Close, "Tutup rincian kosakata") }
                 }
             }
             item { DetailSection("Makna", selected.meaning) }
             item { DetailSection("Dalam konteks", selected.explanation) }
-            item { DetailSection("Contoh", selected.example + "\n\n" + selected.exampleTranslation) }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        DetailSection("Contoh", selected.example)
+                        PronunciationButton(selected.example, "vocabulary-example-${selected.id}", "contoh ${selected.word}")
+                    }
+                    Text(selected.exampleTranslation, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             item { DetailSection("Dari ${selected.storyTitle}", "${selected.category} · ${selected.repetitions} pengulangan berhasil · ${selected.lapses} kesalahan") }
             item { VocabularyStatusSelector(selected.learningStatus()) { status(selected, it) } }
             item {

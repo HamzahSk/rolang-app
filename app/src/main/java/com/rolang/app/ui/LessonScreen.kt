@@ -66,7 +66,14 @@ fun LessonScreen(
                     0 -> item { LessonOverview(lesson, state) }
                     1 -> item { VocabularySection(lesson, state) }
                     2 -> item { GrammarSection(lesson, state) }
-                    3 -> itemsIndexed(lesson.sentences) { index, _ -> ExampleCard(lesson, state, index) }
+                    3 -> {
+                        item {
+                            PronunciationSequenceControls("lesson-examples-${lesson.id}",
+                                lesson.sentences.indices.map { lesson.sentence(it, state.preferences.target) },
+                                { "lesson-example-${lesson.id}-$it" }, "Putar semua contoh")
+                        }
+                        itemsIndexed(lesson.sentences) { index, _ -> ExampleCard(lesson, state, index) }
+                    }
                     else -> item {
                         ExerciseSession(lesson, state, onComplete) {
                             onNext?.invoke() ?: onBack()
@@ -95,9 +102,10 @@ fun LessonScreen(
 private fun LessonOverview(lesson: Story, state: LearningState) {
     Column(Modifier.widthIn(max = 720.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Image(painterResource(illustrationResource(lesson.image)), null, Modifier.fillMaxWidth().height(150.dp), contentScale = ContentScale.Fit)
-        Text(lesson.title(state.preferences.target), style = MaterialTheme.typography.headlineMedium)
-        Text(lesson.summary(state.preferences.target), style = MaterialTheme.typography.bodyLarge,
+        Text(lesson.title(state.preferences.native), style = MaterialTheme.typography.headlineMedium)
+        Text(lesson.summary(state.preferences.native), style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        PronunciationAvailabilityNotice()
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -125,7 +133,7 @@ private fun VocabularySection(lesson: Story, state: LearningState) {
                         Text(word, style = MaterialTheme.typography.titleMedium)
                         Text(native.getOrNull(index).orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Icon(Icons.Outlined.RecordVoiceOver, null, tint = MaterialTheme.colorScheme.primary)
+                    PronunciationButton(word, "lesson-vocabulary-${lesson.id}-$index", word)
                 }
             }
         }
@@ -154,7 +162,11 @@ private fun ExampleCard(lesson: Story, state: LearningState, index: Int) {
     Card(Modifier.widthIn(max = 720.dp).fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("CONTOH ${index + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-            Text(lesson.sentence(index, state.preferences.target), style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(lesson.sentence(index, state.preferences.target), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                PronunciationButton(lesson.sentence(index, state.preferences.target),
+                    "lesson-example-${lesson.id}-$index", "contoh ${index + 1}")
+            }
             HorizontalDivider()
             Text(lesson.sentence(index, state.preferences.native), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

@@ -18,14 +18,14 @@ fun AccountCard(state: OnlineState, authenticate: (String, String, String?) -> U
     synchronize: () -> Unit, logout: () -> Unit) {
     Card {
         Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Online library", style = MaterialTheme.typography.titleLarge)
+            Text("Pustaka daring", style = MaterialTheme.typography.titleLarge)
             Text(state.message)
             if (state.enabled) {
                 if (state.signedIn) {
-                    Text("Signed in as ${state.displayName}")
+                    Text("Masuk sebagai ${state.displayName}")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = synchronize, enabled = !state.busy) { Text("Sync now") }
-                        OutlinedButton(onClick = logout, enabled = !state.busy) { Text("Sign out") }
+                        Button(onClick = synchronize, enabled = !state.busy) { Text("Sinkronkan sekarang") }
+                        OutlinedButton(onClick = logout, enabled = !state.busy) { Text("Keluar") }
                     }
                 } else {
                     var email by remember { mutableStateOf("") }
@@ -35,21 +35,21 @@ fun AccountCard(state: OnlineState, authenticate: (String, String, String?) -> U
                     var register by remember { mutableStateOf(false) }
                     OutlinedTextField(email, { email = it }, label = { Text("Email") }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(password, { password = it }, label = { Text("Password") }, singleLine = true,
+                    OutlinedTextField(password, { password = it }, label = { Text("Kata sandi") }, singleLine = true,
                         visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         modifier = Modifier.fillMaxWidth())
-                    if (register) OutlinedTextField(name, { name = it }, label = { Text("Display name") },
+                    if (register) OutlinedTextField(name, { name = it }, label = { Text("Nama tampilan") },
                         singleLine = true, modifier = Modifier.fillMaxWidth())
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = {
                             authenticate(email, password, if (register) name else null)
                             password = ""
                         }, enabled = !state.busy && email.isNotBlank() && password.length in 12..128 && (!register || name.isNotBlank())) {
-                            Text(if (register) "Create account" else "Sign in")
+                            Text(if (register) "Buat akun" else "Masuk")
                         }
-                        TextButton(onClick = { register = !register }, enabled = !state.busy) { Text(if (register) "Use existing account" else "Register") }
+                        TextButton(onClick = { register = !register }, enabled = !state.busy) { Text(if (register) "Gunakan akun yang ada" else "Daftar") }
                     }
-                    OutlinedButton(onClick = synchronize, enabled = !state.busy) { Text("Refresh stories") }
+                    OutlinedButton(onClick = synchronize, enabled = !state.busy) { Text("Perbarui cerita") }
                 }
                 if (state.busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }

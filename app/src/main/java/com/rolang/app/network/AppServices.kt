@@ -13,12 +13,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 
 data class OnlineState(val enabled: Boolean = false, val signedIn: Boolean = false,
-    val displayName: String = "", val busy: Boolean = false, val message: String = "Online features are disabled.")
+    val displayName: String = "", val busy: Boolean = false, val message: String = "Fitur daring dinonaktifkan.")
 
 class AppServices private constructor(private val context: Context) {
     val database = Room.databaseBuilder(context, LearningDatabase::class.java, "ro-lang.db")
         .addMigrations(LearningDatabase.MIGRATION_1_2, LearningDatabase.MIGRATION_2_3,
-            LearningDatabase.MIGRATION_3_4, LearningDatabase.MIGRATION_4_5).build()
+            LearningDatabase.MIGRATION_3_4, LearningDatabase.MIGRATION_4_5,
+            LearningDatabase.MIGRATION_5_6).build()
     val repository = LearningRepository(database)
     val stories = StoryRepository(database, StoryRemoteSource { ServerConfig.load(context) })
     val preferences = PreferencesRepository(context.learningPreferences, database)
@@ -30,15 +31,15 @@ class AppServices private constructor(private val context: Context) {
     suspend fun configure() = withContext(Dispatchers.IO) {
         val config = try { ServerConfig.load(context) } catch (error: Exception) {
             DiagnosticLogger.error("CONFIG", "Online services could not load their configuration.", error)
-            status.value = OnlineState(message = "Online configuration is unavailable. Saved stories remain available.")
+            status.value = OnlineState(message = "Konfigurasi daring tidak tersedia. Materi tersimpan tetap dapat digunakan.")
             return@withContext
         }
         val account = runCatching { sessions.read() }.onFailure {
             DiagnosticLogger.error("SESSION", "The saved account state could not be read; continuing signed out.", it)
         }.getOrNull()
         status.value = OnlineState(config.onlineEnabled, account != null, account?.displayName.orEmpty(),
-            message = if (!config.onlineEnabled) "Online features are disabled."
-                else if (account == null) "Sign in to synchronize your learning data." else "Your local changes are saved and ready to sync.")
+            message = if (!config.onlineEnabled) "Fitur daring dinonaktifkan."
+                else if (account == null) "Masuk untuk menyinkronkan data belajar." else "Perubahan lokal tersimpan dan siap disinkronkan.")
         try {
             SyncScheduler.configure(context, config)
             if (config.onlineEnabled) SyncScheduler.enqueue(context)
@@ -75,7 +76,7 @@ class AppServices private constructor(private val context: Context) {
         status.update { it.copy(busy = true) }
         try {
             val account = engine.signIn(email, password, name)
-            status.update { it.copy(signedIn = true, displayName = account.displayName, message = "Signed in. Synchronizing your library…") }
+            status.update { it.copy(signedIn = true, displayName = account.displayName, message = "Berhasil masuk. Menyinkronkan pustaka…") }
             synchronize()
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: Exception) { DiagnosticLogger.error("AUTH", "Authentication failed.", error); failure(error) }
@@ -86,14 +87,14 @@ class AppServices private constructor(private val context: Context) {
         try { engine.signOut() }
         catch (cancelled: CancellationException) { throw cancelled }
         finally { status.update { it.copy(signedIn = false, displayName = "", busy = false,
-            message = "Signed out. Learning data remains on this device.") } }
+            message = "Anda telah keluar. Data belajar tetap tersimpan di perangkat ini.") } }
     }
     suspend fun synchronize(includeLearning: Boolean = true): Boolean {
         status.update { it.copy(busy = true) }
         try {
             repository.initialize(context)
             val complete = engine.synchronize(includeLearning)
-            status.update { it.copy(message = if (complete) "Library is up to date." else "More changes are waiting to sync.") }
+            status.update { it.copy(message = if (complete) "Pustaka sudah mutakhir." else "Masih ada perubahan yang menunggu sinkronisasi.") }
             return complete
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: Exception) { DiagnosticLogger.error("SYNC", "Online synchronization failed.", error); failure(error); throw error }
@@ -101,12 +102,12 @@ class AppServices private constructor(private val context: Context) {
     }
     private fun failure(error: Exception) {
         val message = when {
-            error is AccountMismatch -> "This library belongs to another account. Sign in with the original account."
-            error is ApiException && error.status == 401 -> "Sign in again to synchronize. Your learning data is saved locally."
-            error is ApiException && error.status == 429 -> "Too many sign-in attempts. Try again later."
-            error is ApiException && error.status == 400 -> "Check your account details. Use a valid email and a password of 12–128 characters."
-            error is ApiException && error.code == "ALREADY_EXISTS" -> "That account already exists. Sign in to continue."
-            else -> "Server unavailable. Your local library and pending changes are saved."
+            error is AccountMismatch -> "Pustaka ini terikat ke akun lain. Masuk dengan akun semula."
+            error is ApiException && error.status == 401 -> "Masuk kembali untuk menyinkronkan. Data belajar tetap tersimpan secara lokal."
+            error is ApiException && error.status == 429 -> "Terlalu banyak percobaan masuk. Coba lagi nanti."
+            error is ApiException && error.status == 400 -> "Periksa data akun. Gunakan email yang valid dan kata sandi 12–128 karakter."
+            error is ApiException && error.code == "ALREADY_EXISTS" -> "Akun tersebut sudah ada. Masuk untuk melanjutkan."
+            else -> "Server tidak tersedia. Pustaka lokal dan perubahan tertunda tetap tersimpan."
         }
         val signedIn = runCatching { sessions.read() != null }.onFailure {
             DiagnosticLogger.error("SESSION", "The account state could not be checked after an online failure.", it)

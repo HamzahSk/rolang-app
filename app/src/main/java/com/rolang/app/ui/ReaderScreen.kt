@@ -88,16 +88,20 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                 Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Image(painterResource(illustrationResource(story.image)), null,
                         Modifier.fillMaxWidth().height(96.dp), contentScale = ContentScale.Fit)
-                    SectionTitle(story.title(prefs.target), "${story.kind.label} · ${story.category} · ${story.level.label}")
-                    Text(story.summary(prefs.target), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    SectionTitle(story.title(prefs.native), "${story.kind.label} · ${story.category} · ${story.level.label}")
+                    Text(story.summary(prefs.native), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Ketuk kata apa pun untuk melihat artinya.", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    PronunciationAvailabilityNotice()
+                    PronunciationSequenceControls("story-${story.id}",
+                        story.sentences.indices.map { story.sentence(it, prefs.target) },
+                        { "story-sentence-${story.id}-$it" }, "Putar seluruh cerita")
                     DownloadControls(story, state, viewModel)
                     if (story.chapters.size > 1) {
                         Text("Bab", style = MaterialTheme.typography.titleMedium)
                         story.chapters.forEach { chapter -> TextButton(onClick = {
                             chapterScope.launch { listState.scrollToItem(chapter.start + 1) }
-                        }) { Text(chapter.title.getValue(prefs.target.code)) } }
+                        }) { Text(chapter.title.getValue(prefs.native.code)) } }
                     }
                     VocabularyLegend()
                     OutlinedButton(onClick = { translated = !translated }) {
@@ -124,9 +128,13 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                     story.speakers.getOrNull(paragraph)?.let { speaker ->
                         Text(speaker, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
                     }
-                    Text(annotated, Modifier.fillMaxWidth().testTag("story-paragraph-$paragraph"),
-                        style = TextStyle(fontFamily = FontFamily.Serif, fontSize = prefs.fontSize.sp,
-                            lineHeight = (prefs.fontSize * 1.8).sp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                        Text(annotated, Modifier.weight(1f).testTag("story-paragraph-$paragraph"),
+                            style = TextStyle(fontFamily = FontFamily.Serif, fontSize = prefs.fontSize.sp,
+                                lineHeight = (prefs.fontSize * 1.8).sp))
+                        PronunciationButton(text, "story-sentence-${story.id}-$paragraph",
+                            "${story.kind.label.lowercase()} ${paragraph + 1}")
+                    }
                     AnimatedVisibility(translated) {
                         Text(story.sentence(paragraph, prefs.native), color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge)
@@ -184,6 +192,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(selected!!.text, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
+                    PronunciationButton(selected!!.text, "reader-word-${story.id}-${selected!!.paragraph}-${selected!!.text}", selected!!.text)
                     IconButton(onClick = { selected = null }) { Icon(Icons.Outlined.Close, "Tutup rincian kata") }
                 }
             }
@@ -198,7 +207,16 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                 }
                 item { DetailSection("Makna", word.meaning) }
                 item { DetailSection("Pelafalan dan konteks", word.explanation) }
-                item { DetailSection("Contoh", word.example + "\n\n" + word.exampleTranslation) }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) { DetailSection("Contoh", word.example) }
+                            PronunciationButton(word.example, "reader-example-${story.id}-${selected!!.paragraph}-${word.word}",
+                                "contoh ${word.word}")
+                        }
+                        Text(word.exampleTranslation, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 item {
                     VocabularyStatusSelector(state.wordStatus(story.id, word.word)) {
                         viewModel.status(story, word, prefs, it)

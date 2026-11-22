@@ -4,6 +4,11 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class LearningTest {
+    @Test fun `legacy Tagalog code maps to Filipino while the course remains Indonesian referenced`() {
+        assertEquals(Language.FILIPINO, Language.from("tl"))
+        assertEquals("fil", Courses.INDONESIAN_TO_FILIPINO.target.code)
+        assertEquals("id", Courses.INDONESIAN_TO_FILIPINO.reference.code)
+    }
     @Test fun `tokens keep offsets accents and compound words`() {
         val text = "Maya's di-inaasahang café, hati-hati!"
         val tokens = Words.tokens(text)

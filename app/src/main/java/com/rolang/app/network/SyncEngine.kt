@@ -71,7 +71,7 @@ class SyncEngine(
                 // Bound each worker run; durable queue/cursor continue on retry.
                 repeat(20) {
                     val current = checkNotNull(dao.syncState())
-                    val batch = dao.pending()
+                    val batch = dao.pendingForSupportedCourse()
                     val operations = JSONArray()
                     batch.forEach { change -> operations.put(JSONObject().put("id", change.operationId)
                         .put("kind", change.kind).put("key", change.key).put("deleted", change.deleted)
@@ -79,7 +79,7 @@ class SyncEngine(
                     val response = api.request("me/sync", "POST", JSONObject().put("cursor", current.cursor)
                         .put("operations", operations), session.token)
                     applyResponse(response, batch)
-                    if (!response.getBoolean("hasMore") && dao.pending().isEmpty()) return@withContext true
+                    if (!response.getBoolean("hasMore") && dao.pendingForSupportedCourse().isEmpty()) return@withContext true
                 }
                 false
             } catch (error: ApiException) {
@@ -97,10 +97,10 @@ class SyncEngine(
             suspend fun queue(change: PendingChange) {
                 if (dao.pendingFor(change.kind, change.key) == null) dao.enqueue(change)
             }
-            val words = dao.allVocabulary()
+            val words = dao.allVocabulary().filter { it.language == "fil" && it.reference == "id" }
             words.forEach { queue(SyncCodec.vocabulary(it)) }
-            dao.allReadings().forEach { queue(SyncCodec.progress(it)) }
-            dao.allReviews().forEach { review ->
+            dao.allReadings().filter { it.language == "fil" }.forEach { queue(SyncCodec.progress(it)) }
+            dao.allReviews().filter { it.language == "fil" && it.reference == "id" }.forEach { review ->
                 val word = words.firstOrNull { it.id == review.vocabularyId }
                 // Removed words retain their review statistics even on a second device.
                 queue(SyncCodec.review(review, review.vocabularyKey.ifEmpty { word?.let(SyncCodec::key) ?: "removed:${review.syncKey}" }))
@@ -128,10 +128,12 @@ class SyncEngine(
                 .sortedBy { if (it.getString("kind") == "vocabulary") 0 else 1 }
             for (record in sorted) {
                 val kind = record.getString("kind")
-                val key = record.getString("key")
-                if (dao.pendingFor(kind, key) != null) continue
                 val deleted = record.getBoolean("deleted")
-                val data = if (deleted) null else record.getJSONObject("data")
+                val normalized = normalizeRecord(kind, record.getString("key"), deleted,
+                    if (deleted) null else record.getJSONObject("data")) ?: continue
+                val key = normalized.first
+                if (dao.pendingFor(kind, key) != null) continue
+                val data = normalized.second
                 when (kind) {
                     "vocabulary" -> {
                         val parts = key.split(':', limit = 4)
@@ -183,6 +185,43 @@ class SyncEngine(
             val cursor = response.getLong("cursor")
             require(cursor >= state.cursor)
             dao.saveSyncState(state.copy(cursor = cursor))
+        }
+    }
+
+    /** Old synchronized `tl` course records remain usable, while unrelated pairs stay untouched on the server. */
+    private fun normalizeRecord(kind: String, key: String, deleted: Boolean, source: JSONObject?): Pair<String, JSONObject?>? {
+        val data = source?.let { JSONObject(it.toString()) }
+        return when (kind) {
+            "vocabulary" -> {
+                val parts = key.split(':', limit = 4)
+                if (parts.size != 4 || parts[0] !in setOf("tl", "fil") || parts[1] != "id") null
+                else {
+                    data?.put("language", "fil")?.put("reference", "id")
+                    listOf("fil", "id", parts[2], parts[3]).joinToString(":") to data
+                }
+            }
+            "progress" -> {
+                val parts = key.split(':')
+                if (parts.size != 2 || parts[1] !in setOf("tl", "fil")) null
+                else {
+                    data?.put("language", "fil")
+                    "${parts[0]}:fil" to data
+                }
+            }
+            "review" -> {
+                if (deleted) key to null
+                else if (data == null || data.optString("language") !in setOf("tl", "fil") || data.optString("reference") != "id") null
+                else {
+                    data.put("language", "fil").put("reference", "id")
+                    data.put("vocabularyKey", data.getString("vocabularyKey").replaceFirst("tl:id:", "fil:id:"))
+                    key to data
+                }
+            }
+            "profile" -> {
+                data?.put("target", "fil")?.put("native", "id")?.put("level", Level.BEGINNER.name)
+                key to data
+            }
+            else -> key to data
         }
     }
 

@@ -72,8 +72,6 @@ android {
             isUniversalApk = false
         }
     }
-    // Keep the original corpus in source control for migration verification, not in APKs.
-    androidResources { ignoreAssetsPattern = "corpus.json" }
     buildFeatures { compose = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

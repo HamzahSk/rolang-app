@@ -54,7 +54,7 @@ fun HomeScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text("Ro-Lang", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-                    Text("${prefs.target.label} · ${prefs.level.label}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Indonesia → Tagalog · A1", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 AssistChip(onClick = {}, label = { Text("${state.stories.count { it.sentences.isNotEmpty() }} tersimpan luring") },
                     leadingIcon = { Icon(Icons.Outlined.OfflinePin, null, Modifier.size(18.dp)) })
@@ -70,7 +70,7 @@ fun HomeScreen(
                         Icon(Icons.Outlined.School, null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(10.dp)); Text("LANJUTKAN BELAJAR", style = MaterialTheme.typography.labelLarge)
                     }
-                    Text(lesson.title(prefs.target), style = MaterialTheme.typography.headlineMedium)
+                    Text(lesson.title(prefs.native), style = MaterialTheme.typography.headlineMedium)
                     Text("Unit $unitNumber · ${moduleTitle(lesson.family)} · Pelajaran berikutnya",
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LinearProgressIndicator(progress = { if (lessonItems.isEmpty()) 0f else completedLessons.toFloat() / lessonItems.size }, Modifier.fillMaxWidth())
@@ -106,7 +106,7 @@ fun HomeScreen(
         } }
         state.readingStories.firstOrNull { story -> state.storyReadings.any { it.storyId == story.id && !it.completed } }?.let { story -> item {
             TextButton(onClick = { read(story.id) }) {
-                Text("Lanjut membaca “${story.title(prefs.target)}”"); Icon(Icons.AutoMirrored.Outlined.ArrowForward, null)
+                Text("Lanjut membaca “${story.title(prefs.native)}”"); Icon(Icons.AutoMirrored.Outlined.ArrowForward, null)
             }
         } }
     }
@@ -166,17 +166,17 @@ private fun LessonCard(lesson: Story, number: Int, complete: Boolean, prerequisi
         Row(Modifier.padding(18.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(shape = RoundedCornerShape(16.dp), color = if (complete) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer) {
                 Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
-                    if (complete) Icon(Icons.Outlined.CheckCircle, "Completed", tint = MaterialTheme.colorScheme.primary)
+                    if (complete) Icon(Icons.Outlined.CheckCircle, "Selesai", tint = MaterialTheme.colorScheme.primary)
                     else Text("$number", style = MaterialTheme.typography.titleLarge)
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("Pelajaran $number · ${lesson.category}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-                Text(lesson.title(state.preferences.target), style = MaterialTheme.typography.titleMedium)
-                Text(lesson.summary(state.preferences.target), maxLines = 2, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(lesson.title(state.preferences.native), style = MaterialTheme.typography.titleMedium)
+                Text(lesson.summary(state.preferences.native), maxLines = 2, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 when {
                     result != null -> Text("Nilai terbaik ${result.bestScore}/${result.totalQuestions} · ${result.attempts} percobaan", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                    prerequisite != null -> Text("Disarankan lebih dahulu: ${prerequisite.title(state.preferences.target)}", style = MaterialTheme.typography.bodyMedium)
+                    prerequisite != null -> Text("Disarankan lebih dahulu: ${prerequisite.title(state.preferences.native)}", style = MaterialTheme.typography.bodyMedium)
                     else -> Text("Siap dimulai", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 }
             }
@@ -202,7 +202,7 @@ fun StoriesScreen(state: LearningState, viewModel: LearningViewModel? = null, re
         (format == "Semua format" || story.kind.label == format) &&
         (topic == "Semua topik" || story.category == topic) &&
         (level == "Semua tingkat" || story.level.label == level) &&
-        (story.title(state.preferences.target).contains(query, true) || story.summary(state.preferences.target).contains(query, true)) }
+        (story.title(state.preferences.native).contains(query, true) || story.summary(state.preferences.native).contains(query, true)) }
     LazyColumn(Modifier.testTag("stories-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { LibraryStatus(state, viewModel) }
         item { FilterChip(savedOnly, { savedOnly = !savedOnly }, label = { Text("Tersimpan luring") }) }
@@ -242,8 +242,8 @@ fun StoryCard(story: Story, state: LearningState, viewModel: LearningViewModel? 
                     Text("${story.kind.label.uppercase()} · ${story.category.uppercase()}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
                     DifficultyBadge(story.level)
                 }
-                Text(story.title(state.preferences.target), style = MaterialTheme.typography.titleLarge)
-                Text(story.summary(state.preferences.target), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(story.title(state.preferences.native), style = MaterialTheme.typography.titleLarge)
+                Text(story.summary(state.preferences.native), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 LinearProgressIndicator(progress = { when {
                     state.contentCompleted(story.id) -> 1f; reading == null -> 0f; else -> ((reading.sentence + 1f) / story.sentenceCount.coerceAtLeast(1)).coerceIn(0f, 1f)
                 } }, Modifier.fillMaxWidth())

@@ -15,10 +15,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.Lifecycle
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.rolang.app.LearningViewModel
+import com.rolang.app.speech.PronunciationAvailability
 
 private data class Destination(val route: String, val title: String, val icon: ImageVector)
 private val destinations = listOf(
@@ -38,6 +41,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
     val quiz by viewModel.quiz.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val online by viewModel.online.collectAsStateWithLifecycle()
+    val pronunciation by viewModel.pronunciationState.collectAsStateWithLifecycle()
     val activity = LocalContext.current as? Activity
     SideEffect {
         activity?.let {
@@ -59,7 +63,17 @@ fun RoLangApp(viewModel: LearningViewModel) {
         }
     }
     LaunchedEffect(message) { message?.let { snackbar.showSnackbar(it); viewModel.clearMessage() } }
-    RoLangTheme(state.preferences.dark) {
+    LaunchedEffect(pronunciation.availability) {
+        if (pronunciation.availability in setOf(PronunciationAvailability.MISSING_DATA,
+                PronunciationAvailability.UNSUPPORTED, PronunciationAvailability.ERROR)) {
+            snackbar.showSnackbar(pronunciation.message)
+        }
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.pronunciation.refresh() }
+    CompositionLocalProvider(
+        LocalPronunciationState provides pronunciation,
+        LocalPronunciationController provides viewModel.pronunciation,
+    ) { RoLangTheme(state.preferences.dark) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar) },
             bottomBar = {
@@ -93,7 +107,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
                         ReviewScreen(state, now, quiz, busy, viewModel::startQuiz, viewModel::answer, viewModel::reveal,
                             viewModel::rate, viewModel::exitQuiz) { navigate("stories") }
                     }
-                    composable("profile") { ProfileScreen(state, viewModel::target, viewModel::native, viewModel::level, viewModel::font, viewModel::dark) {
+                    composable("profile") { ProfileScreen(state, viewModel::font, viewModel::dark) {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             AccountCard(online, viewModel::authenticate, viewModel::sync, viewModel::logout)
                             DiagnosticLogCard()
@@ -118,5 +132,5 @@ fun RoLangApp(viewModel: LearningViewModel) {
                 }
             }
         }
-    }
+    } }
 }

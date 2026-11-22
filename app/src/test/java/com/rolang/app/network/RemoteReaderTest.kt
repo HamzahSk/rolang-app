@@ -30,15 +30,15 @@ class RemoteReaderTest {
         val initial = Corpus.story(TestCorpus.load(application).first.first())
         var story by mutableStateOf(initial)
         val viewModel = LearningViewModel(application)
-        val state = LearningState(readings = listOf(ReadingEntity(initial.id, "tl", 299)), ready = true)
+        val state = LearningState(readings = listOf(ReadingEntity(initial.id, "fil", 299)), ready = true)
         compose.setContent { RoLangTheme(false) { ReaderScreen(story, state, viewModel) {} } }
         compose.onNodeWithText("Paragraf ${initial.sentences.size} dari ${initial.sentences.size}").assertExists()
         compose.runOnIdle { story = initial.copy(sentences = initial.sentences.take(1)) }
         compose.onNodeWithText("Paragraf 1 dari 1").assertExists()
-        compose.onNodeWithText(initial.sentences.first().getValue("tl")).assertExists()
+        compose.onNodeWithText(initial.sentences.first().getValue("fil")).assertExists()
     }
 
-    @Test fun changingReferenceLanguageKeepsEveryWordLinkInteractive() {
+    @Test fun fixedIndonesianReferenceKeepsEveryWordLinkInteractive() {
         val application = ApplicationProvider.getApplicationContext<Application>()
         runBlocking { TestCorpus.seed(AppServices.get(application).database.dao(), application) }
         val story = Corpus.story(TestCorpus.load(application).first.first())
@@ -56,8 +56,7 @@ class RemoteReaderTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Tagalog → Indonesia", substring = true).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Tutup rincian kata").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isEmpty() }
-        compose.runOnIdle { state = state.copy(preferences = state.preferences.copy(native = Language.ENGLISH)) }
         tapFirstWord()
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Tagalog → Inggris", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Tagalog → Indonesia", substring = true).fetchSemanticsNodes().isNotEmpty() }
     }
 }

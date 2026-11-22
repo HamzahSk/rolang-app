@@ -49,7 +49,9 @@ class OfflineLearningTest {
             story.exercises.any { it.type == ExerciseType.COMPREHENSION } &&
                 story.exercises.any { it.type == ExerciseType.MULTIPLE_CHOICE }
         })
-        for (story in stories) for (target in Language.entries) for (native in Language.entries) {
+        for (story in stories) {
+            val target = Language.FILIPINO
+            val native = Language.INDONESIAN
             for (index in story.sentences.indices) for (token in Words.tokens(story.sentence(index, target))) {
                 val detail = repository.lookup(story, index, token.text, target, native)
                 assertTrue(detail.translation.isNotBlank())
@@ -63,15 +65,13 @@ class OfflineLearningTest {
     @Test fun vocabularyReadingAndReviewSurviveReopeningAndCannotBeDoubleSubmitted() = runBlocking {
         TestCorpus.seed(repository.dao, context)
         val story = Corpus.story(repository.dao.stories().first().first())
-        val target = Language.ENGLISH
+        val target = Language.FILIPINO
         val native = Language.INDONESIAN
         val token = Words.tokens(story.sentence(0, target)).first().text
         val detail = repository.lookup(story, 0, token, target, native)
         val now = System.currentTimeMillis()
         assertTrue(repository.save(story, detail, target, native, now))
         assertFalse(repository.save(story, detail, target, native, now))
-        val tagalogDetail = repository.lookup(story, 0, token, target, Language.TAGALOG)
-        assertTrue(repository.save(story, tagalogDetail, target, Language.TAGALOG, now))
         repository.reading(story, target, 2, true)
         repository.reading(story, target, 1, false)
         repository.exerciseResult(story, target, 4, 5, mapOf("question" to "answer"), now)
@@ -85,7 +85,7 @@ class OfflineLearningTest {
         assertEquals(now + 1 + SpacedRepetition.DAY, saved.dueAt)
         assertEquals(detail.example, saved.example)
         assertEquals(1, repository.dao.reviews().first().size)
-        assertEquals(2, repository.dao.vocabulary().first().size)
+        assertEquals(1, repository.dao.vocabulary().first().size)
         assertTrue(repository.dao.readings().first().single().completed)
         assertEquals(story.sentences.lastIndex, repository.dao.readings().first().single().sentence)
         val result = repository.dao.exerciseResults().first().single()
@@ -102,24 +102,20 @@ class OfflineLearningTest {
         assertEquals("AGAIN", repository.dao.reviews().first().first().rating)
     }
 
-    @Test fun preferenceChoicesPersistIndependently() = runBlocking {
+    @Test fun coursePairStaysFixedWhileDisplayPreferencesPersist() = runBlocking {
         val file = File(context.cacheDir, "preferences-test.preferences_pb")
         file.delete()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val store = PreferenceDataStoreFactory.create(scope = scope) { file }
         val preferences = PreferencesRepository(store)
-        preferences.target(Language.TAGALOG)
-        preferences.native(Language.ENGLISH)
-        preferences.level(Level.ADVANCED)
-        preferences.font(26f)
-        preferences.dark(true)
+        preferences.restore(LearningPreferences(Language.INDONESIAN, Language.FILIPINO, Level.ADVANCED, 26f, true))
         scope.coroutineContext.job.cancelAndJoin()
         val secondScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         try {
             val restored = PreferencesRepository(PreferenceDataStoreFactory.create(scope = secondScope) { file }).preferences.first()
-            assertEquals(Language.TAGALOG, restored.target)
-            assertEquals(Language.ENGLISH, restored.native)
-            assertEquals(Level.ADVANCED, restored.level)
+            assertEquals(Language.FILIPINO, restored.target)
+            assertEquals(Language.INDONESIAN, restored.native)
+            assertEquals(Level.BEGINNER, restored.level)
             assertEquals(26f, restored.fontSize)
             assertTrue(restored.dark)
         } finally { secondScope.coroutineContext.job.cancelAndJoin(); file.delete() }
@@ -128,9 +124,9 @@ class OfflineLearningTest {
     @Test fun fourStatusesPersistProgressAndRejectReviewsAfterManualEdits() = runBlocking {
         TestCorpus.seed(repository.dao, context)
         val story = Corpus.story(repository.dao.stories().first().first())
-        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
-            Language.ENGLISH, Language.INDONESIAN)
-        repository.status(story, detail, Language.ENGLISH, Language.INDONESIAN, VocabularyStatus.NEW, 1000)
+        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.FILIPINO)).first().text,
+            Language.FILIPINO, Language.INDONESIAN)
+        repository.status(story, detail, Language.FILIPINO, Language.INDONESIAN, VocabularyStatus.NEW, 1000)
         var word = repository.dao.allVocabulary().single()
         assertEquals(VocabularyStatus.NEW, word.learningStatus())
         val expected = listOf(VocabularyStatus.LEARNING, VocabularyStatus.LEARNING,

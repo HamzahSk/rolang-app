@@ -1,6 +1,7 @@
 package com.rolang.app.data
 
 import com.rolang.app.domain.Language
+import com.rolang.app.domain.Courses
 import com.rolang.app.domain.Level
 import com.rolang.app.domain.Words
 import org.json.JSONObject
@@ -25,12 +26,14 @@ data class Exercise(
     val explanation: Map<String, String>,
     val choices: Map<String, List<String>> = emptyMap(),
     val tokens: Map<String, List<String>> = emptyMap(),
+    val speech: Map<String, String> = emptyMap(),
 ) {
     fun question(language: Language) = prompt.getValue(language.code)
     fun answer(language: Language) = answer.getValue(language.code)
     fun explanation(language: Language) = explanation.getValue(language.code)
     fun choices(language: Language) = choices[language.code].orEmpty()
     fun tokens(language: Language) = tokens[language.code].orEmpty()
+    fun spoken(language: Language) = speech[language.code].orEmpty()
 }
 
 data class Chapter(val id: String, val title: Map<String, String>, val start: Int, val count: Int)
@@ -57,7 +60,19 @@ data class WordDetail(
 )
 
 object Corpus {
-    private fun translations(obj: JSONObject) = Language.entries.associate { it.code to obj.getString(it.code) }
+    private fun value(obj: JSONObject, language: Language): String = when (language) {
+        Language.INDONESIAN -> obj.getString(Language.INDONESIAN.code)
+        Language.FILIPINO -> if (obj.has(Language.FILIPINO.code)) obj.getString(Language.FILIPINO.code)
+            else obj.getString("tl")
+    }
+    private fun translations(obj: JSONObject) = Language.entries.associate { it.code to value(obj, it) }
+    private fun availableTranslations(obj: JSONObject) = buildMap {
+        if (obj.has(Language.INDONESIAN.code)) put(Language.INDONESIAN.code, obj.getString(Language.INDONESIAN.code))
+        when {
+            obj.has(Language.FILIPINO.code) -> put(Language.FILIPINO.code, obj.getString(Language.FILIPINO.code))
+            obj.has("tl") -> put(Language.FILIPINO.code, obj.getString("tl"))
+        }
+    }
     fun story(entity: StoryEntity): Story {
         val json = JSONObject(entity.content)
         val sentences = json.optJSONArray("sentences") ?: org.json.JSONArray()
@@ -70,8 +85,10 @@ object Corpus {
         } }.orEmpty()
         fun localizedStrings(obj: JSONObject?, field: String): Map<String, List<String>> = obj?.optJSONObject(field)?.let { values ->
             Language.entries.associate { language ->
-                language.code to values.optJSONArray(language.code)?.let { array ->
-                    (0 until array.length()).map(array::getString)
+                val array = values.optJSONArray(language.code)
+                    ?: if (language == Language.FILIPINO) values.optJSONArray("tl") else null
+                language.code to array?.let {
+                    (0 until it.length()).map(it::getString)
                 }.orEmpty()
             }
         }.orEmpty()
@@ -88,11 +105,15 @@ object Corpus {
                     ?: Language.entries.associate { language -> language.code to "Tinjau kembali teks pembelajaran untuk jawaban ini." },
                 choices = localizedStrings(item, "choices"),
                 tokens = localizedStrings(item, "tokens"),
+                speech = item.optJSONObject("speech")?.let(::availableTranslations)
+                    ?: availableTranslations(item.getJSONObject("answer")),
             )
         } }.orEmpty()
         val focus = json.optJSONObject("focus")?.let { obj -> Language.entries.associate { language ->
-            language.code to obj.optJSONArray(language.code)?.let { array ->
-                (0 until array.length()).map(array::getString)
+            val array = obj.optJSONArray(language.code)
+                ?: if (language == Language.FILIPINO) obj.optJSONArray("tl") else null
+            language.code to array?.let {
+                (0 until it.length()).map(it::getString)
             }.orEmpty()
         } }.orEmpty()
         var chapterSentenceCount = 0
@@ -137,15 +158,17 @@ object Corpus {
             StoryEntity(story.getString("id"), story.getString("family"), story.getString("category"),
                 story.getString("level"), story.toString())
         }
-        val wordRows = (0 until lexicon.length()).map { index ->
+        val wordRows = (0 until lexicon.length()).mapNotNull { index ->
             val word = lexicon.getJSONObject(index)
-            Language.entries.forEach { language ->
-                listOf("translations", "meanings", "notes").forEach { field ->
-                    require(word.getJSONObject(field).getString(language.code).isNotBlank())
+            val language = Language.from(word.getString("language"))
+            if (language != Courses.INDONESIAN_TO_FILIPINO.target) return@mapNotNull null
+            listOf("translations", "meanings", "notes").forEach { field ->
+                Language.entries.forEach { localized ->
+                    require(value(word.getJSONObject(field), localized).isNotBlank())
                 }
             }
             require(word.getString("pos").isNotBlank())
-            LexemeEntity(word.getString("language"), Words.key(word.getString("word")), word.toString())
+            LexemeEntity(language.code, Words.key(word.getString("word")), word.toString())
         }
         val keys = wordRows.map { "${it.language}:${it.word}" }.toSet()
         require(wordRows.size == keys.size) { "Duplicate dictionary entry" }
@@ -156,16 +179,6 @@ object Corpus {
                 require(story.title(language).isNotBlank() && story.summary(language).isNotBlank())
                 story.sentences.forEach { sentence ->
                     require(sentence.getValue(language.code).isNotBlank())
-                    Words.tokens(sentence.getValue(language.code)).forEach { token ->
-                        require("${language.code}:${Words.key(token.text)}" in keys) {
-                            "Missing ${language.code} translation for ${token.text} in ${row.id}"
-                        }
-                    }
-                }
-                story.focus(language).forEach { expression ->
-                    require("${language.code}:${Words.key(expression)}" in keys) {
-                        "Missing ${language.code} focus expression $expression in ${row.id}"
-                    }
                 }
                 story.exercises.forEach { exercise ->
                     require(exercise.question(language).isNotBlank())
@@ -178,22 +191,31 @@ object Corpus {
                     if (exercise.type == ExerciseType.SENTENCE_CONSTRUCTION) require(exercise.tokens(language).isNotEmpty())
                 }
             }
+            val target = Courses.INDONESIAN_TO_FILIPINO.target
+            story.sentences.forEach { sentence ->
+                Words.tokens(sentence.getValue(target.code)).forEach { token ->
+                    require("${target.code}:${Words.key(token.text)}" in keys) {
+                        "Missing ${target.code} translation for ${token.text} in ${row.id}"
+                    }
+                }
+            }
+            story.focus(target).forEach { expression ->
+                require("${target.code}:${Words.key(expression)}" in keys) {
+                    "Missing ${target.code} focus expression $expression in ${row.id}"
+                }
+            }
         }
         return storyRows to wordRows
     }
 
     fun detail(lexeme: LexemeEntity, word: String, native: Language, example: String, translated: String): WordDetail {
         val json = JSONObject(lexeme.content)
-        return WordDetail(word, json.getJSONObject("translations").getString(native.code),
-            json.getJSONObject("meanings").getString(native.code), json.getString("pos"),
+        return WordDetail(word, value(json.getJSONObject("translations"), native),
+            value(json.getJSONObject("meanings"), native), json.getString("pos"),
             buildString {
                 val pronunciation = json.optString("pronunciation")
-                if (pronunciation.isNotBlank()) append(when (native) {
-                    Language.INDONESIAN -> "Pelafalan: $pronunciation\n\n"
-                    Language.TAGALOG -> "Bigkas: $pronunciation\n\n"
-                    Language.ENGLISH -> "Pronunciation: $pronunciation\n\n"
-                })
-                append(json.getJSONObject("notes").getString(native.code))
+                if (pronunciation.isNotBlank()) append("Pelafalan: $pronunciation\n\n")
+                append(value(json.getJSONObject("notes"), native))
             }, example, translated)
     }
 }

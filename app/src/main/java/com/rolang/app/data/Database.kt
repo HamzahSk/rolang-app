@@ -209,6 +209,13 @@ interface LearningDao {
     suspend fun enqueue(change: PendingChange)
     @Query("SELECT * FROM pending_changes ORDER BY kind, `key` LIMIT :limit")
     suspend fun pending(limit: Int = 100): List<PendingChange>
+    @Query("""SELECT * FROM pending_changes
+        WHERE kind='profile'
+           OR (kind='vocabulary' AND `key` LIKE 'fil:id:%')
+           OR (kind='progress' AND `key` LIKE '%:fil')
+           OR (kind='review' AND (deleted=1 OR (data LIKE '%"language":"fil"%' AND data LIKE '%"reference":"id"%')))
+        ORDER BY kind, `key` LIMIT :limit""")
+    suspend fun pendingForSupportedCourse(limit: Int = 100): List<PendingChange>
     @Query("SELECT * FROM pending_changes WHERE kind=:kind AND `key`=:key")
     suspend fun pendingFor(kind: String, key: String): PendingChange?
     @Query("DELETE FROM pending_changes WHERE operationId=:operationId")
@@ -220,10 +227,89 @@ interface LearningDao {
 }
 
 @Database(entities = [StoryEntity::class, StoryCatalogEntity::class, ChapterCacheEntity::class, StoryDownloadEntity::class, LexemeEntity::class, StoryLexemeEntity::class, VocabularyEntity::class,
-    ReadingEntity::class, ExerciseResultEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 5, exportSchema = true)
+    ReadingEntity::class, ExerciseResultEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 6, exportSchema = true)
 abstract class LearningDatabase : RoomDatabase() {
     abstract fun dao(): LearningDao
     companion object {
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Merge any early `fil` rows before canonicalizing the former `tl` course.
+                db.execSQL("""UPDATE vocabulary SET
+                    repetitions=MAX(repetitions, COALESCE((SELECT MAX(old.repetitions) FROM vocabulary old
+                        WHERE old.language='tl' AND old.reference='id' AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word), repetitions)),
+                    intervalDays=MAX(intervalDays, COALESCE((SELECT MAX(old.intervalDays) FROM vocabulary old
+                        WHERE old.language='tl' AND old.reference='id' AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word), intervalDays)),
+                    lapses=MAX(lapses, COALESCE((SELECT MAX(old.lapses) FROM vocabulary old
+                        WHERE old.language='tl' AND old.reference='id' AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word), lapses)),
+                    lastReviewedAt=MAX(lastReviewedAt, COALESCE((SELECT MAX(old.lastReviewedAt) FROM vocabulary old
+                        WHERE old.language='tl' AND old.reference='id' AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word), lastReviewedAt)),
+                    statusChangedAt=MAX(statusChangedAt, COALESCE((SELECT MAX(old.statusChangedAt) FROM vocabulary old
+                        WHERE old.language='tl' AND old.reference='id' AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word), statusChangedAt)),
+                    dueAt=MIN(dueAt, COALESCE((SELECT MIN(old.dueAt) FROM vocabulary old
+                        WHERE old.language='tl' AND old.reference='id' AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word), dueAt)),
+                    mastered=CASE WHEN mastered=1 OR EXISTS(SELECT 1 FROM vocabulary old WHERE old.language='tl'
+                        AND old.reference='id' AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word AND old.mastered=1) THEN 1 ELSE 0 END,
+                    status=CASE
+                        WHEN mastered=1 OR EXISTS(SELECT 1 FROM vocabulary old WHERE old.language='tl' AND old.reference='id'
+                            AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word AND (old.mastered=1 OR old.status='KNOWN')) THEN 'KNOWN'
+                        WHEN status='ALMOST_MASTERED' OR EXISTS(SELECT 1 FROM vocabulary old WHERE old.language='tl' AND old.reference='id'
+                            AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word AND old.status='ALMOST_MASTERED') THEN 'ALMOST_MASTERED'
+                        WHEN status='LEARNING' OR EXISTS(SELECT 1 FROM vocabulary old WHERE old.language='tl' AND old.reference='id'
+                            AND old.storyId=vocabulary.storyId AND old.word=vocabulary.word AND old.status='LEARNING') THEN 'LEARNING'
+                        ELSE 'NEW' END
+                    WHERE language='fil' AND reference='id'""")
+                db.execSQL("""UPDATE reviews SET vocabularyId=COALESCE((SELECT current.id FROM vocabulary legacy
+                    JOIN vocabulary current ON current.language='fil' AND current.reference='id'
+                        AND current.storyId=legacy.storyId AND current.word=legacy.word
+                    WHERE legacy.id=reviews.vocabularyId AND legacy.language='tl' AND legacy.reference='id'), vocabularyId)""")
+                db.execSQL("""DELETE FROM vocabulary WHERE language='tl' AND reference='id' AND EXISTS(
+                    SELECT 1 FROM vocabulary current WHERE current.language='fil' AND current.reference='id'
+                        AND current.storyId=vocabulary.storyId AND current.word=vocabulary.word)""")
+                db.execSQL("UPDATE vocabulary SET language='fil' WHERE language='tl' AND reference='id'")
+
+                db.execSQL("""UPDATE reading SET
+                    sentence=MAX(sentence, COALESCE((SELECT legacy.sentence FROM reading legacy
+                        WHERE legacy.storyId=reading.storyId AND legacy.language='tl'), sentence)),
+                    completed=CASE WHEN completed=1 OR EXISTS(SELECT 1 FROM reading legacy
+                        WHERE legacy.storyId=reading.storyId AND legacy.language='tl' AND legacy.completed=1) THEN 1 ELSE 0 END
+                    WHERE language='fil'""")
+                db.execSQL("DELETE FROM reading WHERE language='tl' AND EXISTS(SELECT 1 FROM reading current WHERE current.storyId=reading.storyId AND current.language='fil')")
+                db.execSQL("UPDATE reading SET language='fil' WHERE language='tl'")
+
+                db.execSQL("""UPDATE exercise_results SET
+                    attempts=MAX(attempts, COALESCE((SELECT legacy.attempts FROM exercise_results legacy
+                        WHERE legacy.contentId=exercise_results.contentId AND legacy.language='tl'), attempts)),
+                    bestScore=MAX(bestScore, COALESCE((SELECT legacy.bestScore FROM exercise_results legacy
+                        WHERE legacy.contentId=exercise_results.contentId AND legacy.language='tl'), bestScore)),
+                    completed=CASE WHEN completed=1 OR EXISTS(SELECT 1 FROM exercise_results legacy
+                        WHERE legacy.contentId=exercise_results.contentId AND legacy.language='tl' AND legacy.completed=1) THEN 1 ELSE 0 END,
+                    updatedAt=MAX(updatedAt, COALESCE((SELECT legacy.updatedAt FROM exercise_results legacy
+                        WHERE legacy.contentId=exercise_results.contentId AND legacy.language='tl'), updatedAt))
+                    WHERE language='fil'""")
+                db.execSQL("DELETE FROM exercise_results WHERE language='tl' AND EXISTS(SELECT 1 FROM exercise_results current WHERE current.contentId=exercise_results.contentId AND current.language='fil')")
+                db.execSQL("UPDATE exercise_results SET language='fil' WHERE language='tl'")
+
+                db.execSQL("UPDATE reviews SET language='fil' WHERE language='tl' AND reference='id'")
+                db.execSQL("UPDATE reviews SET vocabularyKey=REPLACE(vocabularyKey, 'tl:id:', 'fil:id:') WHERE vocabularyKey LIKE 'tl:id:%'")
+
+                db.execSQL("DELETE FROM pending_changes WHERE kind='vocabulary' AND `key` LIKE 'tl:id:%' AND EXISTS(SELECT 1 FROM pending_changes current WHERE current.kind='vocabulary' AND current.`key`=REPLACE(pending_changes.`key`, 'tl:id:', 'fil:id:'))")
+                db.execSQL("UPDATE pending_changes SET `key`=REPLACE(`key`, 'tl:id:', 'fil:id:') WHERE kind='vocabulary' AND `key` LIKE 'tl:id:%'")
+                db.execSQL("DELETE FROM pending_changes WHERE kind='progress' AND `key` LIKE '%:tl' AND EXISTS(SELECT 1 FROM pending_changes current WHERE current.kind='progress' AND current.`key`=SUBSTR(pending_changes.`key`, 1, LENGTH(pending_changes.`key`)-2) || 'fil')")
+                db.execSQL("UPDATE pending_changes SET `key`=SUBSTR(`key`, 1, LENGTH(`key`)-2) || 'fil' WHERE kind='progress' AND `key` LIKE '%:tl'")
+                db.execSQL("""UPDATE pending_changes SET data=REPLACE(REPLACE(REPLACE(data,
+                    '"language":"tl"', '"language":"fil"'),
+                    '"target":"tl"', '"target":"fil"'),
+                    '"native":"en"', '"native":"id"') WHERE data IS NOT NULL""")
+                db.execSQL("UPDATE pending_changes SET data=REPLACE(data, 'tl:id:', 'fil:id:') WHERE data IS NOT NULL")
+
+                db.execSQL("DELETE FROM lexicon WHERE language IN ('en','id')")
+                db.execSQL("DELETE FROM lexicon WHERE language='tl' AND EXISTS(SELECT 1 FROM lexicon current WHERE current.language='fil' AND current.word=lexicon.word)")
+                db.execSQL("UPDATE lexicon SET language='fil' WHERE language='tl'")
+                db.execSQL("DELETE FROM story_lexicon WHERE language IN ('en','id')")
+                db.execSQL("DELETE FROM story_lexicon WHERE language='tl' AND EXISTS(SELECT 1 FROM story_lexicon current WHERE current.storyId=story_lexicon.storyId AND current.language='fil' AND current.word=story_lexicon.word)")
+                db.execSQL("UPDATE story_lexicon SET language='fil' WHERE language='tl'")
+            }
+        }
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE TABLE IF NOT EXISTS story_catalog (id TEXT NOT NULL, content TEXT NOT NULL, available INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(id))")

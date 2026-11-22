@@ -44,11 +44,11 @@ class LiveServerTest {
             engines[1].signIn(email, "test-fixture-password")
             val repository = LearningRepository(databases[0])
             val story = Corpus.story(repository.dao.stories().first().first())
-            val token = Words.tokens(story.sentence(0, Language.ENGLISH)).first().text
-            repository.save(story, repository.lookup(story, 0, token, Language.ENGLISH, Language.TAGALOG),
-                Language.ENGLISH, Language.TAGALOG, System.currentTimeMillis())
+            val token = Words.tokens(story.sentence(0, Language.FILIPINO)).first().text
+            repository.save(story, repository.lookup(story, 0, token, Language.FILIPINO, Language.INDONESIAN),
+                Language.FILIPINO, Language.INDONESIAN, System.currentTimeMillis())
             val word = repository.dao.allVocabulary().single()
-            repository.reading(story, Language.ENGLISH, 1, true)
+            repository.reading(story, Language.FILIPINO, 1, true)
             assertTrue(repository.review(word, Rating.GOOD, true, System.currentTimeMillis() + 1))
             assertTrue(engines[0].synchronize())
             assertTrue(engines[1].synchronize())
@@ -100,7 +100,7 @@ class LiveServerTest {
                 assertEquals(expected.sentences, actual.sentences)
                 assertEquals(expected.exercises, actual.exercises.take(expected.exercises.size))
                 assertTrue(actual.notes.containsAll(expected.notes))
-                for (language in listOf("en", "id", "tl"))
+                for (language in listOf("id", "fil"))
                     assertTrue(actual.focus.getValue(language).containsAll(expected.focus.getValue(language)))
                 for ((language, guide) in expected.pronunciation)
                     assertTrue(actual.pronunciation.getValue(language).contains(guide))

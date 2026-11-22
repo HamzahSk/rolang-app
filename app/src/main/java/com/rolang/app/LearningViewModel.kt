@@ -7,6 +7,8 @@ import com.rolang.app.data.*
 import com.rolang.app.diagnostics.DiagnosticLogger
 import com.rolang.app.domain.*
 import com.rolang.app.network.AppServices
+import com.rolang.app.speech.FilipinoTtsManager
+import com.rolang.app.speech.PronunciationController
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.json.JSONObject
@@ -61,6 +63,9 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     private val services = AppServices.get(application)
     private val repository = services.repository
     private val preferences = services.preferences
+    private val tts = FilipinoTtsManager(application)
+    val pronunciation: PronunciationController = tts
+    val pronunciationState = tts.state
     val online = services.online
     private val ready = MutableStateFlow(false)
     private val error = MutableStateFlow<String?>(null)
@@ -113,6 +118,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             try {
                 repository.initialize(application)
+                preferences.ensureSupportedCourse()
                 preferences.preferences.first()
                 ready.value = true
                 services.configure()
@@ -161,17 +167,6 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
             _message.value = message
         }
     }
-    fun target(language: Language) {
-        languageGeneration++
-        _quiz.value = null
-        work { preferences.target(language) }
-    }
-    fun native(language: Language) {
-        languageGeneration++
-        _quiz.value = null
-        work { preferences.native(language) }
-    }
-    fun level(level: Level) { work { preferences.level(level) } }
     fun font(size: Float) { work { preferences.font(size) } }
     fun dark(value: Boolean) { work { preferences.dark(value) } }
     fun authenticate(email: String, password: String, name: String?) { viewModelScope.launch { services.authenticate(email, password, name) } }
@@ -273,4 +268,9 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         }
     }
     fun exitQuiz() { if (!_busy.value) _quiz.value = null }
+
+    override fun onCleared() {
+        tts.close()
+        super.onCleared()
+    }
 }
