@@ -15,7 +15,7 @@ the schema solely so existing installations can open without losing data.
 Lesson content is fetched directly from GitHub Raw:
 
 ```text
-https://raw.githubusercontent.com/HamzahSk/rolang-server/main/
+https://raw.githubusercontent.com/HamzahSk/rolang-server/data/
 ```
 
 The app discovers `manifest.json`, `lesson/index.json`, a course index, and then
