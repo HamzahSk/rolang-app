@@ -64,7 +64,7 @@ class GitHubContentSource(
     }
 
     companion object {
-        const val DEFAULT_BASE_URL = "https://raw.githubusercontent.com/HamzahSk/rolang-server/main/"
+        const val DEFAULT_BASE_URL = "https://raw.githubusercontent.com/HamzahSk/rolang-server/data/"
         fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
             .digest(bytes).joinToString("") { "%02x".format(it) }
     }
