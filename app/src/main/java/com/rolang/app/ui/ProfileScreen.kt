@@ -1,21 +1,24 @@
 package com.rolang.app.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.rolang.app.LearningState
+import com.rolang.app.diagnostics.DiagnosticLogger
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
 @Composable
 fun ProfileScreen(state: LearningState, font: (Float) -> Unit, dark: (Boolean) -> Unit,
-                  account: @Composable () -> Unit = {}) {
+                  footer: @Composable () -> Unit = {}) {
     val prefs = state.preferences
     val reviews = state.courseReviews
     val mastered = state.courseWords.count { it.mastered }
@@ -59,8 +62,23 @@ fun ProfileScreen(state: LearningState, font: (Float) -> Unit, dark: (Boolean) -
                 }
             }
         }
-        item { account() }
-        item { InfoCard("Pustaka selalu tersedia", "Cerita, terjemahan, kata tersimpan, kemajuan, dan tinjauan disimpan di perangkat. Ro-Lang tetap dapat dibaca luring dan dapat disinkronkan saat daring.") }
+        item { footer() }
+        item { InfoCard("Data belajar tetap di perangkat", "Kemajuan, kosakata, jadwal tinjauan, dan hasil latihan disimpan hanya di Room lokal. Pelajaran dapat disimpan beserta gambarnya untuk penggunaan luring.") }
         item { Text("Ro-Lang · Versi 1.0", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
+}
+
+@Composable
+fun DiagnosticLogCard() {
+    val context = LocalContext.current
+    Card {
+        Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Diagnostik", style = MaterialTheme.typography.titleLarge)
+            Text("Kesalahan aplikasi dan permintaan GitHub disimpan di ${DiagnosticLogger.displayPath(context)}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = {
+                if (!DiagnosticLogger.share(context)) Toast.makeText(context, "Log diagnostik belum dapat diekspor.", Toast.LENGTH_LONG).show()
+            }) { Text("Ekspor log diagnostik") }
+        }
     }
 }

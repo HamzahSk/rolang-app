@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.room.withTransaction
 import com.rolang.app.domain.Language
 import com.rolang.app.domain.Level
 import com.rolang.app.domain.Courses
@@ -22,7 +21,7 @@ data class LearningPreferences(
     val dark: Boolean = false,
 )
 
-class PreferencesRepository(private val store: DataStore<Preferences>, private val database: LearningDatabase? = null) {
+class PreferencesRepository(private val store: DataStore<Preferences>, @Suppress("UNUSED_PARAMETER") database: LearningDatabase? = null) {
     private val target = stringPreferencesKey("target")
     private val native = stringPreferencesKey("native")
     private val level = stringPreferencesKey("level")
@@ -34,13 +33,7 @@ class PreferencesRepository(private val store: DataStore<Preferences>, private v
             (it[font] ?: 20f).coerceIn(16f, 28f), it[dark] ?: false)
     }
     private suspend fun change(update: (MutablePreferences) -> Unit) {
-        if (database == null) store.edit { update(it) }
-        else database.withTransaction {
-            // Use the same lock order as incoming profile sync. A user edit
-            // cannot be overwritten before its pending operation is visible.
-            store.edit { update(it) }
-            database.dao().enqueue(SyncCodec.preferences(preferences.first()))
-        }
+        store.edit { update(it) }
     }
     suspend fun ensureSupportedCourse() {
         val saved = store.data.first()

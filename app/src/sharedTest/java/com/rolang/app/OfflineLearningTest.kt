@@ -155,11 +155,8 @@ class OfflineLearningTest {
         assertEquals(failedAt + 600_000, word.dueAt)
         assertEquals(1, word.lapses)
         assertEquals(7, repository.dao.allReviews().size)
-        val pending = repository.dao.pendingFor("vocabulary", SyncCodec.key(word))!!
-        assertEquals(word.status, org.json.JSONObject(pending.data!!).getString("status"))
         database.close()
         reopen()
         assertEquals(word, repository.dao.vocabularyById(word.id))
-        assertEquals(pending, repository.dao.pendingFor("vocabulary", SyncCodec.key(word)))
     }
 }

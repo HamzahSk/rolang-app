@@ -9,7 +9,7 @@ enum class Language(val code: String, val label: String) {
     INDONESIAN("id", "Indonesia"), FILIPINO("fil", "Tagalog");
 
     companion object {
-        /** Accept the former Android/server code while all new records use ISO 639-2 `fil`. */
+        /** Accept the legacy Android code while all new records use ISO 639-2 `fil`. */
         fun from(code: String) = when (code.lowercase(Locale.ROOT)) {
             "fil", "tl" -> FILIPINO
             else -> INDONESIAN

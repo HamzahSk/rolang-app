@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -40,7 +41,6 @@ fun RoLangApp(viewModel: LearningViewModel) {
     val message by viewModel.message.collectAsStateWithLifecycle()
     val quiz by viewModel.quiz.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
-    val online by viewModel.online.collectAsStateWithLifecycle()
     val pronunciation by viewModel.pronunciationState.collectAsStateWithLifecycle()
     val activity = LocalContext.current as? Activity
     SideEffect {
@@ -80,6 +80,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
                 if (!route.startsWith("reader") && !route.startsWith("lesson/")) NavigationBar {
                     destinations.forEach { item ->
                         NavigationBarItem(selected = route == item.route, onClick = { navigate(item.route) },
+                            modifier = Modifier.testTag("nav-${item.route}"),
                             icon = { Icon(item.icon, contentDescription = null) }, label = { Text(item.title) })
                     }
                 }
@@ -108,10 +109,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
                             viewModel::rate, viewModel::exitQuiz) { navigate("stories") }
                     }
                     composable("profile") { ProfileScreen(state, viewModel::font, viewModel::dark) {
-                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            AccountCard(online, viewModel::authenticate, viewModel::sync, viewModel::logout)
-                            DiagnosticLogCard()
-                        }
+                        DiagnosticLogCard()
                     } }
                     composable("reader/{id}") { backStack ->
                         StoryContentRoute(backStack.arguments?.getString("id").orEmpty(), viewModel, { nav.popBackStack() }) { loaded ->
@@ -123,7 +121,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
                             val index = state.lessons.indexOfFirst { it.id == loaded.id }
                             val previous = state.lessons.getOrNull(index - 1)
                             val next = state.lessons.getOrNull(index + 1)
-                            LessonScreen(loaded, state, index + 1, onBack = { nav.popBackStack() },
+                            LessonScreen(loaded, state, viewModel, index + 1, onBack = { nav.popBackStack() },
                                 onComplete = { score, total, answers -> viewModel.completeExercises(loaded, score, total, answers) },
                                 onPrevious = previous?.let { previousLesson -> { nav.navigate("lesson/${previousLesson.id}") } },
                                 onNext = next?.let { nextLesson -> { nav.navigate("lesson/${nextLesson.id}") } })

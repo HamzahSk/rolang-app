@@ -38,6 +38,32 @@ data class Exercise(
 
 data class Chapter(val id: String, val title: Map<String, String>, val start: Int, val count: Int)
 
+enum class LessonSectionType { OVERVIEW, VOCABULARY, DIALOGUE, ACTIVITY, GRAMMAR, PRACTICE, CONTENT }
+
+data class LessonText(
+    val sourceLanguage: String,
+    val sourceText: String,
+    val indonesian: String,
+    val tagalog: String = "",
+)
+
+data class LessonRow(val cells: List<LessonText>)
+
+data class LessonBlock(
+    val type: String,
+    val style: String = "body",
+    val text: LessonText? = null,
+    val rows: List<LessonRow> = emptyList(),
+    val path: String = "",
+)
+
+data class LessonSection(
+    val id: String,
+    val type: LessonSectionType,
+    val title: LessonText,
+    val blocks: List<LessonBlock>,
+)
+
 data class Story(
     val id: String, val family: String, val category: String, val level: Level,
     val titles: Map<String, String>, val summaries: Map<String, String>,
@@ -47,11 +73,18 @@ data class Story(
     val notes: List<LearningNote> = emptyList(), val exercises: List<Exercise> = emptyList(),
     val focus: Map<String, List<String>> = emptyMap(), val pronunciation: Map<String, String> = emptyMap(),
     val chapters: List<Chapter> = emptyList(), val sentenceCount: Int = sentences.size,
+    val lessonSections: List<LessonSection> = emptyList(), val assets: List<String> = emptyList(),
+    val contentHash: String = "", val contentPath: String = "", val assetBaseUrl: String = "",
+    val courseTitle: Map<String, String> = emptyMap(), val courseDescription: Map<String, String> = emptyMap(),
+    val unitTitle: Map<String, String> = emptyMap(),
 ) {
     fun title(language: Language) = titles.getValue(language.code)
     fun summary(language: Language) = summaries.getValue(language.code)
     fun sentence(index: Int, language: Language) = sentences[index].getValue(language.code)
     fun focus(language: Language) = focus[language.code].orEmpty()
+    fun courseTitle(language: Language) = courseTitle[language.code].orEmpty()
+    fun courseDescription(language: Language) = courseDescription[language.code].orEmpty()
+    fun unitTitle(language: Language) = unitTitle[language.code].orEmpty()
 }
 
 data class WordDetail(
@@ -60,6 +93,17 @@ data class WordDetail(
 )
 
 object Corpus {
+    private fun flexibleTranslations(obj: JSONObject): Map<String, String> {
+        val indonesian = obj.optString("id").ifBlank { obj.optString("sourceText") }
+        val filipino = obj.optString("fil").ifBlank { obj.optString("tagalog").ifBlank { indonesian } }
+        return mapOf(Language.INDONESIAN.code to indonesian, Language.FILIPINO.code to filipino)
+    }
+    private fun lessonText(obj: JSONObject) = LessonText(
+        sourceLanguage = obj.optString("sourceLanguage", if (obj.has("fil")) "fil" else "en"),
+        sourceText = obj.optString("sourceText").ifBlank { obj.optString("fil").ifBlank { obj.optString("id") } },
+        indonesian = obj.optString("id").ifBlank { obj.optString("sourceText") },
+        tagalog = obj.optString("tagalog").ifBlank { obj.optString("fil") },
+    )
     private fun value(obj: JSONObject, language: Language): String = when (language) {
         Language.INDONESIAN -> obj.getString(Language.INDONESIAN.code)
         Language.FILIPINO -> if (obj.has(Language.FILIPINO.code)) obj.getString(Language.FILIPINO.code)
@@ -75,6 +119,7 @@ object Corpus {
     }
     fun story(entity: StoryEntity): Story {
         val json = JSONObject(entity.content)
+        val staticLesson = json.optString("courseId").isNotBlank()
         val sentences = json.optJSONArray("sentences") ?: org.json.JSONArray()
         fun localizedList(field: String): List<Map<String, String>> = json.optJSONArray(field)?.let { array ->
             (0 until array.length()).map { translations(array.getJSONObject(it)) }
@@ -134,16 +179,48 @@ object Corpus {
         require(declaredSentenceCount in 0..300)
         require(sentences.length() == 0 || declaredSentenceCount == sentences.length())
         if (chapters.isNotEmpty()) require(chapterSentenceCount == declaredSentenceCount)
+        val lessonSections = json.optJSONArray("sections")?.let { array -> (0 until array.length()).map { index ->
+            val section = array.getJSONObject(index)
+            val blocks = section.optJSONArray("blocks")?.let { values -> (0 until values.length()).map { blockIndex ->
+                val block = values.getJSONObject(blockIndex)
+                LessonBlock(
+                    type = block.getString("type"),
+                    style = block.optString("style", "body"),
+                    text = block.optJSONObject("text")?.let(::lessonText),
+                    rows = block.optJSONArray("rows")?.let { rows -> (0 until rows.length()).map { rowIndex ->
+                        val cells = rows.getJSONObject(rowIndex).getJSONArray("cells")
+                        LessonRow((0 until cells.length()).map { cellIndex -> lessonText(cells.getJSONObject(cellIndex)) })
+                    } }.orEmpty(),
+                    path = block.optString("path"),
+                )
+            } }.orEmpty()
+            LessonSection(
+                id = section.getString("id"),
+                type = runCatching { LessonSectionType.valueOf(section.optString("type", "CONTENT")) }
+                    .getOrDefault(LessonSectionType.CONTENT),
+                title = lessonText(section.getJSONObject("title")),
+                blocks = blocks,
+            )
+        } }.orEmpty()
+        fun optionalLocalized(field: String) = json.optJSONObject(field)?.let(::flexibleTranslations).orEmpty()
         return Story(entity.id, entity.family, entity.category, Level.valueOf(entity.level),
-            translations(json.getJSONObject("title")), translations(json.getJSONObject("summary")),
+            if (staticLesson) flexibleTranslations(json.getJSONObject("title")) else translations(json.getJSONObject("title")),
+            if (staticLesson) flexibleTranslations(json.getJSONObject("summary")) else translations(json.getJSONObject("summary")),
             (0 until sentences.length()).map { translations(sentences.getJSONObject(it)) },
             json.optInt("order", Int.MAX_VALUE),
             runCatching { UnitKind.valueOf(json.optString("kind", "STORY")) }.getOrDefault(UnitKind.STORY),
             json.optString("image"),
             json.optJSONArray("speakers")?.let { array -> (0 until array.length()).map {
                 if (array.isNull(it)) null else array.getString(it)
-            } }.orEmpty(), localizedList("objectives"), notes(), exercises(), focus,
-            json.optJSONObject("pronunciation")?.let(::translations).orEmpty(), chapters, declaredSentenceCount)
+            } }.orEmpty(), if (staticLesson) json.optJSONArray("objectives")?.let { array ->
+                (0 until array.length()).map { flexibleTranslations(array.getJSONObject(it)) }
+            }.orEmpty() else localizedList("objectives"), notes(), exercises(), focus,
+            json.optJSONObject("pronunciation")?.let(::translations).orEmpty(), chapters, declaredSentenceCount,
+            lessonSections = lessonSections,
+            assets = json.optJSONArray("assets")?.let { values -> (0 until values.length()).map(values::getString) }.orEmpty(),
+            contentHash = json.optString("contentHash"), contentPath = json.optString("contentPath"),
+            assetBaseUrl = json.optString("assetBaseUrl"), courseTitle = optionalLocalized("courseTitle"),
+            courseDescription = optionalLocalized("courseDescription"), unitTitle = optionalLocalized("unitTitle"))
     }
 
     fun parse(root: JSONObject): Pair<List<StoryEntity>, List<LexemeEntity>> {

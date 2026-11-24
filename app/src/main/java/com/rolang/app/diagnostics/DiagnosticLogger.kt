@@ -15,7 +15,7 @@ import java.time.Instant
 
 /**
  * Small, dependency-free diagnostic logger that remains usable during process failure.
- * It never records request bodies or authentication headers and all writes are best effort.
+ * It never records request bodies or sensitive headers and all writes are best effort.
  */
 @SuppressLint("StaticFieldLeak") // Only applicationContext is retained for process-wide crash logging.
 object DiagnosticLogger {

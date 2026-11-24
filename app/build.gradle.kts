@@ -7,23 +7,18 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-val generatedServerAssets = layout.buildDirectory.dir("generated/serverAssets")
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.isFile) {
         keystorePropertiesFile.inputStream().use { load(it) }
     }
 }
-val copyServerConfig by tasks.registering(Copy::class) {
-    from(rootProject.file("config.json"))
-    into(generatedServerAssets)
-}
 val copyTestCorpus by tasks.registering(Copy::class) {
     from("src/main/assets/corpus.json")
     rename { "story-fixture.json" }
     into(layout.buildDirectory.dir("generated/testAssets"))
 }
-tasks.named("preBuild").configure { dependsOn(copyServerConfig, copyTestCorpus) }
+tasks.named("preBuild").configure { dependsOn(copyTestCorpus) }
 
 android {
     namespace = "com.rolang.app"
@@ -79,7 +74,6 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     sourceSets {
-        getByName("main").assets.srcDir(generatedServerAssets)
         getByName("test").java.srcDir("src/sharedTest/java")
         getByName("test").resources.srcDir("src/main/assets")
         getByName("androidTest").assets.srcDir(layout.buildDirectory.dir("generated/testAssets"))
@@ -121,7 +115,7 @@ dependencies {
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
+    implementation("io.coil-kt:coil-compose:2.7.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("androidx.test.ext:junit:1.2.1")

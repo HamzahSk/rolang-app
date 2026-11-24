@@ -18,9 +18,9 @@ fun LibraryStatus(state: LearningState, viewModel: LearningViewModel?) {
         if (state.catalogLoading) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Memperbarui pustaka…") }
         state.catalogError?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (state.stories.isEmpty() && !state.catalogLoading && state.catalogError == null) Text(when (state.catalogStatus) {
-            CatalogStatus.EMPTY -> "Server terhubung, tetapi belum ada materi yang diterbitkan."
-            CatalogStatus.READY -> "Materi daring diterima, tetapi tidak ada entri yang dapat ditampilkan dengan aman."
-            else -> "Menghubungkan ke pustaka daring…"
+            CatalogStatus.EMPTY -> "Manifest GitHub valid, tetapi belum memuat pelajaran."
+            CatalogStatus.READY -> "Katalog diterima, tetapi tidak ada entri yang dapat ditampilkan dengan aman."
+            else -> "Menghubungkan ke pustaka GitHub…"
         })
         viewModel?.let { TextButton(onClick = it::refreshCatalog, enabled = !state.catalogLoading) { Text("Perbarui pustaka") } }
     }
@@ -28,24 +28,24 @@ fun LibraryStatus(state: LearningState, viewModel: LearningViewModel?) {
 
 @Composable
 fun DownloadControls(story: Story, state: LearningState, viewModel: LearningViewModel) {
+    if (story.contentPath.isBlank()) return
     val download = state.downloads.firstOrNull { it.storyId == story.id }
-    val saved = state.stories.any { it.id == story.id && it.sentences.isNotEmpty() }
-    val active = download?.status in setOf("QUEUED", "DOWNLOADING", "RETRYING")
+    val active = download?.status == "DOWNLOADING"
+    val current = download?.status == "COMPLETE" && download.version == story.contentHash
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (active) {
             LinearProgressIndicator(progress = { if (download!!.total == 0) 0f else download.completed.toFloat() / download.total }, modifier = Modifier.fillMaxWidth())
-            Text(when (download!!.status) {
-                "QUEUED" -> "Menunggu koneksi…"
-                "RETRYING" -> "Menunggu percobaan ulang · ${download.completed}/${download.total} bab tersimpan"
-                else -> "Mengunduh · ${download.completed}/${download.total} bab"
-            }, style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = { viewModel.cancelDownload(story.id) }) { Text("Batalkan unduhan") }
+            Text("Menyimpan gambar · ${download!!.completed}/${download.total}", style = MaterialTheme.typography.bodySmall)
         } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (download?.status == "COMPLETE") Text("Sudah diunduh", style = MaterialTheme.typography.labelMedium)
-            else TextButton(onClick = { viewModel.downloadStory(story.id) }) {
-                Text(if (download?.status in setOf("FAILED", "CANCELLED")) "Ulangi unduhan" else "Unduh cerita")
+            if (current) Text("Tersimpan luring", style = MaterialTheme.typography.labelMedium)
+            else TextButton(onClick = { viewModel.downloadLesson(story.id) }) {
+                Text(when {
+                    download?.status == "COMPLETE" -> "Perbarui unduhan"
+                    download?.status == "FAILED" -> "Coba simpan lagi"
+                    else -> "Simpan untuk luring"
+                })
             }
-            if (saved || download != null) TextButton(onClick = { viewModel.removeDownload(story.id) }) { Text("Hapus materi tersimpan") }
+            if (download != null) TextButton(onClick = { viewModel.removeLessonDownload(story.id) }) { Text("Hapus unduhan") }
         }
         download?.error?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
@@ -65,7 +65,7 @@ fun StoryContentRoute(id: String, viewModel: LearningViewModel, back: () -> Unit
             story = viewModel.cachedStory(id)
             story = viewModel.openStory(id)
         } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { error = "Materi ini belum tersimpan. Sambungkan ke server lalu coba lagi." }
+        catch (_: Exception) { error = "Materi ini belum tersimpan. Sambungkan ke internet untuk mengakses GitHub lalu coba lagi." }
         finally { loading = false }
     }
     val snapshot = story

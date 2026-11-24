@@ -101,22 +101,26 @@ data class ReviewEntity(
     @ColumnInfo(defaultValue = "''") val vocabularyKey: String = "",
 )
 
+/** Kept only so existing version-6 databases open without a destructive migration. */
 @Entity(tableName = "pending_changes", primaryKeys = ["kind", "key"])
 data class PendingChange(val kind: String, val key: String, val operationId: String = UUID.randomUUID().toString(),
     val data: String? = null, val deleted: Boolean = false)
 
+/** Legacy schema compatibility; the app no longer reads or writes synchronization state. */
 @Entity(tableName = "sync_state")
 data class SyncState(@PrimaryKey val id: Int = 1, val owner: String? = null,
     val cursor: Long = 0, val bootstrapped: Boolean = false)
 
 @Dao
 interface LearningDao {
-    @Query("SELECT * FROM story_catalog WHERE available=1 OR id IN (SELECT id FROM stories) ORDER BY id")
+    @Query("SELECT * FROM story_catalog WHERE available=1 ORDER BY id")
     fun catalog(): Flow<List<StoryCatalogEntity>>
     @Query("SELECT * FROM story_catalog")
     suspend fun allCatalog(): List<StoryCatalogEntity>
     @Query("SELECT * FROM story_catalog WHERE id=:id")
     suspend fun catalogStory(id: String): StoryCatalogEntity?
+    @Query("UPDATE story_catalog SET available=0 WHERE id IN (:ids)")
+    suspend fun hideCatalog(ids: List<String>)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun cacheCatalog(items: List<StoryCatalogEntity>)
     @Query("SELECT * FROM stories WHERE id=:id")
@@ -147,6 +151,8 @@ interface LearningDao {
     suspend fun allStories(): List<StoryEntity>
     @Query("UPDATE stories SET available = 0 WHERE remote = 0 AND id NOT IN (:ids)")
     suspend fun hideObsoleteBundledStories(ids: List<String>)
+    @Query("UPDATE stories SET available = 0 WHERE remote = 0 AND id IN (:ids)")
+    suspend fun hideStories(ids: List<String>)
     @Query("SELECT COUNT(*) FROM stories")
     suspend fun storyCount(): Int
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -205,25 +211,9 @@ interface LearningDao {
     suspend fun importReview(review: ReviewEntity)
     @Query("DELETE FROM reviews WHERE syncKey=:key")
     suspend fun deleteReview(key: String)
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun enqueue(change: PendingChange)
+    /** Migration verification/read-only access to legacy rows; no new changes are enqueued. */
     @Query("SELECT * FROM pending_changes ORDER BY kind, `key` LIMIT :limit")
     suspend fun pending(limit: Int = 100): List<PendingChange>
-    @Query("""SELECT * FROM pending_changes
-        WHERE kind='profile'
-           OR (kind='vocabulary' AND `key` LIKE 'fil:id:%')
-           OR (kind='progress' AND `key` LIKE '%:fil')
-           OR (kind='review' AND (deleted=1 OR (data LIKE '%"language":"fil"%' AND data LIKE '%"reference":"id"%')))
-        ORDER BY kind, `key` LIMIT :limit""")
-    suspend fun pendingForSupportedCourse(limit: Int = 100): List<PendingChange>
-    @Query("SELECT * FROM pending_changes WHERE kind=:kind AND `key`=:key")
-    suspend fun pendingFor(kind: String, key: String): PendingChange?
-    @Query("DELETE FROM pending_changes WHERE operationId=:operationId")
-    suspend fun acknowledge(operationId: String)
-    @Query("SELECT * FROM sync_state WHERE id=1")
-    suspend fun syncState(): SyncState?
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun saveSyncState(state: SyncState)
 }
 
 @Database(entities = [StoryEntity::class, StoryCatalogEntity::class, ChapterCacheEntity::class, StoryDownloadEntity::class, LexemeEntity::class, StoryLexemeEntity::class, VocabularyEntity::class,

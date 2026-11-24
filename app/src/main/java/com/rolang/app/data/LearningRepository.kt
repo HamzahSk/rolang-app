@@ -12,19 +12,23 @@ class LearningRepository(private val database: LearningDatabase) {
     suspend fun initialize(context: Context) = withContext(Dispatchers.IO) {
         val root = context.assets.open("corpus.json").bufferedReader().use { JSONObject(it.readText()) }
         val (bundledStories, bundledWords) = Corpus.parse(root)
+        val legacyLessons = bundledStories.filter { Corpus.story(it).kind == UnitKind.LESSON }
+        val bundledReading = bundledStories - legacyLessons.toSet()
         database.withTransaction {
             val currentStories = dao.allStories().associateBy { it.id }
             val currentCatalog = dao.allCatalog().associateBy { it.id }
-            dao.seedStories(bundledStories.filter { currentStories[it.id]?.remote != true })
+            dao.seedStories(bundledReading.filter { currentStories[it.id]?.remote != true })
             // Replace legacy cached entries so obsolete English localization
             // fields do not survive after the focused corpus is installed.
             dao.seedLexicon(bundledWords)
-            dao.cacheCatalog(bundledStories.map { story ->
+            dao.cacheCatalog(bundledReading.map { story ->
                 if (currentStories[story.id]?.remote == true) currentCatalog[story.id]
                     ?: StoryCatalogEntity(story.id, story.content)
                 else StoryCatalogEntity(story.id, story.content)
             })
-            dao.hideObsoleteBundledStories(bundledStories.map { it.id })
+            dao.hideStories(legacyLessons.map { it.id })
+            dao.hideCatalog(legacyLessons.map { it.id })
+            dao.hideObsoleteBundledStories(bundledReading.map { it.id })
         }
     }
     suspend fun lookup(story: Story, sentence: Int, word: String, target: Language, native: Language): WordDetail {
@@ -47,9 +51,7 @@ class LearningRepository(private val database: LearningDatabase) {
                 partOfSpeech = detail.partOfSpeech, explanation = detail.explanation, example = detail.example,
                 exampleTranslation = detail.exampleTranslation, storyId = story.id, storyTitle = story.title(native),
                 category = story.category, createdAt = now, dueAt = now)
-            val saved = dao.saveWord(word) != -1L
-            if (saved) dao.enqueue(SyncCodec.vocabulary(word))
-            saved
+            dao.saveWord(word) != -1L
         }
 
     /** Check the snapshot inside the transaction so a repeated submission cannot advance the schedule twice. */
@@ -64,12 +66,10 @@ class LearningRepository(private val database: LearningDatabase) {
                 status = SpacedRepetition.statusAfterReview(current.learningStatus(), next, effective).name,
                 statusChangedAt = maxOf(now, current.statusChangedAt + 1))
             dao.updateWord(updated)
-            dao.enqueue(SyncCodec.vocabulary(updated))
             val review = ReviewEntity(vocabularyId = current.id, language = current.language,
                 reference = current.reference, reviewedAt = now, correct = correct, rating = effective.name,
-                vocabularyKey = SyncCodec.key(current))
+                vocabularyKey = "${current.language}:${current.reference}:${current.storyId}:${current.word}")
             dao.logReview(review)
-            dao.enqueue(SyncCodec.review(review, SyncCodec.key(current)))
             true
         }
     suspend fun status(id: Long, status: VocabularyStatus, now: Long) = database.withTransaction {
@@ -80,7 +80,6 @@ class LearningRepository(private val database: LearningDatabase) {
             intervalDays = if (reset) 0 else current.intervalDays,
             statusChangedAt = maxOf(now, current.statusChangedAt + 1))
         dao.updateWord(updated)
-        dao.enqueue(SyncCodec.vocabulary(updated))
     }
     suspend fun mastery(id: Long, mastered: Boolean, now: Long) =
         status(id, if (mastered) VocabularyStatus.KNOWN else VocabularyStatus.LEARNING, now)
@@ -93,14 +92,12 @@ class LearningRepository(private val database: LearningDatabase) {
     suspend fun delete(id: Long) = database.withTransaction {
         val current = dao.vocabularyById(id) ?: return@withTransaction
         dao.deleteWord(id)
-        dao.enqueue(PendingChange("vocabulary", SyncCodec.key(current), deleted = true))
     }
     suspend fun reading(story: Story, language: Language, sentence: Int, completed: Boolean) = database.withTransaction {
         val previous = dao.reading(story.id, language.code)
         val reading = ReadingEntity(story.id, language.code, sentence.coerceIn(story.sentences.indices),
             completed || previous?.completed == true)
         dao.saveReading(reading)
-        dao.enqueue(SyncCodec.progress(reading))
     }
     suspend fun exerciseResult(
         story: Story,
@@ -126,6 +123,5 @@ class LearningRepository(private val database: LearningDatabase) {
         dao.saveExerciseResult(result)
         val reading = ReadingEntity(story.id, language.code, story.sentences.lastIndex, true)
         dao.saveReading(reading)
-        dao.enqueue(SyncCodec.progress(reading))
     }
 }

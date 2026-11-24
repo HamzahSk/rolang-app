@@ -56,7 +56,7 @@ fun HomeScreen(
                     Text("Ro-Lang", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                     Text("Indonesia → Tagalog · A1", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                AssistChip(onClick = {}, label = { Text("${state.stories.count { it.sentences.isNotEmpty() }} tersimpan luring") },
+                AssistChip(onClick = {}, label = { Text("${state.downloads.count { it.status == "COMPLETE" }} pelajaran luring") },
                     leadingIcon = { Icon(Icons.Outlined.OfflinePin, null, Modifier.size(18.dp)) })
             }
         }
@@ -71,7 +71,7 @@ fun HomeScreen(
                         Spacer(Modifier.width(10.dp)); Text("LANJUTKAN BELAJAR", style = MaterialTheme.typography.labelLarge)
                     }
                     Text(lesson.title(prefs.native), style = MaterialTheme.typography.headlineMedium)
-                    Text("Unit $unitNumber · ${moduleTitle(lesson.family)} · Pelajaran berikutnya",
+                    Text("Unit $unitNumber · ${lesson.unitTitle(prefs.native).ifBlank { moduleTitle(lesson.family) }} · Pelajaran berikutnya",
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LinearProgressIndicator(progress = { if (lessonItems.isEmpty()) 0f else completedLessons.toFloat() / lessonItems.size }, Modifier.fillMaxWidth())
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -138,13 +138,21 @@ fun LessonsScreen(state: LearningState, viewModel: LearningViewModel? = null, op
     val groups = lessons.groupBy { it.family }
     LazyColumn(Modifier.testTag("lessons-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { LibraryStatus(state, viewModel) }
-        item { SectionTitle("Pelajaran Tagalog A1", "Kurikulum bertahap dengan tujuan, latihan, dan urutan yang jelas.") }
+        lessons.firstOrNull()?.let { course -> item {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(course.courseTitle(state.preferences.native).ifBlank { "Elementary Tagalog 1" }, style = MaterialTheme.typography.headlineMedium)
+                    Text(course.courseDescription(state.preferences.native), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("8 unit · ${lessons.size} pelajaran · Indonesia → Tagalog", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        } }
         item { LinearProgressIndicator(progress = { if (lessons.isEmpty()) 0f else completed.size.toFloat() / lessons.size }, modifier = Modifier.fillMaxWidth()) }
         groups.entries.forEachIndexed { unitIndex, (family, unitLessons) ->
             item(key = "unit:$family") { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("UNIT ${unitIndex + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-                Text(moduleTitle(family), style = MaterialTheme.typography.titleLarge)
-                Text(unitLessons.joinToString(" · ") { it.category }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(unitLessons.first().unitTitle(state.preferences.native).ifBlank { moduleTitle(family) }, style = MaterialTheme.typography.titleLarge)
+                Text("${unitLessons.size} pelajaran", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } }
             items(unitLessons, key = { it.id }) { lesson ->
                 val number = lessons.indexOf(lesson) + 1
@@ -247,7 +255,6 @@ fun StoryCard(story: Story, state: LearningState, viewModel: LearningViewModel? 
                 LinearProgressIndicator(progress = { when {
                     state.contentCompleted(story.id) -> 1f; reading == null -> 0f; else -> ((reading.sentence + 1f) / story.sentenceCount.coerceAtLeast(1)).coerceIn(0f, 1f)
                 } }, Modifier.fillMaxWidth())
-                viewModel?.let { DownloadControls(story, state, it) }
                 Text(when { result?.completed == true -> "Selesai · terbaik ${result.bestScore}/${result.totalQuestions}"
                     state.contentCompleted(story.id) -> "Selesai · latihan tersedia"
                     reading != null -> "Lanjut membaca"; else -> "Mulai cerita" },

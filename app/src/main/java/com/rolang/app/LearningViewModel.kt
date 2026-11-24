@@ -66,7 +66,6 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     private val tts = FilipinoTtsManager(application)
     val pronunciation: PronunciationController = tts
     val pronunciationState = tts.state
-    val online = services.online
     private val ready = MutableStateFlow(false)
     private val error = MutableStateFlow<String?>(null)
     private val _message = MutableStateFlow<String?>(null)
@@ -121,7 +120,6 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
                 preferences.ensureSupportedCourse()
                 preferences.preferences.first()
                 ready.value = true
-                services.configure()
                 refreshCatalog()
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (failure: Exception) {
@@ -149,12 +147,16 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         catch (error: Exception) { DiagnosticLogger.error("STORY", "Cached story $id could not be read.", error); null }
     suspend fun openStory(id: String) = try { services.stories.open(id) } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: Exception) { DiagnosticLogger.error("STORY", "Story $id could not be opened.", error); throw error }
-    fun downloadStory(id: String) { safeAction("Unduhan belum dapat dimulai. Silakan coba lagi.") { services.downloadStory(id) } }
-    fun cancelDownload(id: String) { safeAction("Unduhan belum dapat dibatalkan. Silakan coba lagi.") { services.cancelDownload(id) } }
-    fun removeDownload(id: String) { safeAction("Materi tersimpan belum dapat dihapus. Silakan coba lagi.") { services.removeDownload(id) } }
+    fun downloadLesson(id: String) { safeAction("Pelajaran belum dapat disimpan luring. Silakan coba lagi.") {
+        services.downloadLesson(id); _message.value = "Pelajaran dan gambar tersimpan untuk akses luring"
+    } }
+    fun removeLessonDownload(id: String) { safeAction("Unduhan belum dapat dihapus. Silakan coba lagi.") {
+        services.removeLessonDownload(id); _message.value = "Aset luring dihapus; kemajuan belajar tetap tersimpan"
+    } }
+    fun assetModel(story: Story, path: String): Any = services.stories.assetModel(story, path)
     fun clearMessage() { _message.value = null }
     private fun work(action: suspend () -> Unit) = viewModelScope.launch {
-        try { action(); services.schedulePending() } catch (cancelled: CancellationException) { throw cancelled }
+        try { action() } catch (cancelled: CancellationException) { throw cancelled }
         catch (failure: Exception) {
             DiagnosticLogger.error("ACTION", "A local learning change failed.", failure)
             _message.value = "Perubahan belum dapat disimpan. Silakan coba lagi."
@@ -169,12 +171,6 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     }
     fun font(size: Float) { work { preferences.font(size) } }
     fun dark(value: Boolean) { work { preferences.dark(value) } }
-    fun authenticate(email: String, password: String, name: String?) { viewModelScope.launch { services.authenticate(email, password, name) } }
-    fun logout() { safeAction("Keluar akun belum berhasil. Silakan coba lagi.") { services.logout() } }
-    fun sync() { viewModelScope.launch {
-        try { services.synchronize() } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { /* The account card displays the recoverable error. */ }
-    } }
     suspend fun lookup(story: Story, index: Int, word: String, prefs: LearningPreferences) = try {
         repository.lookup(story, index, word, prefs.target, prefs.native)
     } catch (cancelled: CancellationException) { throw cancelled }
