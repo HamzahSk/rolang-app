@@ -113,4 +113,4 @@ Before finishing:
 - Test malformed JSON and unavailable GitHub scenarios.
 - Run unit tests, lint, and Android debug build.
 
-Implement the complete migration, not just a proposal. Inspect the existing codebase and EPUB first, then make the necessary changes.
+Implement the complete migration, not just a proposal. Inspect the existing codebase and EPUB first, then make the necessary changes. 
