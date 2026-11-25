@@ -1,109 +1,84 @@
-Task: Rebuild RoLang Static Content & Migrate Android App
+Task: Restructure and Improve RoLang Lessons
 
-Start from scratch by inspecting the current repositories and workspace. This is a new session, so do not assume previous session context or existing uncommitted changes.
+Inspect and reorganize all existing Tagalog lessons in the "rolang-server" repository. The current lesson content is messy: paragraphs are poorly structured, dialogues are mixed with explanations, and exercises are mixed with learning materials.
 
-1. Analyze and Extract EPUB
+The goal is to make every lesson clean, readable, well-organized, and easy for Indonesian beginners to understand.
 
-Locate "elementary tagalog 1.epub" and fully inspect its contents.
+1. Review All Lessons
 
-Extract:
+- Inspect every lesson JSON file in the "data" branch.
+- Review the original "elementary tagalog 1.epub" whenever necessary to understand the correct content and context.
+- Fix broken paragraphs, inconsistent formatting, and poorly separated sections.
+- Preserve the original textbook's meaning and learning progression.
+- Do not remove important explanations, examples, vocabulary, or exercises.
 
-- Chapters and learning sections.
-- Grammar explanations.
-- Vocabulary and Indonesian translations.
-- Examples and dialogues.
-- Exercises and practice materials.
-- All relevant embedded images and illustrations.
+2. Separate Content Types
 
-Convert the textbook into structured Indonesian → Tagalog lessons. Preserve its original educational content, learning progression, and relevant illustrations. Do not invent or silently omit content.
+Organize each lesson into clearly separated sections:
 
-2. RoLang Server: Static GitHub Repository
+1. Introduction – Briefly explain what the student will learn.
+2. Learning Material – Grammar explanations and concepts, divided into short, readable paragraphs.
+3. Vocabulary – Tagalog words, Indonesian meanings, and relevant examples.
+4. Examples – Separate Tagalog sentences from their Indonesian translations.
+5. Dialogues – Display conversations in dedicated dialogue blocks, with clear speaker names and separate messages. Never mix dialogue with grammar explanations.
+6. Exercises – Put all questions and practice activities in a dedicated section, separate from learning materials.
+7. Summary – Briefly recap the important concepts when appropriate.
 
-Use the existing "rolang-server" GitHub repository, but publish all static content exclusively on the "data" branch.
+Not every lesson needs every section. Only include sections supported by the original textbook.
 
-Target structure:
+3. Improve Readability
 
-rolang-server/
-├── manifest.json
-├── lesson/
-│   ├── index.json
-│   └── elementary-tagalog-1/
-│       ├── index.json
-│       ├── 01-introduction.json
-│       ├── 02-pronouns.json
-│       └── assets/
-└── storie/
-    └── (reserved for future content)
+- Split long paragraphs into smaller, logically connected paragraphs.
+- Use clear headings and subheadings.
+- Avoid combining multiple unrelated concepts in one section.
+- Keep Tagalog text and Indonesian explanations visually distinguishable.
+- Preserve original Tagalog spelling, punctuation, and examples.
+- Fix incorrect paragraph boundaries caused by EPUB extraction.
+- Remove duplicated or meaningless fragments introduced during extraction.
+- Use lists and tables only when they genuinely improve comprehension.
 
-Requirements:
+4. Exercises and Dialogues
 
-- Separate each lesson into its own JSON file.
-- Organize content using nested folders.
-- Extract EPUB images into the appropriate asset folders.
-- Use relative asset paths.
-- Create a manifest and indexes for content discovery.
-- Validate all JSON files and image references.
-- Keep static content independent of the old backend.
+- Exercises must never appear inside explanations or vocabulary sections.
+- Preserve exercise instructions, questions, and answer choices.
+- Keep answer keys separate from questions when available.
+- Dialogues must retain their original speaker order and conversational context.
+- Do not accidentally classify textbook examples as dialogues or exercises.
 
-Important: All content must be committed and pushed to the "data" branch. Do not publish content to "main".
+5. Adapt Lesson UI/UX
 
-Use this Raw URL as the content base:
+Inspect the Android lesson rendering components and adapt them to the improved JSON structure.
 
-"https://raw.githubusercontent.com/HamzahSk/rolang-server/data/"
+- Render each content type using an appropriate Material 3 component.
+- Use dedicated layouts for vocabulary, examples, dialogues, and exercises.
+- Make dialogue speakers easy to distinguish.
+- Make exercises interactive where the existing architecture supports it.
+- Display relevant textbook illustrations in their appropriate sections.
+- Improve spacing, typography, hierarchy, and reading comfort.
+- Ensure long lessons remain easy to navigate.
 
-3. Android App Migration
+Do not simply display all JSON content as generic paragraphs.
 
-Inspect the current RoLang Android app and remove its backend dependency.
+6. Repository and Compatibility
 
-- Replace API content loading with direct GitHub Raw JSON loading.
-- Remove authentication, account synchronization, and backend-related WorkManager tasks.
-- Keep Room for local learning progress, vocabulary, reviews, and preferences.
-- Preserve existing user data and avoid destructive migrations.
-- Implement caching, content hashes, offline access, and graceful network failure handling.
-- Update all content URLs to use the "data" branch.
+- Work exclusively on the "data" branch of "rolang-server" for content changes.
+- Preserve the existing repository structure and GitHub Raw URLs.
+- Update JSON schemas or indexes if necessary.
+- Keep the Android app compatible with the updated content format.
+- Do not implement Stories yet.
+- Do not modify unrelated application features.
 
-4. Lesson UI/UX
+7. Validation
 
-Redesign the learning experience around the extracted textbook.
+After restructuring:
 
-Include:
+- Validate every lesson JSON file.
+- Check that no content is accidentally missing or duplicated.
+- Verify all image references.
+- Check that dialogues, exercises, vocabulary, and explanations are properly separated.
+- Test the Android lesson UI with short and long lessons.
+- Run relevant tests, lint, and Android debug build.
 
-- Course overview and progress.
-- Units and ordered lessons.
-- Learning objectives.
-- Grammar explanations.
-- Vocabulary with translations.
-- Examples and dialogues.
-- Relevant EPUB illustrations.
-- Exercises and practice.
-- Filipino TTS pronunciation controls.
+Implement the changes directly. Do not merely provide recommendations.
 
-Use the existing Material 3 design system and ensure the interface is comfortable on mobile.
-
-5. Stories Deferred
-
-Do not implement Stories yet. Only prepare the "storie/" directory for future content.
-
-6. Verification & Delivery
-
-- Verify all 24 lessons or adjust the count according to the actual EPUB structure.
-- Verify every extracted image and JSON reference.
-- Verify the manifest and all GitHub Raw URLs on the "data" branch.
-- Test online loading, offline caching, and fallback behavior.
-- Run unit tests, Android lint, and debug APK build.
-- Update documentation and CI validation.
-
-Do not delete legacy backend files unless they are confirmed unnecessary and unrelated to existing functionality.
-
-Do not overwrite unrelated changes.
-
-Actually implement, commit, and push the static content to the "data" branch if repository permissions allow. Never claim a successful push without verifying it.
-
-At completion, report:
-
-- Extracted lesson and image counts.
-- Repository structure.
-- Branch and commit hash.
-- Android files modified.
-- Test and build results.
-- Any remaining manual steps.
+At completion, report the number of lessons reviewed, files changed, structural improvements, and verification results.
