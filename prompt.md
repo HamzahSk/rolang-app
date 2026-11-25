@@ -1,84 +1,52 @@
-Task: Restructure and Improve RoLang Lessons
+Task: Add New Tagalog Lessons from Course Book 1
 
-Inspect and reorganize all existing Tagalog lessons in the "rolang-server" repository. The current lesson content is messy: paragraphs are poorly structured, dialogues are mixed with explanations, and exercises are mixed with learning materials.
+Expand the RoLang learning content using the PDF:
 
-The goal is to make every lesson clean, readable, well-organized, and easy for Indonesian beginners to understand.
+"Learning Tagalog - Fluency Made Fast and Easy - Course Book 1.pdf"
 
-1. Review All Lessons
+1. Inspect the PDF
 
-- Inspect every lesson JSON file in the "data" branch.
-- Review the original "elementary tagalog 1.epub" whenever necessary to understand the correct content and context.
-- Fix broken paragraphs, inconsistent formatting, and poorly separated sections.
-- Preserve the original textbook's meaning and learning progression.
-- Do not remove important explanations, examples, vocabulary, or exercises.
+- Locate and open the PDF from the available project files.
+- Read the entire book and inspect its structure, chapters, lessons, and learning progression.
+- Extract relevant images, illustrations, diagrams, tables, and other visual materials.
+- Preserve the original examples, dialogues, vocabulary, explanations, and exercises.
+- Use the PDF as the primary source. Do not invent or replace its content with unrelated material.
 
-2. Separate Content Types
+2. Create New Lessons
 
-Organize each lesson into clearly separated sections:
+- Convert the book's content into structured RoLang lessons.
+- Organize lessons by chapter and topic, following the book's learning progression.
+- Use Indonesian as the explanation language and Tagalog as the target language.
+- Separate grammar, vocabulary, examples, dialogues, exercises, and summaries into appropriate content sections.
+- Break long explanations into readable paragraphs.
+- Include Indonesian translations for Tagalog examples where supported by the source.
+- Preserve important context and avoid omitting useful material.
 
-1. Introduction – Briefly explain what the student will learn.
-2. Learning Material – Grammar explanations and concepts, divided into short, readable paragraphs.
-3. Vocabulary – Tagalog words, Indonesian meanings, and relevant examples.
-4. Examples – Separate Tagalog sentences from their Indonesian translations.
-5. Dialogues – Display conversations in dedicated dialogue blocks, with clear speaker names and separate messages. Never mix dialogue with grammar explanations.
-6. Exercises – Put all questions and practice activities in a dedicated section, separate from learning materials.
-7. Summary – Briefly recap the important concepts when appropriate.
+3. Extract and Use Images
 
-Not every lesson needs every section. Only include sections supported by the original textbook.
+- Extract images and illustrations from the PDF when available.
+- Save them in the appropriate content repository directories.
+- Reference them correctly in lesson JSON files.
+- Associate each image with its relevant lesson or section.
+- Optimize image sizes without making them unreadable.
+- Do not use unrelated or randomly generated images as replacements.
 
-3. Improve Readability
+4. Repository Integration
 
-- Split long paragraphs into smaller, logically connected paragraphs.
-- Use clear headings and subheadings.
-- Avoid combining multiple unrelated concepts in one section.
-- Keep Tagalog text and Indonesian explanations visually distinguishable.
-- Preserve original Tagalog spelling, punctuation, and examples.
-- Fix incorrect paragraph boundaries caused by EPUB extraction.
-- Remove duplicated or meaningless fragments introduced during extraction.
-- Use lists and tables only when they genuinely improve comprehension.
+- Add the new content to "rolang-server" on the "data" branch.
+- Follow the existing JSON schema, directory structure, and naming conventions.
+- Update lesson indexes or manifests so the Android app can discover the new lessons.
+- Keep existing lessons intact. Avoid duplicate content.
+- Ensure all image paths work with the existing GitHub Raw content loader.
 
-4. Exercises and Dialogues
+5. Android Compatibility and Validation
 
-- Exercises must never appear inside explanations or vocabulary sections.
-- Preserve exercise instructions, questions, and answer choices.
-- Keep answer keys separate from questions when available.
-- Dialogues must retain their original speaker order and conversational context.
-- Do not accidentally classify textbook examples as dialogues or exercises.
+- Inspect the existing Android lesson renderer and make only necessary changes to support the new content.
+- Ensure images, tables, dialogues, vocabulary, and exercises render correctly.
+- Validate every generated JSON file and image reference.
+- Check for missing pages, duplicated content, and extraction errors.
+- Run relevant tests, lint, and Android debug build if app code changes are required.
 
-5. Adapt Lesson UI/UX
+Implement everything directly. Do not stop at recommendations or a content plan.
 
-Inspect the Android lesson rendering components and adapt them to the improved JSON structure.
-
-- Render each content type using an appropriate Material 3 component.
-- Use dedicated layouts for vocabulary, examples, dialogues, and exercises.
-- Make dialogue speakers easy to distinguish.
-- Make exercises interactive where the existing architecture supports it.
-- Display relevant textbook illustrations in their appropriate sections.
-- Improve spacing, typography, hierarchy, and reading comfort.
-- Ensure long lessons remain easy to navigate.
-
-Do not simply display all JSON content as generic paragraphs.
-
-6. Repository and Compatibility
-
-- Work exclusively on the "data" branch of "rolang-server" for content changes.
-- Preserve the existing repository structure and GitHub Raw URLs.
-- Update JSON schemas or indexes if necessary.
-- Keep the Android app compatible with the updated content format.
-- Do not implement Stories yet.
-- Do not modify unrelated application features.
-
-7. Validation
-
-After restructuring:
-
-- Validate every lesson JSON file.
-- Check that no content is accidentally missing or duplicated.
-- Verify all image references.
-- Check that dialogues, exercises, vocabulary, and explanations are properly separated.
-- Test the Android lesson UI with short and long lessons.
-- Run relevant tests, lint, and Android debug build.
-
-Implement the changes directly. Do not merely provide recommendations.
-
-At completion, report the number of lessons reviewed, files changed, structural improvements, and verification results.
+At completion, report the chapters processed, number of new lessons created, images extracted, files changed, and validation results.
