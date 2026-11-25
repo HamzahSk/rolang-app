@@ -1,52 +1,85 @@
-Task: Add New Tagalog Lessons from Course Book 1
+Task: Build the RoLang Stories Section
 
-Expand the RoLang learning content using the PDF:
+Use the EPUB file:
 
-"Learning Tagalog - Fluency Made Fast and Easy - Course Book 1.pdf"
+"English Short Stories for Intermediate Learners 100 English Short Stories.epub"
 
-1. Inspect the PDF
+Create a complete Stories section in RoLang, using the book to understand its learning level, themes, vocabulary, and story structure.
 
-- Locate and open the PDF from the available project files.
-- Read the entire book and inspect its structure, chapters, lessons, and learning progression.
-- Extract relevant images, illustrations, diagrams, tables, and other visual materials.
-- Preserve the original examples, dialogues, vocabulary, explanations, and exercises.
-- Use the PDF as the primary source. Do not invent or replace its content with unrelated material.
+1. Inspect and Extract the EPUB
 
-2. Create New Lessons
+- Open and inspect the entire EPUB.
+- Analyze all 100 stories, their themes, difficulty, vocabulary, and structure.
+- Extract relevant illustrations and images if available.
+- Organize the story metadata and learning topics.
+- Do not reproduce or translate the book's complete copyrighted stories. Use it only as a reference to create original learning content.
 
-- Convert the book's content into structured RoLang lessons.
-- Organize lessons by chapter and topic, following the book's learning progression.
-- Use Indonesian as the explanation language and Tagalog as the target language.
-- Separate grammar, vocabulary, examples, dialogues, exercises, and summaries into appropriate content sections.
-- Break long explanations into readable paragraphs.
-- Include Indonesian translations for Tagalog examples where supported by the source.
-- Preserve important context and avoid omitting useful material.
+2. Create Original Stories
 
-3. Extract and Use Images
+- Create original short stories inspired by broad themes and learning objectives found in the book.
+- Do not copy the original wording, characters, distinctive plots, or dialogue.
+- Write each story in two versions:
+  - Tagalog: Natural and grammatically correct Tagalog.
+  - Indonesian: A complete, natural Indonesian translation of the original Tagalog story.
+- Keep both versions equivalent in meaning, events, and dialogue.
+- Use clear language suitable for Indonesian beginners learning Tagalog.
+- Give every story a title, description, difficulty level, and category.
+- Ensure stories are complete, not shortened summaries or unfinished fragments.
 
-- Extract images and illustrations from the PDF when available.
-- Save them in the appropriate content repository directories.
-- Reference them correctly in lesson JSON files.
-- Associate each image with its relevant lesson or section.
-- Optimize image sizes without making them unreadable.
-- Do not use unrelated or randomly generated images as replacements.
+3. Learning Features
 
-4. Repository Integration
+Each story should support:
 
-- Add the new content to "rolang-server" on the "data" branch.
-- Follow the existing JSON schema, directory structure, and naming conventions.
-- Update lesson indexes or manifests so the Android app can discover the new lessons.
-- Keep existing lessons intact. Avoid duplicate content.
-- Ensure all image paths work with the existing GitHub Raw content loader.
+- Tagalog and Indonesian reading modes.
+- Paragraph-by-paragraph navigation.
+- Vocabulary lists with Indonesian meanings.
+- Important expressions and grammar notes.
+- Reading comprehension questions.
+- Interactive exercises where supported by the existing architecture.
+- Audio/TTS support using the existing Android implementation.
+- Relevant illustrations when available or appropriate.
 
-5. Android Compatibility and Validation
+4. Android Stories UI
 
-- Inspect the existing Android lesson renderer and make only necessary changes to support the new content.
-- Ensure images, tables, dialogues, vocabulary, and exercises render correctly.
-- Validate every generated JSON file and image reference.
-- Check for missing pages, duplicated content, and extraction errors.
-- Run relevant tests, lint, and Android debug build if app code changes are required.
+Build a dedicated Stories section in the Android app.
 
-Implement everything directly. Do not stop at recommendations or a content plan.
+- Add a story library with categories and difficulty levels.
+- Provide a clean story-reading interface.
+- Allow switching between Tagalog and Indonesian.
+- Add vocabulary and learning notes.
+- Support bookmarking and reading progress.
+- Follow the existing Material 3 design system.
+- Preserve existing lesson functionality and user progress.
 
-At completion, report the chapters processed, number of new lessons created, images extracted, files changed, and validation results.
+5. Repository and Deployment
+
+IMPORTANT: All content changes must go to the "data" branch of "rolang-server".
+
+- Inspect the existing "storie/" directory and follow its naming conventions and JSON schema.
+- Put all new story files in the appropriate "storie/" directories.
+- Update story indexes/manifests so the Android app can discover every story.
+- Ensure GitHub Raw URLs use the "data" branch.
+- Do not push content changes to "main".
+- Before committing, explicitly verify the current branch is "data".
+- Commit and push all intended changes to "origin/data".
+- Never force-push or reset "main".
+
+6. Validation
+
+- Validate all story JSON files.
+- Check Tagalog and Indonesian versions for completeness and consistency.
+- Verify vocabulary, exercises, and image references.
+- Test story discovery and loading through actual GitHub Raw URLs.
+- Test the Android Stories interface.
+- Run relevant unit tests, lint, and debug build.
+
+Implement everything directly.
+
+At completion, report:
+
+- Number of original stories created.
+- Categories and difficulty levels.
+- Number of images extracted or added.
+- Android files changed.
+- Test and build results.
+- Git commit hash and confirmation that changes were pushed to "origin/data".
