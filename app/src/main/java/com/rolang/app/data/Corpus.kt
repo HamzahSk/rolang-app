@@ -38,7 +38,10 @@ data class Exercise(
 
 data class Chapter(val id: String, val title: Map<String, String>, val start: Int, val count: Int)
 
-enum class LessonSectionType { OVERVIEW, VOCABULARY, DIALOGUE, ACTIVITY, GRAMMAR, PRACTICE, CONTENT }
+enum class LessonSectionType {
+    INTRODUCTION, LEARNING_MATERIAL, VOCABULARY, EXAMPLES, DIALOGUE, EXERCISES, SUMMARY,
+    OVERVIEW, ACTIVITY, GRAMMAR, PRACTICE, CONTENT,
+}
 
 data class LessonText(
     val sourceLanguage: String,
@@ -49,10 +52,19 @@ data class LessonText(
 
 data class LessonRow(val cells: List<LessonText>)
 
+data class LessonVocabularyEntry(val term: LessonText, val meaning: LessonText)
+
+data class LessonDialogueTurn(val speaker: String, val speakerText: LessonText, val text: LessonText)
+
 data class LessonBlock(
     val type: String,
     val style: String = "body",
+    val role: String = "",
     val text: LessonText? = null,
+    val title: LessonText? = null,
+    val items: List<LessonText> = emptyList(),
+    val entries: List<LessonVocabularyEntry> = emptyList(),
+    val turns: List<LessonDialogueTurn> = emptyList(),
     val rows: List<LessonRow> = emptyList(),
     val path: String = "",
 )
@@ -183,14 +195,29 @@ object Corpus {
             val section = array.getJSONObject(index)
             val blocks = section.optJSONArray("blocks")?.let { values -> (0 until values.length()).map { blockIndex ->
                 val block = values.getJSONObject(blockIndex)
+                fun rows() = block.optJSONArray("rows")?.let { rows -> (0 until rows.length()).map { rowIndex ->
+                    val cells = rows.getJSONObject(rowIndex).getJSONArray("cells")
+                    LessonRow((0 until cells.length()).map { cellIndex -> lessonText(cells.getJSONObject(cellIndex)) })
+                } }.orEmpty()
                 LessonBlock(
                     type = block.getString("type"),
                     style = block.optString("style", "body"),
+                    role = block.optString("role"),
                     text = block.optJSONObject("text")?.let(::lessonText),
-                    rows = block.optJSONArray("rows")?.let { rows -> (0 until rows.length()).map { rowIndex ->
-                        val cells = rows.getJSONObject(rowIndex).getJSONArray("cells")
-                        LessonRow((0 until cells.length()).map { cellIndex -> lessonText(cells.getJSONObject(cellIndex)) })
+                    title = block.optJSONObject("title")?.let(::lessonText),
+                    items = block.optJSONArray("items")?.let { items -> (0 until items.length()).map { itemIndex ->
+                        lessonText(items.getJSONObject(itemIndex))
                     } }.orEmpty(),
+                    entries = block.optJSONArray("entries")?.let { entries -> (0 until entries.length()).map { entryIndex ->
+                        val entry = entries.getJSONObject(entryIndex)
+                        LessonVocabularyEntry(lessonText(entry.getJSONObject("term")), lessonText(entry.getJSONObject("meaning")))
+                    } }.orEmpty(),
+                    turns = block.optJSONArray("turns")?.let { turns -> (0 until turns.length()).map { turnIndex ->
+                        val turn = turns.getJSONObject(turnIndex)
+                        LessonDialogueTurn(turn.getString("speaker"), lessonText(turn.getJSONObject("speakerText")),
+                            lessonText(turn.getJSONObject("text")))
+                    } }.orEmpty(),
+                    rows = rows(),
                     path = block.optString("path"),
                 )
             } }.orEmpty()
