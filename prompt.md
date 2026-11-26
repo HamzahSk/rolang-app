@@ -1,126 +1,202 @@
-Task: Resynchronize and Reorganize RoLang Stories
+Task: Build a Global Vocabulary System for RoLang
 
-The Stories content from Book 1 and Book 2 has already been added to "rolang-server", but the Android app's Stories section is not properly synchronized with the server.
+Currently, RoLang extracts and displays word translations directly from individual stories. This approach causes duplicated vocabulary entries and makes vocabulary difficult to manage across multiple stories.
 
-Previously, adding Book 2 accidentally replaced Book 1. This MUST NOT happen again.
+Replace this system with a centralized, reusable Global Vocabulary Database hosted in "rolang-server".
 
-1. Server as the Source of Truth
+1. Create a Global Vocabulary Repository
 
-Inspect the current Stories content in "rolang-server" on the "data" branch.
+Create a new directory:
 
-- Audit all existing story files, indexes, and manifests.
-- Identify stories belonging to Book 1 and Book 2.
-- Treat the current server content as the source of truth.
-- Synchronize the Android app with the complete server collection.
-- Preserve all existing stories from both books.
-- Never replace the entire collection when adding or updating a book.
-- Do not regenerate, rewrite, or delete existing story content unnecessarily.
-- Detect duplicate IDs and filename conflicts without accidentally deleting valid stories.
+"rolang-server/vocabulary/"
 
-2. Fix Story Synchronization
-
-Inspect the complete content-loading flow:
-
-- GitHub Raw URLs and branch configuration.
-- Story index and manifest loading.
-- Remote story discovery.
-- JSON parsing and data mapping.
-- Local caching and offline storage.
-- Update detection and cache invalidation.
-- Course/book grouping and story ordering.
-
-Make sure the app can discover and load every story from both books.
-
-Important requirements:
-
-- Remote updates must merge or reconcile with existing local data instead of replacing unrelated stories.
-- Adding Book 2 must never remove Book 1.
-- Updating Book 1 must never remove Book 2.
-- Preserve bookmarks, reading progress, and other user data.
-- Handle missing, deleted, and updated remote entries safely.
-- Avoid stale indexes and outdated cached content.
-- Ensure offline stories remain accessible.
-
-3. Reorganize Story Categories
-
-The current category structure should be redesigned.
-
-Categories must represent broad themes, NOT individual story titles.
-
-For example:
-
-- Adventure
-- Animals
-- Daily Life
-- Family and Friendship
-- Nature and Environment
-- Folktales and Fables
-- History and Culture
-- Mystery and Discovery
-
-These are examples only. Determine the final categories based on the actual stories from both books.
+All vocabulary data must be stored here as JSON files.
 
 Requirements:
 
-- Each category should contain multiple relevant stories whenever possible.
-- Stories from Book 1 and Book 2 can belong to the same category.
-- A story may have multiple relevant tags if the existing architecture supports it.
-- Keep book/source information separate from categories.
-- Preserve each story's original title and numbering.
-- Do not create a separate category for every story.
-- Do not use Book 1 and Book 2 as story categories; display them as source/book filters instead.
+- Organize vocabulary into JSON files containing approximately 100 unique words each.
+- Use consistent IDs for every vocabulary entry.
+- Create an "index.json" to register all vocabulary files and their metadata.
+- Support adding new vocabulary files without replacing existing ones.
+- Avoid duplicate entries across different JSON files.
+- Keep the structure scalable for thousands of words.
 
-4. Improve Stories UI
+Suggested structure:
 
-Update the Stories library to support:
+vocabulary/
+├── index.json
+├── vocabulary-001.json
+├── vocabulary-002.json
+├── vocabulary-003.json
+└── ...
 
-- Broad thematic categories.
-- Book/source filters (Book 1 and Book 2).
-- Difficulty filters.
-- Search by story title.
-- Story counts for each category.
-- Clear story grouping and navigation.
-- A clean Material 3 layout.
+2. Vocabulary Data Structure
 
-Avoid excessive category cards or unnecessary nested navigation.
+Each vocabulary entry should support:
 
-5. Data Integrity and Validation
+- Unique ID.
+- Tagalog word or phrase.
+- Indonesian meaning.
+- Alternative meanings or additional senses when applicable.
+- Part of speech (noun, verb, adjective, etc.).
+- Pronunciation.
+- Relevant example sentences in Tagalog.
+- Indonesian translations of examples.
+- References to stories where the word appears.
+
+Example:
+
+{
+  "id": "usa",
+  "word": "usa",
+  "language": "tl",
+  "meanings": [
+    {
+      "language": "id",
+      "value": "rusa"
+    }
+  ],
+  "partOfSpeech": "noun",
+  "pronunciation": "usa",
+  "examples": [
+    {
+      "tagalog": "Araw-araw na hinahangaan ng usa ang malapad niyang dibdib.",
+      "indonesian": "Setiap hari rusa mengagumi dadanya yang lebar."
+    }
+  ],
+  "storyRefs": [
+    "story-book-1-001"
+  ]
+}
+
+Adapt the schema to the existing project conventions if necessary.
+
+Important:
+
+- One word must have one canonical global entry.
+- If a word appears in multiple stories, add those story references to the same entry.
+- Do not duplicate the vocabulary entry just because its context changes.
+- Support multiple meanings when a word genuinely has different meanings.
+- Preserve context-specific example sentences and translations.
+
+3. Migrate Existing Story Vocabulary
+
+Inspect all existing vocabulary embedded in stories from Book 1, Book 2, and other available collections.
+
+- Extract all existing vocabulary entries.
+- Normalize and deduplicate them.
+- Merge entries referring to the same Tagalog word.
+- Preserve useful Indonesian meanings, pronunciation, examples, and story references.
+- Move the vocabulary into the new global JSON database.
+- Replace embedded vocabulary data with references to global vocabulary IDs.
+- Do not lose existing vocabulary information during migration.
+
+Do not arbitrarily merge different words that happen to have similar spellings or meanings.
+
+4. Update Story Integration
+
+Stories should no longer own separate copies of vocabulary.
+
+Instead, each story should contain references such as:
+
+{
+  "vocabularyIds": [
+    "usa",
+    "araw",
+    "bahay"
+  ]
+}
+
+When opening a story, the Android app should resolve these IDs against the global vocabulary database.
+
+This allows:
+
+- Multiple stories to share vocabulary.
+- Vocabulary updates to apply globally.
+- New stories to reuse existing words.
+- Vocabulary learning progress to remain centralized.
+
+5. Redesign the Word Translation UI
+
+Inspect the existing word-detail interface shown when users tap a Tagalog word.
+
+Update it to retrieve data from the global vocabulary database.
+
+Preserve and improve these features:
+
+- Tagalog word display.
+- Indonesian meaning.
+- Part of speech.
+- Pronunciation and TTS.
+- Multiple meanings when available.
+- Example sentences and translations.
+- Story contexts where the word appears.
+- Global learning status (New, Learning, Almost Mastered, Mastered).
+- Save vocabulary and review functionality.
+
+Important:
+
+- Learning status must belong to the global vocabulary entry, not an individual story.
+- If a word appears in another story, its existing learning status must remain the same.
+- Keep user progress locally stored and preserve existing progress during migration.
+- Handle vocabulary that is not yet available in the global database gracefully.
+
+6. Global Vocabulary Management and Loading
+
+Implement:
+
+- Vocabulary index loading from GitHub Raw.
+- Lazy loading of JSON files.
+- Local caching and offline access.
+- Search by Tagalog word and Indonesian meaning.
+- Fast lookup by vocabulary ID.
+- Duplicate detection when adding new entries.
+- Safe index updates when new vocabulary files are published.
+
+Avoid downloading every vocabulary JSON file whenever a story is opened.
+
+Use the existing networking, caching, and repository architecture where possible.
+
+7. GitHub Repository Rules
+
+All server vocabulary changes MUST be made in:
+
+"rolang-server" → branch "data"
+
+- Create the "vocabulary/" directory on "data".
+- Commit and push all vocabulary files and updated story indexes to "origin/data".
+- Ensure GitHub Raw URLs point to the "data" branch.
+- Never push content changes to "main".
+- Never force-push or reset "main".
+
+Keep Android app changes separate from server content changes.
+
+8. Validation
 
 Before finishing:
 
-- Compare server and Android story inventories.
-- Verify that every server story is discoverable in the app.
-- Verify that both books are present.
-- Check for missing, duplicated, or incorrectly grouped stories.
-- Validate all JSON files and image references.
-- Test remote loading, caching, offline access, and update synchronization.
-- Confirm that existing bookmarks and reading progress remain intact.
+- Verify that all existing story vocabulary has been migrated.
+- Check for duplicate vocabulary IDs and words.
+- Verify all story vocabulary references.
+- Ensure words shared by multiple stories resolve to the same global entry.
+- Test word lookup, search, TTS, learning status, and offline access.
+- Confirm that existing bookmarks and learning progress remain intact.
+- Test the actual GitHub Raw loading flow.
 
-Do not simply report the number of stories in the local database. Test actual remote discovery and loading.
-
-6. Git Rules — CRITICAL
-
-For "rolang-server":
-
-- Work exclusively on the "data" branch.
-- Commit and push all intended server changes to "origin/data".
-- Never push story content to "main".
-- Never force-push or reset "main".
-- Verify the remote branch after pushing.
-
-Keep Android app changes separate and report their commit status.
+Do not merely create the JSON files. Integrate the global vocabulary system into the Android app.
 
 Final Report
 
-Provide:
+Report:
 
-- Total stories found on the server.
-- Number of stories from Book 1 and Book 2.
-- Final category list and story counts per category.
-- Any synchronization bugs found and fixed.
-- Confirmation that no existing stories were lost.
+- Total unique vocabulary entries migrated.
+- Number of vocabulary JSON files created.
+- Number of duplicate entries merged.
+- Number of stories connected to global vocabulary.
+- Any missing or unresolved vocabulary references.
+- Android files changed.
 - Test and build results.
 - Server commit hash and confirmation of push to "origin/data".
 - Android commit and push status.
 
-Implement the fixes directly. Do not just provide recommendations.
+Implement everything directly without modifying unrelated features.
