@@ -6,6 +6,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Locale
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -15,7 +16,6 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowTextToSpeech
-import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -23,18 +23,29 @@ class FilipinoTtsManagerTest {
     private val locale = Locale("fil", "PH")
 
     @Before fun resetTts() = ShadowTextToSpeech.reset()
+
     @After fun cleanUpTts() = ShadowTextToSpeech.reset()
 
     private fun idle() = shadowOf(Looper.getMainLooper()).idle()
+
     private fun finishInitialization(status: Int = TextToSpeech.SUCCESS) {
         idle()
         shadowOf(ShadowTextToSpeech.getLastTextToSpeechInstance()).onInitListener.onInit(status)
         idle()
     }
-    private fun voice(name: String, language: String = "fil", network: Boolean = false) =
-        Voice(name, Locale(language, if (language == "fil") "PH" else "US"), 400, 200, network, emptySet())
 
-    @Test fun cNativeFilipinoVoiceSupportsPlayStopReplaySequenceAndSettings() {
+    private fun voice(name: String, language: String = "fil", network: Boolean = false) =
+        Voice(
+            name,
+            Locale(language, if (language == "fil") "PH" else "US"),
+            400,
+            200,
+            network,
+            emptySet(),
+        )
+
+    @Test
+    fun cNativeFilipinoVoiceSupportsPlayStopReplaySequenceAndSettings() {
         ShadowTextToSpeech.addLanguageAvailability(locale)
         ShadowTextToSpeech.addVoice(voice("fil-offline"))
         val manager = FilipinoTtsManager(ApplicationProvider.getApplicationContext<Context>())
@@ -49,7 +60,9 @@ class FilipinoTtsManagerTest {
         idle()
         assertEquals("Salamat po.", shadow.lastSpokenText)
         assertEquals(TextToSpeech.QUEUE_FLUSH, shadow.queueMode)
-        assertFalse(manager.state.value.speaking) // Robolectric completes each utterance immediately.
+        assertFalse(
+            manager.state.value.speaking
+        ) // Robolectric completes each utterance immediately.
 
         manager.stop()
         idle()
@@ -59,10 +72,10 @@ class FilipinoTtsManagerTest {
         idle()
         assertEquals("Salamat po.", shadow.lastSpokenText)
 
-        manager.speakSequence("story", listOf(
-            SpeechItem("line-1", "Kumusta ka?"),
-            SpeechItem("line-2", "Mabuti ako."),
-        ))
+        manager.speakSequence(
+            "story",
+            listOf(SpeechItem("line-1", "Kumusta ka?"), SpeechItem("line-2", "Mabuti ako.")),
+        )
         idle()
         assertEquals(listOf("Kumusta ka?", "Mabuti ako."), shadow.spokenTextList.takeLast(2))
         assertFalse(manager.state.value.speaking)
@@ -78,7 +91,8 @@ class FilipinoTtsManagerTest {
         assertEquals(PronunciationAvailability.CLOSED, manager.state.value.availability)
     }
 
-    @Test fun bFailedNativeInitializationReportsErrorAndDoesNotSpeak() {
+    @Test
+    fun bFailedNativeInitializationReportsErrorAndDoesNotSpeak() {
         val manager = FilipinoTtsManager(ApplicationProvider.getApplicationContext<Context>())
         finishInitialization(TextToSpeech.ERROR)
 
@@ -87,11 +101,15 @@ class FilipinoTtsManagerTest {
         manager.speak("Salamat", "word")
         idle()
         assertFalse(manager.state.value.speaking)
-        assertNotEquals("Salamat", shadowOf(ShadowTextToSpeech.getLastTextToSpeechInstance()).lastSpokenText)
+        assertNotEquals(
+            "Salamat",
+            shadowOf(ShadowTextToSpeech.getLastTextToSpeechInstance()).lastSpokenText,
+        )
         manager.close()
     }
 
-    @Test fun aUnavailableFilipinoLanguageIsReportedAsUnsupported() {
+    @Test
+    fun aUnavailableFilipinoLanguageIsReportedAsUnsupported() {
         val manager = FilipinoTtsManager(ApplicationProvider.getApplicationContext<Context>())
         finishInitialization()
         assertEquals(PronunciationAvailability.UNSUPPORTED, manager.state.value.availability)

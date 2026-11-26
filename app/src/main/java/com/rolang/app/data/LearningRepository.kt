@@ -9,96 +9,197 @@ import org.json.JSONObject
 
 class LearningRepository(private val database: LearningDatabase) {
     val dao = database.dao()
-    suspend fun initialize(context: Context) = withContext(Dispatchers.IO) {
-        val root = context.assets.open("corpus.json").bufferedReader().use { JSONObject(it.readText()) }
-        val (bundledStories, bundledWords) = Corpus.parse(root)
-        val legacyLessons = bundledStories.filter { Corpus.story(it).kind == UnitKind.LESSON }
-        val bundledReading = bundledStories - legacyLessons.toSet()
-        database.withTransaction {
-            val currentStories = dao.allStories().associateBy { it.id }
-            val currentCatalog = dao.allCatalog().associateBy { it.id }
-            dao.seedStories(bundledReading.filter { currentStories[it.id]?.remote != true })
-            // Replace legacy cached entries so obsolete English localization
-            // fields do not survive after the focused corpus is installed.
-            dao.seedLexicon(bundledWords)
-            dao.cacheCatalog(bundledReading.map { story ->
-                if (currentStories[story.id]?.remote == true) currentCatalog[story.id]
-                    ?: StoryCatalogEntity(story.id, story.content)
-                else StoryCatalogEntity(story.id, story.content)
-            })
-            dao.hideStories(legacyLessons.map { it.id })
-            dao.hideCatalog(legacyLessons.map { it.id })
-            dao.hideObsoleteBundledStories(bundledReading.map { it.id })
+
+    suspend fun initialize(context: Context) =
+        withContext(Dispatchers.IO) {
+            val root =
+                context.assets.open("corpus.json").bufferedReader().use {
+                    JSONObject(it.readText())
+                }
+            val (bundledStories, bundledWords) = Corpus.parse(root)
+            val legacyLessons = bundledStories.filter { Corpus.story(it).kind == UnitKind.LESSON }
+            val bundledReading = bundledStories - legacyLessons.toSet()
+            database.withTransaction {
+                val currentStories = dao.allStories().associateBy { it.id }
+                val currentCatalog = dao.allCatalog().associateBy { it.id }
+                dao.seedStories(bundledReading.filter { currentStories[it.id]?.remote != true })
+                // Replace legacy cached entries so obsolete English localization
+                // fields do not survive after the focused corpus is installed.
+                dao.seedLexicon(bundledWords)
+                dao.cacheCatalog(
+                    bundledReading.map { story ->
+                        if (currentStories[story.id]?.remote == true)
+                            currentCatalog[story.id] ?: StoryCatalogEntity(story.id, story.content)
+                        else StoryCatalogEntity(story.id, story.content)
+                    }
+                )
+                dao.hideStories(legacyLessons.map { it.id })
+                dao.hideCatalog(legacyLessons.map { it.id })
+                dao.hideObsoleteBundledStories(bundledReading.map { it.id })
+            }
         }
-    }
-    suspend fun lookup(story: Story, sentence: Int, word: String, target: Language, native: Language): WordDetail {
+
+    suspend fun lookup(
+        story: Story,
+        sentence: Int,
+        word: String,
+        target: Language,
+        native: Language,
+    ): WordDetail {
         val cached = dao.storyLexeme(story.id, target.code, Words.key(word))
-        val lexeme = cached?.let { LexemeEntity(it.language, it.word, it.content) }
-            ?: checkNotNull(dao.lexeme(target.code, Words.key(word))) { "Translation missing from local cache" }
-        return Corpus.detail(lexeme, word, native, story.sentence(sentence, target), story.sentence(sentence, native))
+        val lexeme =
+            cached?.let { LexemeEntity(it.language, it.word, it.content) }
+                ?: checkNotNull(dao.lexeme(target.code, Words.key(word))) {
+                    "Translation missing from local cache"
+                }
+        return Corpus.detail(
+            lexeme,
+            word,
+            native,
+            story.sentence(sentence, target),
+            story.sentence(sentence, native),
+        )
     }
+
     suspend fun lookup(story: Story, word: String, target: Language, native: Language): WordDetail {
         val key = Words.key(word)
-        val index = story.sentences.indexOfFirst { sentence ->
-            sentence.getValue(target.code).lowercase().contains(key)
-        }.coerceAtLeast(0)
+        val index =
+            story.sentences
+                .indexOfFirst { sentence ->
+                    sentence.getValue(target.code).lowercase().contains(key)
+                }
+                .coerceAtLeast(0)
         return lookup(story, index, word, target, native)
     }
-    suspend fun save(story: Story, detail: WordDetail, target: Language, native: Language, now: Long): Boolean =
+
+    suspend fun save(
+        story: Story,
+        detail: WordDetail,
+        target: Language,
+        native: Language,
+        now: Long,
+    ): Boolean =
         database.withTransaction {
-            val word = VocabularyEntity(language = target.code, reference = native.code,
-                word = Words.key(detail.word), translation = detail.translation, meaning = detail.meaning,
-                partOfSpeech = detail.partOfSpeech, explanation = detail.explanation, example = detail.example,
-                exampleTranslation = detail.exampleTranslation, storyId = story.id, storyTitle = story.title(native),
-                category = story.category, createdAt = now, dueAt = now)
+            val word =
+                VocabularyEntity(
+                    language = target.code,
+                    reference = native.code,
+                    word = Words.key(detail.word),
+                    translation = detail.translation,
+                    meaning = detail.meaning,
+                    partOfSpeech = detail.partOfSpeech,
+                    explanation = detail.explanation,
+                    example = detail.example,
+                    exampleTranslation = detail.exampleTranslation,
+                    storyId = story.id,
+                    storyTitle = story.title(native),
+                    category = story.category,
+                    createdAt = now,
+                    dueAt = now,
+                )
             dao.saveWord(word) != -1L
         }
 
-    /** Check the snapshot inside the transaction so a repeated submission cannot advance the schedule twice. */
-    suspend fun review(snapshot: VocabularyEntity, rating: Rating, correct: Boolean, now: Long): Boolean =
+    /**
+     * Check the snapshot inside the transaction so a repeated submission cannot advance the
+     * schedule twice.
+     */
+    suspend fun review(
+        snapshot: VocabularyEntity,
+        rating: Rating,
+        correct: Boolean,
+        now: Long,
+    ): Boolean =
         database.withTransaction {
             val current = dao.vocabularyById(snapshot.id) ?: return@withTransaction false
-            if (current != snapshot ||
-                current.mastered || current.dueAt > now) return@withTransaction false
+            if (current != snapshot || current.mastered || current.dueAt > now)
+                return@withTransaction false
             val effective = if (correct) rating else Rating.AGAIN
             val next = SpacedRepetition.next(current.schedule(), effective, now)
-            val updated = current.scheduled(next, now).copy(
-                status = SpacedRepetition.statusAfterReview(current.learningStatus(), next, effective).name,
-                statusChangedAt = maxOf(now, current.statusChangedAt + 1))
+            val updated =
+                current
+                    .scheduled(next, now)
+                    .copy(
+                        status =
+                            SpacedRepetition.statusAfterReview(
+                                    current.learningStatus(),
+                                    next,
+                                    effective,
+                                )
+                                .name,
+                        statusChangedAt = maxOf(now, current.statusChangedAt + 1),
+                    )
             dao.updateWord(updated)
-            val review = ReviewEntity(vocabularyId = current.id, language = current.language,
-                reference = current.reference, reviewedAt = now, correct = correct, rating = effective.name,
-                vocabularyKey = "${current.language}:${current.reference}:${current.storyId}:${current.word}")
+            val review =
+                ReviewEntity(
+                    vocabularyId = current.id,
+                    language = current.language,
+                    reference = current.reference,
+                    reviewedAt = now,
+                    correct = correct,
+                    rating = effective.name,
+                    vocabularyKey =
+                        "${current.language}:${current.reference}:${current.storyId}:${current.word}",
+                )
             dao.logReview(review)
             true
         }
-    suspend fun status(id: Long, status: VocabularyStatus, now: Long) = database.withTransaction {
-        val current = dao.vocabularyById(id) ?: return@withTransaction
-        val reset = status == VocabularyStatus.NEW || status == VocabularyStatus.LEARNING
-        val updated = current.copy(status = status.name, mastered = status == VocabularyStatus.KNOWN, dueAt = now,
-            repetitions = if (reset) 0 else current.repetitions,
-            intervalDays = if (reset) 0 else current.intervalDays,
-            statusChangedAt = maxOf(now, current.statusChangedAt + 1))
-        dao.updateWord(updated)
-    }
+
+    suspend fun status(id: Long, status: VocabularyStatus, now: Long) =
+        database.withTransaction {
+            val current = dao.vocabularyById(id) ?: return@withTransaction
+            val reset = status == VocabularyStatus.NEW || status == VocabularyStatus.LEARNING
+            val updated =
+                current.copy(
+                    status = status.name,
+                    mastered = status == VocabularyStatus.KNOWN,
+                    dueAt = now,
+                    repetitions = if (reset) 0 else current.repetitions,
+                    intervalDays = if (reset) 0 else current.intervalDays,
+                    statusChangedAt = maxOf(now, current.statusChangedAt + 1),
+                )
+            dao.updateWord(updated)
+        }
+
     suspend fun mastery(id: Long, mastered: Boolean, now: Long) =
         status(id, if (mastered) VocabularyStatus.KNOWN else VocabularyStatus.LEARNING, now)
-    suspend fun status(story: Story, detail: WordDetail, target: Language, native: Language,
-                       status: VocabularyStatus, now: Long) = database.withTransaction {
-        save(story, detail, target, native, now)
-        val current = checkNotNull(dao.vocabularyByKey(target.code, native.code, story.id, Words.key(detail.word)))
-        status(current.id, status, now)
-    }
-    suspend fun delete(id: Long) = database.withTransaction {
-        val current = dao.vocabularyById(id) ?: return@withTransaction
-        dao.deleteWord(id)
-    }
-    suspend fun reading(story: Story, language: Language, sentence: Int, completed: Boolean) = database.withTransaction {
-        val previous = dao.reading(story.id, language.code)
-        val reading = ReadingEntity(story.id, language.code, sentence.coerceIn(story.sentences.indices),
-            completed || previous?.completed == true)
-        dao.saveReading(reading)
-    }
+
+    suspend fun status(
+        story: Story,
+        detail: WordDetail,
+        target: Language,
+        native: Language,
+        status: VocabularyStatus,
+        now: Long,
+    ) =
+        database.withTransaction {
+            save(story, detail, target, native, now)
+            val current =
+                checkNotNull(
+                    dao.vocabularyByKey(target.code, native.code, story.id, Words.key(detail.word))
+                )
+            status(current.id, status, now)
+        }
+
+    suspend fun delete(id: Long) =
+        database.withTransaction {
+            val current = dao.vocabularyById(id) ?: return@withTransaction
+            dao.deleteWord(id)
+        }
+
+    suspend fun reading(story: Story, language: Language, sentence: Int, completed: Boolean) =
+        database.withTransaction {
+            val previous = dao.reading(story.id, language.code)
+            val reading =
+                ReadingEntity(
+                    story.id,
+                    language.code,
+                    sentence.coerceIn(story.sentences.indices),
+                    completed || previous?.completed == true,
+                )
+            dao.saveReading(reading)
+        }
+
     suspend fun exerciseResult(
         story: Story,
         language: Language,
@@ -106,22 +207,24 @@ class LearningRepository(private val database: LearningDatabase) {
         total: Int,
         answers: Map<String, String>,
         now: Long,
-    ) = database.withTransaction {
-        val previous = dao.exerciseResult(story.id, language.code)
-        val result = ExerciseResultEntity(
-            contentId = story.id,
-            language = language.code,
-            contentType = if (story.kind == UnitKind.LESSON) "LESSON" else "STORY",
-            attempts = (previous?.attempts ?: 0) + 1,
-            bestScore = maxOf(previous?.bestScore ?: 0, score),
-            latestScore = score,
-            totalQuestions = total,
-            answersJson = JSONObject(answers).toString(),
-            completed = true,
-            updatedAt = now,
-        )
-        dao.saveExerciseResult(result)
-        val reading = ReadingEntity(story.id, language.code, story.sentences.lastIndex, true)
-        dao.saveReading(reading)
-    }
+    ) =
+        database.withTransaction {
+            val previous = dao.exerciseResult(story.id, language.code)
+            val result =
+                ExerciseResultEntity(
+                    contentId = story.id,
+                    language = language.code,
+                    contentType = if (story.kind == UnitKind.LESSON) "LESSON" else "STORY",
+                    attempts = (previous?.attempts ?: 0) + 1,
+                    bestScore = maxOf(previous?.bestScore ?: 0, score),
+                    latestScore = score,
+                    totalQuestions = total,
+                    answersJson = JSONObject(answers).toString(),
+                    completed = true,
+                    updatedAt = now,
+                )
+            dao.saveExerciseResult(result)
+            val reading = ReadingEntity(story.id, language.code, story.sentences.lastIndex, true)
+            dao.saveReading(reading)
+        }
 }

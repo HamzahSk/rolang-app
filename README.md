@@ -59,8 +59,16 @@ No API keys, server configuration, account credentials, or deployment are needed
 ```sh
 python3 tools/build_corpus.py
 python3 rolang-server/tools/validate_content.py rolang-server
+./gradlew spotlessApply
+./gradlew spotlessCheck
 ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
 ```
+
+Spotless formats Kotlin sources in every module (including shared and Android
+tests) and Kotlin Gradle scripts with ktfmt's Kotlin style. Build/generated
+directories and the separate `rolang-server/` checkout are excluded. CI checks
+formatting; manual workflow dispatch can optionally apply it in the runner's
+workspace before checking and building.
 
 The static-content validator parses every JSON file, checks manifest/index hashes,
 requires all 30 Book 1 stories in source order, and verifies every relative image

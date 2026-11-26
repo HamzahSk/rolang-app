@@ -23,16 +23,16 @@ import org.robolectric.annotation.Config
 class LessonSectionNavigatorTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun shortLessonShowsItsOnlySection() {
-        compose.setContent {
-            MaterialTheme { LessonSectionNavigator(listOf(section(1)), 0) {} }
-        }
+    @Test
+    fun shortLessonShowsItsOnlySection() {
+        compose.setContent { MaterialTheme { LessonSectionNavigator(listOf(section(1)), 0) {} } }
 
         compose.onNodeWithText("1 / 1").assertIsDisplayed()
         compose.onNodeWithText("Bagian 1").assertIsDisplayed()
     }
 
-    @Test fun longLessonCanJumpToItsLastSection() {
+    @Test
+    fun longLessonCanJumpToItsLastSection() {
         val sections = (1..56).map(::section)
         compose.setContent {
             var selected by mutableIntStateOf(0)
@@ -45,10 +45,11 @@ class LessonSectionNavigatorTest {
         compose.onNodeWithText("Bagian 56").assertIsDisplayed()
     }
 
-    private fun section(number: Int) = LessonSection(
-        id = "section-$number",
-        type = LessonSectionType.LEARNING_MATERIAL,
-        title = LessonText("mixed", "Bagian $number", "Bagian $number"),
-        blocks = emptyList(),
-    )
+    private fun section(number: Int) =
+        LessonSection(
+            id = "section-$number",
+            type = LessonSectionType.LEARNING_MATERIAL,
+            title = LessonText("mixed", "Bagian $number", "Bagian $number"),
+            blocks = emptyList(),
+        )
 }

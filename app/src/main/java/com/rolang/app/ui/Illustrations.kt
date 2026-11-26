@@ -17,16 +17,17 @@ import com.rolang.app.R
 import com.rolang.app.data.Story
 
 @DrawableRes
-fun illustrationResource(name: String): Int = when (name) {
-    "sounds" -> R.drawable.illustration_sounds
-    "greetings" -> R.drawable.illustration_greetings
-    "family" -> R.drawable.illustration_family
-    "time" -> R.drawable.illustration_time
-    "classroom" -> R.drawable.illustration_classroom
-    "food" -> R.drawable.illustration_food
-    "travel" -> R.drawable.illustration_travel
-    else -> R.drawable.illustration_friends
-}
+fun illustrationResource(name: String): Int =
+    when (name) {
+        "sounds" -> R.drawable.illustration_sounds
+        "greetings" -> R.drawable.illustration_greetings
+        "family" -> R.drawable.illustration_family
+        "time" -> R.drawable.illustration_time
+        "classroom" -> R.drawable.illustration_classroom
+        "food" -> R.drawable.illustration_food
+        "travel" -> R.drawable.illustration_travel
+        else -> R.drawable.illustration_friends
+    }
 
 @Composable
 fun StoryIllustration(
@@ -37,7 +38,12 @@ fun StoryIllustration(
 ) {
     val remote = viewModel != null && story.contentPath.isNotBlank() && story.image in story.assets
     if (!remote) {
-        Image(painterResource(illustrationResource(story.image)), null, modifier, contentScale = contentScale)
+        Image(
+            painterResource(illustrationResource(story.image)),
+            null,
+            modifier,
+            contentScale = contentScale,
+        )
         return
     }
     SubcomposeAsyncImage(
@@ -45,9 +51,18 @@ fun StoryIllustration(
         contentDescription = null,
         modifier = modifier,
         contentScale = contentScale,
-        loading = { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } },
+        loading = {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        },
         error = {
-            Image(painterResource(illustrationResource(story.family)), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            Image(
+                painterResource(illustrationResource(story.family)),
+                null,
+                Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+            )
         },
         success = { SubcomposeAsyncImageContent() },
     )

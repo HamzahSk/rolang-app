@@ -8,16 +8,19 @@ plugins {
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
-val keystoreProperties = Properties().apply {
-    if (keystorePropertiesFile.isFile) {
-        keystorePropertiesFile.inputStream().use { load(it) }
+val keystoreProperties =
+    Properties().apply {
+        if (keystorePropertiesFile.isFile) {
+            keystorePropertiesFile.inputStream().use { load(it) }
+        }
     }
-}
-val copyTestCorpus by tasks.registering(Copy::class) {
-    from("src/main/assets/corpus.json")
-    rename { "story-fixture.json" }
-    into(layout.buildDirectory.dir("generated/testAssets"))
-}
+val copyTestCorpus by
+    tasks.registering(Copy::class) {
+        from("src/main/assets/corpus.json")
+        rename { "story-fixture.json" }
+        into(layout.buildDirectory.dir("generated/testAssets"))
+    }
+
 tasks.named("preBuild").configure { dependsOn(copyTestCorpus) }
 
 android {
@@ -27,20 +30,24 @@ android {
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.isFile) {
-                storeFile = rootProject.file(
-                    requireNotNull(keystoreProperties.getProperty("storeFile")) {
-                        "storeFile is missing from ${keystorePropertiesFile.path}"
-                    },
-                )
-                storePassword = requireNotNull(keystoreProperties.getProperty("storePassword")) {
-                    "storePassword is missing from ${keystorePropertiesFile.path}"
-                }
-                keyAlias = requireNotNull(keystoreProperties.getProperty("keyAlias")) {
-                    "keyAlias is missing from ${keystorePropertiesFile.path}"
-                }
-                keyPassword = requireNotNull(keystoreProperties.getProperty("keyPassword")) {
-                    "keyPassword is missing from ${keystorePropertiesFile.path}"
-                }
+                storeFile =
+                    rootProject.file(
+                        requireNotNull(keystoreProperties.getProperty("storeFile")) {
+                            "storeFile is missing from ${keystorePropertiesFile.path}"
+                        }
+                    )
+                storePassword =
+                    requireNotNull(keystoreProperties.getProperty("storePassword")) {
+                        "storePassword is missing from ${keystorePropertiesFile.path}"
+                    }
+                keyAlias =
+                    requireNotNull(keystoreProperties.getProperty("keyAlias")) {
+                        "keyAlias is missing from ${keystorePropertiesFile.path}"
+                    }
+                keyPassword =
+                    requireNotNull(keystoreProperties.getProperty("keyPassword")) {
+                        "keyPassword is missing from ${keystorePropertiesFile.path}"
+                    }
             }
         }
     }
@@ -85,7 +92,10 @@ android {
             val testHome = layout.buildDirectory.dir("test-home").get().asFile
             it.systemProperty("user.home", testHome.absolutePath)
             it.doFirst { testHome.mkdirs() }
-            it.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+            it.systemProperty(
+                "robolectric.dependency.repo.url",
+                "https://repo.maven.apache.org/maven2",
+            )
             providers.gradleProperty("rolangIntegrationUrl").orNull?.let { url ->
                 it.systemProperty("rolang.integration.url", url)
             }

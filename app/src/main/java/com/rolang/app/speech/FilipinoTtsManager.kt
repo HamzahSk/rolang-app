@@ -10,24 +10,42 @@ import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import com.rolang.app.diagnostics.DiagnosticLogger
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.io.Closeable
 import java.util.Locale
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-enum class PronunciationAvailability { INITIALIZING, READY, MISSING_DATA, UNSUPPORTED, ERROR, CLOSED }
-enum class SpeechQueueMode { FLUSH, ADD }
+enum class PronunciationAvailability {
+    INITIALIZING,
+    READY,
+    MISSING_DATA,
+    UNSUPPORTED,
+    ERROR,
+    CLOSED,
+}
+
+enum class SpeechQueueMode {
+    FLUSH,
+    ADD,
+}
 
 data class SpeechItem(val id: String, val text: String)
 
 interface PronunciationController {
     fun refresh()
+
     fun speak(text: String, id: String, queueMode: SpeechQueueMode = SpeechQueueMode.FLUSH)
+
     fun speakSequence(groupId: String, items: List<SpeechItem>)
+
     fun replay()
+
     fun stop()
+
     fun setSpeechRate(value: Float)
+
     fun setPitch(value: Float)
+
     fun openVoiceDataSettings()
 }
 
@@ -44,8 +62,11 @@ data class PronunciationState(
     val availableLanguageCount: Int = 0,
     val message: String = "Menyiapkan suara Filipino…",
 ) {
-    val ready get() = availability == PronunciationAvailability.READY
-    val speaking get() = activeGroupId != null
+    val ready
+        get() = availability == PronunciationAvailability.READY
+
+    val speaking
+        get() = activeGroupId != null
 }
 
 internal data class FilipinoVoiceOption(
@@ -59,27 +80,35 @@ internal data class FilipinoVoiceOption(
 
 internal fun isFilipinoLanguage(code: String) = code.equals("fil", true) || code.equals("tl", true)
 
-internal fun availabilityFromLanguageStatus(status: Int): PronunciationAvailability? = when (status) {
-    TextToSpeech.LANG_MISSING_DATA -> PronunciationAvailability.MISSING_DATA
-    TextToSpeech.LANG_NOT_SUPPORTED -> PronunciationAvailability.UNSUPPORTED
-    else -> null
-}
+internal fun availabilityFromLanguageStatus(status: Int): PronunciationAvailability? =
+    when (status) {
+        TextToSpeech.LANG_MISSING_DATA -> PronunciationAvailability.MISSING_DATA
+        TextToSpeech.LANG_NOT_SUPPORTED -> PronunciationAvailability.UNSUPPORTED
+        else -> null
+    }
 
-internal fun preferredFilipinoVoice(options: Collection<FilipinoVoiceOption>): FilipinoVoiceOption? = options
-    .filter { isFilipinoLanguage(it.language) }
-    .sortedWith(compareBy<FilipinoVoiceOption>(
-        { it.networkRequired },
-        { !it.country.equals("PH", true) },
-        { -it.quality },
-        { it.latency },
-        { it.name },
-    )).firstOrNull()
+internal fun preferredFilipinoVoice(
+    options: Collection<FilipinoVoiceOption>
+): FilipinoVoiceOption? =
+    options
+        .filter { isFilipinoLanguage(it.language) }
+        .sortedWith(
+            compareBy<FilipinoVoiceOption>(
+                { it.networkRequired },
+                { !it.country.equals("PH", true) },
+                { -it.quality },
+                { it.latency },
+                { it.name },
+            )
+        )
+        .firstOrNull()
 
 internal fun verifiedOfflineFilipinoVoice(
     options: Collection<FilipinoVoiceOption>,
     selected: FilipinoVoiceOption?,
-): FilipinoVoiceOption? = preferredFilipinoVoice(options.filterNot { it.networkRequired })
-    ?: selected?.takeIf { isFilipinoLanguage(it.language) && !it.networkRequired }
+): FilipinoVoiceOption? =
+    preferredFilipinoVoice(options.filterNot { it.networkRequired })
+        ?: selected?.takeIf { isFilipinoLanguage(it.language) && !it.networkRequired }
 
 /** One lifecycle-owned native TTS instance shared by every pronunciation control. */
 class FilipinoTtsManager(context: Context) : PronunciationController, Closeable {
@@ -93,7 +122,9 @@ class FilipinoTtsManager(context: Context) : PronunciationController, Closeable 
     private var initialization = 0L
     private var session = 0L
     private var utterance = 0L
+
     private data class Pending(val controlId: String, val groupId: String, val session: Long)
+
     private val pending = mutableMapOf<String, Pending>()
     private var lastBatch: Pair<String, List<SpeechItem>>? = null
 
@@ -108,21 +139,26 @@ class FilipinoTtsManager(context: Context) : PronunciationController, Closeable 
     private fun initialize() = onMain {
         if (closed) return@onMain
         val currentInitialization = ++initialization
-        tts?.runCatching { stop(); shutdown() }
+        tts?.runCatching {
+            stop()
+            shutdown()
+        }
         tts = null
         pending.clear()
         session++
-        _state.value = _state.value.copy(
-            availability = PronunciationAvailability.INITIALIZING,
-            activeId = null,
-            activeGroupId = null,
-            voiceName = null,
-            message = "Menyiapkan suara Filipino…",
-        )
+        _state.value =
+            _state.value.copy(
+                availability = PronunciationAvailability.INITIALIZING,
+                activeId = null,
+                activeGroupId = null,
+                voiceName = null,
+                message = "Menyiapkan suara Filipino…",
+            )
         try {
-            val created = TextToSpeech(appContext) { status ->
-                main.post { finishInitialization(status, currentInitialization) }
-            }
+            val created =
+                TextToSpeech(appContext) { status ->
+                    main.post { finishInitialization(status, currentInitialization) }
+                }
             if (!closed && currentInitialization == initialization) tts = created
             else created.shutdown()
         } catch (error: Exception) {
@@ -142,71 +178,119 @@ class FilipinoTtsManager(context: Context) : PronunciationController, Closeable 
             return
         }
         engine.setOnUtteranceProgressListener(listener)
-        engine.setAudioAttributes(AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-        val availableLanguages = runCatching { engine.availableLanguages.orEmpty() }.getOrDefault(emptySet())
-        val availability = runCatching { engine.isLanguageAvailable(preferredLocale) }
-            .getOrElse { TextToSpeech.LANG_NOT_SUPPORTED }
+        engine.setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+        )
+        val availableLanguages =
+            runCatching { engine.availableLanguages.orEmpty() }.getOrDefault(emptySet())
+        val availability =
+            runCatching { engine.isLanguageAvailable(preferredLocale) }
+                .getOrElse { TextToSpeech.LANG_NOT_SUPPORTED }
         val engineName = runCatching { engine.defaultEngine }.getOrNull()
         when (availabilityFromLanguageStatus(availability)) {
             PronunciationAvailability.MISSING_DATA -> {
-                unavailable(PronunciationAvailability.MISSING_DATA,
+                unavailable(
+                    PronunciationAvailability.MISSING_DATA,
                     "Data suara Filipino belum terpasang. Pasang suara Filipino (Filipina) melalui pengaturan Text-to-Speech Android.",
-                    engineName, availableLanguages.size)
+                    engineName,
+                    availableLanguages.size,
+                )
                 return
             }
             PronunciationAvailability.UNSUPPORTED -> {
-                unavailable(PronunciationAvailability.UNSUPPORTED,
+                unavailable(
+                    PronunciationAvailability.UNSUPPORTED,
                     "Mesin Text-to-Speech di perangkat ini tidak mendukung Filipino. Coba pasang atau pilih mesin TTS yang menyediakan Filipino (Filipina).",
-                    engineName, availableLanguages.size)
+                    engineName,
+                    availableLanguages.size,
+                )
                 return
             }
             else -> Unit
         }
-        if (availability < TextToSpeech.LANG_AVAILABLE || engine.setLanguage(preferredLocale) < TextToSpeech.LANG_AVAILABLE) {
-            unavailable(PronunciationAvailability.UNSUPPORTED,
-                "Suara Filipino tidak didukung oleh mesin Text-to-Speech yang aktif.", engineName, availableLanguages.size)
+        if (
+            availability < TextToSpeech.LANG_AVAILABLE ||
+                engine.setLanguage(preferredLocale) < TextToSpeech.LANG_AVAILABLE
+        ) {
+            unavailable(
+                PronunciationAvailability.UNSUPPORTED,
+                "Suara Filipino tidak didukung oleh mesin Text-to-Speech yang aktif.",
+                engineName,
+                availableLanguages.size,
+            )
             return
         }
         val voices = runCatching { engine.voices.orEmpty() }.getOrDefault(emptySet())
-        val options = voices.map { voice ->
-            FilipinoVoiceOption(voice.name, voice.locale.language, voice.locale.country,
-                voice.isNetworkConnectionRequired, voice.quality, voice.latency)
-        }
+        val options =
+            voices.map { voice ->
+                FilipinoVoiceOption(
+                    voice.name,
+                    voice.locale.language,
+                    voice.locale.country,
+                    voice.isNetworkConnectionRequired,
+                    voice.quality,
+                    voice.latency,
+                )
+            }
         val selectedBefore = runCatching { engine.voice }.getOrNull()
-        val selectedOption = selectedBefore?.let { voice ->
-            FilipinoVoiceOption(voice.name, voice.locale.language, voice.locale.country,
-                voice.isNetworkConnectionRequired, voice.quality, voice.latency)
-        }
+        val selectedOption =
+            selectedBefore?.let { voice ->
+                FilipinoVoiceOption(
+                    voice.name,
+                    voice.locale.language,
+                    voice.locale.country,
+                    voice.isNetworkConnectionRequired,
+                    voice.quality,
+                    voice.latency,
+                )
+            }
         val preferred = verifiedOfflineFilipinoVoice(options, selectedOption)
-        voices.firstOrNull { it.name == preferred?.name }?.let { voice ->
-            runCatching { engine.setVoice(voice) }
-        }
+        voices
+            .firstOrNull { it.name == preferred?.name }
+            ?.let { voice -> runCatching { engine.setVoice(voice) } }
         val selected = runCatching { engine.voice }.getOrNull()
-        val verified = selected?.let { voice ->
-            FilipinoVoiceOption(voice.name, voice.locale.language, voice.locale.country,
-                voice.isNetworkConnectionRequired, voice.quality, voice.latency)
-        }?.takeIf { isFilipinoLanguage(it.language) && !it.networkRequired }
+        val verified =
+            selected
+                ?.let { voice ->
+                    FilipinoVoiceOption(
+                        voice.name,
+                        voice.locale.language,
+                        voice.locale.country,
+                        voice.isNetworkConnectionRequired,
+                        voice.quality,
+                        voice.latency,
+                    )
+                }
+                ?.takeIf { isFilipinoLanguage(it.language) && !it.networkRequired }
         if (verified == null) {
-            unavailable(PronunciationAvailability.MISSING_DATA,
+            unavailable(
+                PronunciationAvailability.MISSING_DATA,
                 "Mesin TTS tidak memilih suara Filipino offline. Tidak ada pengucapan bahasa lain yang akan digunakan sebagai pengganti.",
-                engineName, availableLanguages.size, options.count { isFilipinoLanguage(it.language) })
+                engineName,
+                availableLanguages.size,
+                options.count { isFilipinoLanguage(it.language) },
+            )
             return
         }
-        if (engine.setSpeechRate(_state.value.speechRate) != TextToSpeech.SUCCESS ||
-            engine.setPitch(_state.value.pitch) != TextToSpeech.SUCCESS) {
+        if (
+            engine.setSpeechRate(_state.value.speechRate) != TextToSpeech.SUCCESS ||
+                engine.setPitch(_state.value.pitch) != TextToSpeech.SUCCESS
+        ) {
             failInitialization("Pengaturan suara Filipino tidak dapat diterapkan.")
             return
         }
-        _state.value = _state.value.copy(
-            availability = PronunciationAvailability.READY,
-            voiceName = verified.name,
-            engineName = engineName,
-            filipinoVoiceCount = maxOf(options.count { isFilipinoLanguage(it.language) }, 1),
-            availableLanguageCount = availableLanguages.size,
-            message = "Suara Filipino offline siap digunakan.",
-        )
+        _state.value =
+            _state.value.copy(
+                availability = PronunciationAvailability.READY,
+                voiceName = verified.name,
+                engineName = engineName,
+                filipinoVoiceCount = maxOf(options.count { isFilipinoLanguage(it.language) }, 1),
+                availableLanguageCount = availableLanguages.size,
+                message = "Suara Filipino offline siap digunakan.",
+            )
     }
 
     override fun speak(text: String, id: String, queueMode: SpeechQueueMode) {
@@ -230,42 +314,68 @@ class FilipinoTtsManager(context: Context) : PronunciationController, Closeable 
     override fun setSpeechRate(value: Float) = onMain {
         val rate = value.coerceIn(0.5f, 1.2f)
         val applied = tts?.takeIf { _state.value.ready }?.setSpeechRate(rate)
-        _state.value = _state.value.copy(speechRate = rate,
-            message = if (applied == TextToSpeech.ERROR) "Kecepatan suara belum dapat diterapkan." else _state.value.message)
+        _state.value =
+            _state.value.copy(
+                speechRate = rate,
+                message =
+                    if (applied == TextToSpeech.ERROR) "Kecepatan suara belum dapat diterapkan."
+                    else _state.value.message,
+            )
     }
 
     override fun setPitch(value: Float) = onMain {
         val pitch = value.coerceIn(0.8f, 1.2f)
         val applied = tts?.takeIf { _state.value.ready }?.setPitch(pitch)
-        _state.value = _state.value.copy(pitch = pitch,
-            message = if (applied == TextToSpeech.ERROR) "Nada suara belum dapat diterapkan." else _state.value.message)
+        _state.value =
+            _state.value.copy(
+                pitch = pitch,
+                message =
+                    if (applied == TextToSpeech.ERROR) "Nada suara belum dapat diterapkan."
+                    else _state.value.message,
+            )
     }
 
     override fun openVoiceDataSettings() = onMain {
-        val intents = listOf(
-            Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA),
-            Intent("com.android.settings.TTS_SETTINGS"),
-            Intent(Settings.ACTION_SETTINGS),
-        )
-        val opened = intents.any { intent ->
-            runCatching {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                appContext.startActivity(intent)
-            }.isSuccess
-        }
-        if (!opened) _state.value = _state.value.copy(
-            message = "Buka Pengaturan Android → Aksesibilitas atau Sistem → Text-to-Speech, lalu unduh suara Filipino (Filipina).")
+        val intents =
+            listOf(
+                Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA),
+                Intent("com.android.settings.TTS_SETTINGS"),
+                Intent(Settings.ACTION_SETTINGS),
+            )
+        val opened =
+            intents.any { intent ->
+                runCatching {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        appContext.startActivity(intent)
+                    }
+                    .isSuccess
+            }
+        if (!opened)
+            _state.value =
+                _state.value.copy(
+                    message =
+                        "Buka Pengaturan Android → Aksesibilitas atau Sistem → Text-to-Speech, lalu unduh suara Filipino (Filipina)."
+                )
     }
 
     private fun play(groupId: String, source: List<SpeechItem>, remember: Boolean) {
         val engine = tts
-        val items = source.filter { it.text.isNotBlank() && it.text.length <= TextToSpeech.getMaxSpeechInputLength() }
+        val items =
+            source.filter {
+                it.text.isNotBlank() && it.text.length <= TextToSpeech.getMaxSpeechInputLength()
+            }
         if (!_state.value.ready || engine == null) {
-            _state.value = _state.value.copy(message = when (_state.value.availability) {
-                PronunciationAvailability.MISSING_DATA -> "Pasang data suara Filipino melalui pengaturan Text-to-Speech Android terlebih dahulu."
-                PronunciationAvailability.UNSUPPORTED -> "Perangkat ini belum menyediakan suara Filipino."
-                else -> "Suara Filipino belum siap. Coba lagi sebentar."
-            })
+            _state.value =
+                _state.value.copy(
+                    message =
+                        when (_state.value.availability) {
+                            PronunciationAvailability.MISSING_DATA ->
+                                "Pasang data suara Filipino melalui pengaturan Text-to-Speech Android terlebih dahulu."
+                            PronunciationAvailability.UNSUPPORTED ->
+                                "Perangkat ini belum menyediakan suara Filipino."
+                            else -> "Suara Filipino belum siap. Coba lagi sebentar."
+                        }
+                )
             return
         }
         if (items.isEmpty()) {
@@ -276,13 +386,18 @@ class FilipinoTtsManager(context: Context) : PronunciationController, Closeable 
         session++
         val currentSession = session
         if (remember) lastBatch = groupId to items
-        _state.value = _state.value.copy(activeId = null, activeGroupId = groupId, lastGroupId = groupId)
+        _state.value =
+            _state.value.copy(activeId = null, activeGroupId = groupId, lastGroupId = groupId)
         for ((index, item) in items.withIndex()) {
             val token = "rolang-${currentSession}-${utterance++}"
             pending[token] = Pending(item.id, groupId, currentSession)
-            val result = engine.speak(item.text,
-                if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
-                Bundle(), token)
+            val result =
+                engine.speak(
+                    item.text,
+                    if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
+                    Bundle(),
+                    token,
+                )
             if (result != TextToSpeech.SUCCESS) {
                 playbackError("Pelafalan Tagalog tidak dapat dimulai.")
                 return
@@ -292,11 +407,18 @@ class FilipinoTtsManager(context: Context) : PronunciationController, Closeable 
 
     private fun append(item: SpeechItem) {
         val engine = tts ?: return
-        if (!_state.value.ready || item.text.isBlank() || item.text.length > TextToSpeech.getMaxSpeechInputLength()) return
+        if (
+            !_state.value.ready ||
+                item.text.isBlank() ||
+                item.text.length > TextToSpeech.getMaxSpeechInputLength()
+        )
+            return
         val group = _state.value.activeGroupId ?: item.id
         val token = "rolang-${session}-${utterance++}"
         pending[token] = Pending(item.id, group, session)
-        if (engine.speak(item.text, TextToSpeech.QUEUE_ADD, Bundle(), token) != TextToSpeech.SUCCESS) {
+        if (
+            engine.speak(item.text, TextToSpeech.QUEUE_ADD, Bundle(), token) != TextToSpeech.SUCCESS
+        ) {
             playbackError("Pelafalan tambahan tidak dapat dimasukkan ke antrean.")
         }
     }
@@ -325,34 +447,63 @@ class FilipinoTtsManager(context: Context) : PronunciationController, Closeable 
         voiceCount: Int = 0,
     ) {
         releaseEngine()
-        _state.value = _state.value.copy(availability = availability, activeId = null, activeGroupId = null,
-            engineName = engineName, availableLanguageCount = languageCount, filipinoVoiceCount = voiceCount,
-            voiceName = null, message = message)
+        _state.value =
+            _state.value.copy(
+                availability = availability,
+                activeId = null,
+                activeGroupId = null,
+                engineName = engineName,
+                availableLanguageCount = languageCount,
+                filipinoVoiceCount = voiceCount,
+                voiceName = null,
+                message = message,
+            )
     }
 
     private fun failInitialization(message: String, error: Throwable? = null) {
         DiagnosticLogger.error("TTS", message, error)
         releaseEngine()
-        _state.value = _state.value.copy(availability = PronunciationAvailability.ERROR,
-            activeId = null, activeGroupId = null, voiceName = null, message = message)
+        _state.value =
+            _state.value.copy(
+                availability = PronunciationAvailability.ERROR,
+                activeId = null,
+                activeGroupId = null,
+                voiceName = null,
+                message = message,
+            )
     }
 
-    private val listener = object : UtteranceProgressListener() {
-        override fun onStart(utteranceId: String) {
-            main.post {
-                val item = pending[utteranceId] ?: return@post
-                if (item.session == session) _state.value = _state.value.copy(
-                    activeId = item.controlId, activeGroupId = item.groupId)
+    private val listener =
+        object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String) {
+                main.post {
+                    val item = pending[utteranceId] ?: return@post
+                    if (item.session == session)
+                        _state.value =
+                            _state.value.copy(
+                                activeId = item.controlId,
+                                activeGroupId = item.groupId,
+                            )
+                }
+            }
+
+            override fun onDone(utteranceId: String) {
+                main.post { complete(utteranceId) }
+            }
+
+            @Deprecated("Android calls the error-code overload on supported engines")
+            override fun onError(utteranceId: String) {
+                main.post { playbackError("Pelafalan Tagalog gagal diputar.") }
+            }
+
+            override fun onError(utteranceId: String, errorCode: Int) {
+                main.post { playbackError("Pelafalan Tagalog gagal diputar (kode $errorCode).") }
+            }
+
+            override fun onStop(utteranceId: String, interrupted: Boolean) {
+                main.post { complete(utteranceId) }
             }
         }
-        override fun onDone(utteranceId: String) { main.post { complete(utteranceId) } }
-        @Deprecated("Android calls the error-code overload on supported engines")
-        override fun onError(utteranceId: String) { main.post { playbackError("Pelafalan Tagalog gagal diputar.") } }
-        override fun onError(utteranceId: String, errorCode: Int) {
-            main.post { playbackError("Pelafalan Tagalog gagal diputar (kode $errorCode).") }
-        }
-        override fun onStop(utteranceId: String, interrupted: Boolean) { main.post { complete(utteranceId) } }
-    }
 
     private fun complete(utteranceId: String) {
         val item = pending.remove(utteranceId) ?: return
@@ -380,7 +531,12 @@ class FilipinoTtsManager(context: Context) : PronunciationController, Closeable 
         initialization++
         stopInternal(clearLast = true)
         releaseEngine()
-        _state.value = _state.value.copy(availability = PronunciationAvailability.CLOSED,
-            activeId = null, activeGroupId = null, message = "Text-to-Speech telah dihentikan.")
+        _state.value =
+            _state.value.copy(
+                availability = PronunciationAvailability.CLOSED,
+                activeId = null,
+                activeGroupId = null,
+                message = "Text-to-Speech telah dihentikan.",
+            )
     }
 }
