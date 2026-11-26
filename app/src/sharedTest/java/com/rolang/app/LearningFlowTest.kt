@@ -51,7 +51,11 @@ class LearningFlowTest {
         scrollClick("reader-content", "Tampilkan terjemahan")
         compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithText("Sembunyikan terjemahan").assertExists()
-        compose.onNodeWithText("Ibunya memerlukan tomat, bawang, pisang, dan ikan segar.").performScrollTo().assertIsDisplayed()
+        // Paragraph heights can change with reader typography and translation containers.
+        // Ask the lazy list to compose the target before asserting its visibility.
+        compose.onNodeWithTag("reader-content").performScrollToNode(
+            hasText("Ibunya memerlukan tomat, bawang, pisang, dan ikan segar."))
+        compose.onNodeWithText("Ibunya memerlukan tomat, bawang, pisang, dan ikan segar.").assertIsDisplayed()
         compose.onNodeWithTag("reader-content").performScrollToNode(hasTestTag("story-paragraph-2"))
         compose.onNodeWithTag("story-paragraph-2").assertIsDisplayed()
         compose.onNodeWithContentDescription("Kembali ke daftar cerita").performClick()

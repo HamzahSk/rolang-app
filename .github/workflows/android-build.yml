@@ -6,8 +6,13 @@ on:
 
   pull_request:
     branches: [main]
-    
+
   workflow_dispatch:
+    inputs:
+      run_spotless_apply:
+        description: "Jalankan spotlessApply sebelum build (hanya untuk workflow_dispatch)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -65,67 +70,80 @@ jobs:
       - name: Grant Gradle Permission
         run: chmod +x gradlew
 
-      - name: Test, Lint, and Build APKs
+      - name: Apply Spotless Formatting (Manual Dispatch Only)
+        if: github.event_name == 'workflow_dispatch' && inputs.run_spotless_apply
+        run: ./gradlew --no-daemon --stacktrace spotlessApply
+
+      - name: Spotless Check, Unit Test, and Lint
         run: |
           ./gradlew --no-daemon --stacktrace \
+            spotlessCheck \
             :app:testDebugUnitTest \
-            :app:lintDebug \
+            :app:lintDebug
+
+      - name: Build Debug & AndroidTest APKs
+        run: |
+          ./gradlew --no-daemon --stacktrace \
             :app:assembleDebug \
             :app:assembleDebugAndroidTest
 
-      - name: Decode Keystore
+      - name: Setup Release Keystore (If Secrets Available)
         env:
           ENCODED_STRING: ${{ secrets.SIGNING_KEY }}
-        run: |
-          echo "$ENCODED_STRING" | base64 -d > keystore.jks
-
-      - name: Create keystore.properties
-        env:
           STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "storeFile=keystore.jks" > keystore.properties
-          echo "storePassword=$STORE_PASSWORD" >> keystore.properties
-          echo "keyAlias=$KEY_ALIAS" >> keystore.properties
-          echo "keyPassword=$KEY_PASSWORD" >> keystore.properties
+          if [ -n "$ENCODED_STRING" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "$ENCODED_STRING" | base64 -d > keystore.jks
+            {
+              echo "storeFile=keystore.jks"
+              echo "storePassword=$STORE_PASSWORD"
+              echo "keyAlias=$KEY_ALIAS"
+              echo "keyPassword=$KEY_PASSWORD"
+            } > keystore.properties
+            echo "Release keystore configured."
+          else
+            echo "Signing secrets not available; building release without custom keystore."
+          fi
 
-      - name: Build Signed Release APK (arm64-v8a)
+      - name: Build Release APKs (Non-Debug)
         run: |
           ./gradlew --no-daemon --stacktrace :app:assembleRelease
 
-      - name: Upload Release APK (arm64-v8a)
+      - name: Upload Debug APKs
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rolang-android-release-arm64
-          path: app/build/outputs/apk/release/app-arm64-v8a-release.apk
+          name: rolang-android-debug-apks
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Debug APK
+      - name: Upload Release APKs (Non-Debug)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rolang-android-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: rolang-android-release-apks
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Android Test APK
+      - name: Upload Android Test APKs
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rolang-android-tests
+          name: rolang-android-test-apks
           path: app/build/outputs/apk/androidTest/debug/*.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Test Reports
+      - name: Upload Test, Lint & Spotless Reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rolang-test-reports
+          name: rolang-verification-reports
           path: |
             app/build/reports/tests/
             app/build/test-results/testDebugUnitTest/
             app/build/reports/lint-results-debug.*
+            **/build/reports/spotless/
           if-no-files-found: ignore
           retention-days: 7

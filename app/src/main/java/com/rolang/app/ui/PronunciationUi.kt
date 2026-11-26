@@ -85,15 +85,20 @@ fun PronunciationSequenceControls(
     itemId: (Int) -> String,
     playLabel: String,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     val state = LocalPronunciationState.current
     val controller = LocalPronunciationController.current
     val active = state.activeGroupId == groupId
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        FilledTonalButton(onClick = {
+        val play = {
             if (active) controller.stop()
             else controller.speakSequence(groupId, texts.mapIndexed { index, text -> SpeechItem(itemId(index), text) })
-        }, enabled = texts.any(String::isNotBlank)) {
+        }
+        if (compact) FilledTonalIconButton(onClick = play, enabled = texts.any(String::isNotBlank)) {
+            Icon(if (active) Icons.Outlined.StopCircle else Icons.AutoMirrored.Outlined.VolumeUp,
+                if (active) "Hentikan" else playLabel)
+        } else FilledTonalButton(onClick = play, enabled = texts.any(String::isNotBlank)) {
             Icon(if (active) Icons.Outlined.StopCircle else Icons.AutoMirrored.Outlined.VolumeUp, null)
             Spacer(Modifier.width(8.dp))
             Text(if (active) "Hentikan" else playLabel)

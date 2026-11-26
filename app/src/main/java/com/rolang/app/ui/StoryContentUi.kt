@@ -1,6 +1,8 @@
 package com.rolang.app.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +29,7 @@ fun LibraryStatus(state: LearningState, viewModel: LearningViewModel?) {
 }
 
 @Composable
-fun DownloadControls(story: Story, state: LearningState, viewModel: LearningViewModel) {
+fun DownloadControls(story: Story, state: LearningState, viewModel: LearningViewModel, compact: Boolean = false) {
     if (story.contentPath.isBlank()) return
     val download = state.downloads.firstOrNull { it.storyId == story.id }
     val active = download?.status == "DOWNLOADING"
@@ -36,7 +38,8 @@ fun DownloadControls(story: Story, state: LearningState, viewModel: LearningView
         if (active) {
             LinearProgressIndicator(progress = { if (download!!.total == 0) 0f else download.completed.toFloat() / download.total }, modifier = Modifier.fillMaxWidth())
             Text("Menyimpan gambar · ${download!!.completed}/${download.total}", style = MaterialTheme.typography.bodySmall)
-        } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        } else Row(modifier = if (compact) Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()) else Modifier,
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (current) Text("Tersimpan luring", style = MaterialTheme.typography.labelMedium)
             else TextButton(onClick = { viewModel.downloadLesson(story.id) }) {
                 Text(when {

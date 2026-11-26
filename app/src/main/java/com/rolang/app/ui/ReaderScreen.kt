@@ -16,11 +16,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rolang.app.LearningState
@@ -87,45 +89,53 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                         if (story.id in prefs.bookmarkedStories) "Hapus tanda cerita" else "Tandai cerita")
                 }
             })
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Paragraf ${index + 1} dari ${story.sentences.size}", style = MaterialTheme.typography.labelLarge)
             LinearProgressIndicator(progress = { (index + 1f) / story.sentences.size }, modifier = Modifier.fillMaxWidth())
         }
         LazyColumn(Modifier.weight(1f).testTag("reader-content"), state = listState,
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             item(key = "heading") {
-                Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StoryIllustration(story, viewModel, Modifier.fillMaxWidth().height(180.dp), ContentScale.Fit)
-                    SectionTitle(story.title(prefs.native), "${story.kind.label} · ${story.category} · ${story.level.label}")
-                    Text(story.summary(prefs.native), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Mode baca", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(readingLanguage == Language.FILIPINO, { readingCode = Language.FILIPINO.code }, label = { Text("Tagalog") })
-                        FilterChip(readingLanguage == Language.INDONESIAN, { readingCode = Language.INDONESIAN.code }, label = { Text("Indonesia") })
+                Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    StoryIllustration(story, viewModel, Modifier.fillMaxWidth().height(150.dp), ContentScale.Fit)
+                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(story.title(prefs.native), style = MaterialTheme.typography.headlineMedium)
+                        Text("${story.kind.label} · ${story.category} · ${story.level.label}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                        Text(story.summary(prefs.native), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                     }
-                    Text(if (readingLanguage == Language.FILIPINO) "Ketuk kata Tagalog untuk melihat artinya."
-                        else "Gunakan mode Tagalog untuk membuka rincian kosakata.",
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (readingLanguage == Language.FILIPINO) {
-                        PronunciationAvailabilityNotice()
-                        PronunciationSequenceControls("story-${story.id}",
-                            story.sentences.indices.map { story.sentence(it, Language.FILIPINO) },
-                            { "story-sentence-${story.id}-$it" }, "Putar seluruh cerita")
+                    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 1.dp) {
+                        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    FilterChip(readingLanguage == Language.FILIPINO, { readingCode = Language.FILIPINO.code }, label = { Text("Tagalog") })
+                                    FilterChip(readingLanguage == Language.INDONESIAN, { readingCode = Language.INDONESIAN.code }, label = { Text("Indonesia") })
+                                }
+                                if (readingLanguage == Language.FILIPINO) PronunciationSequenceControls("story-${story.id}",
+                                    story.sentences.indices.map { story.sentence(it, Language.FILIPINO) },
+                                    { "story-sentence-${story.id}-$it" }, "Putar seluruh cerita", compact = true)
+                            }
+                            TextButton(onClick = { translated = !translated }, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                                Icon(Icons.Outlined.Translate, null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (translated) "Sembunyikan terjemahan" else "Tampilkan terjemahan")
+                            }
+                            Text(if (readingLanguage == Language.FILIPINO) "Ketuk kata Tagalog untuk melihat artinya."
+                                else "Gunakan mode Tagalog untuk membuka rincian kosakata.",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
-                    DownloadControls(story, state, viewModel)
+                    if (readingLanguage == Language.FILIPINO) PronunciationAvailabilityNotice()
+                    DownloadControls(story, state, viewModel, compact = true)
                     if (story.chapters.size > 1) {
                         Text("Bab", style = MaterialTheme.typography.titleMedium)
                         story.chapters.forEach { chapter -> TextButton(onClick = {
                             chapterScope.launch { listState.scrollToItem(chapter.start + 1) }
                         }) { Text(chapter.title.getValue(prefs.native.code)) } }
                     }
-                    VocabularyLegend()
-                    OutlinedButton(onClick = { translated = !translated }) {
-                        Icon(Icons.Outlined.Translate, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(if (translated) "Sembunyikan terjemahan" else "Tampilkan terjemahan")
-                    }
+                    VocabularyLegend(Modifier.fillMaxWidth())
                 }
             }
             itemsIndexed(story.sentences, key = { paragraph, _ -> "paragraph:$paragraph" }) { paragraph, _ ->
@@ -136,26 +146,29 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                             append(text)
                             Words.tokens(text).forEach { token ->
                                 addLink(LinkAnnotation.Clickable(token.text,
-                                    styles = TextLinkStyles(style = vocabularyStyle(
+                                    styles = TextLinkStyles(style = readerWordStyle(
                                         statuses[Words.key(token.text)] ?: VocabularyStatus.NEW, textColor)),
                                     linkInteractionListener = { selected = SelectedWord(token.text, paragraph) }), token.start, token.end)
                             }
                         }
                 }
-                Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    story.speakers.getOrNull(paragraph)?.let { speaker ->
-                        Text(speaker, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-                    }
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                        Text(annotated, Modifier.weight(1f).testTag("story-paragraph-$paragraph"),
-                            style = TextStyle(fontFamily = FontFamily.Serif, fontSize = prefs.fontSize.sp,
-                                lineHeight = (prefs.fontSize * 1.8).sp))
+                Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(story.speakers.getOrNull(paragraph) ?: "Paragraf ${paragraph + 1}",
+                            Modifier.weight(1f), style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                         if (readingLanguage == Language.FILIPINO) PronunciationButton(text,
                             "story-sentence-${story.id}-$paragraph", "${story.kind.label.lowercase()} ${paragraph + 1}")
                     }
+                    Text(annotated, Modifier.fillMaxWidth().testTag("story-paragraph-$paragraph"),
+                        style = TextStyle(fontFamily = FontFamily.Serif, fontSize = prefs.fontSize.sp,
+                            lineHeight = (prefs.fontSize * 1.85).sp))
                     AnimatedVisibility(translated) {
-                        Text(story.sentence(paragraph, translationLanguage), color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyLarge)
+                        Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                            Text(story.sentence(paragraph, translationLanguage), Modifier.padding(14.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+                        }
                     }
                 }
             }
@@ -204,51 +217,74 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
             }
         }
     }
-    if (selected != null) ModalBottomSheet(onDismissRequest = { selected = null }) {
-        LazyColumn(modifier = Modifier.testTag("word-details"), contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    if (selected != null) ModalBottomSheet(
+        onDismissRequest = { selected = null },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        val word = detail
+        LazyColumn(modifier = Modifier.fillMaxWidth().testTag("word-details"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)) {
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(selected!!.text, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
+                    Text(selected!!.text, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary)
                     PronunciationButton(selected!!.text, "reader-word-${story.id}-${selected!!.paragraph}-${selected!!.text}", selected!!.text)
                     IconButton(onClick = { selected = null }) { Icon(Icons.Outlined.Close, "Tutup rincian kata") }
                 }
             }
-            val word = detail
             if (word == null) item {
                 if (lookupError) Text("Terjemahan ini belum dapat dibuka. Tutup lalu ketuk katanya untuk mencoba lagi.")
                 else CircularProgressIndicator()
             } else {
                 item {
-                    Text(word.translation, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-                    Text("${word.partOfSpeech} · ${prefs.target.label} → ${prefs.native.label}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text("Makna utama", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(word.translation, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+                        Text("${word.partOfSpeech} · ${prefs.target.label} → ${prefs.native.label}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-                item { DetailSection("Makna", word.meaning) }
-                item { DetailSection("Pelafalan dan konteks", word.explanation) }
+                item { SheetSection("Makna", word.meaning) }
+                item { SheetSection("Pelafalan dan konteks", word.explanation) }
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) { DetailSection("Contoh", word.example) }
-                            PronunciationButton(word.example, "reader-example-${story.id}-${selected!!.paragraph}-${word.word}",
-                                "contoh ${word.word}")
+                        Text("Contoh", style = MaterialTheme.typography.titleMedium)
+                        Surface(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                            shape = MaterialTheme.shapes.medium) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(word.example, Modifier.weight(1f).padding(start = 14.dp, top = 12.dp, bottom = 12.dp),
+                                    style = MaterialTheme.typography.bodyLarge)
+                                PronunciationButton(word.example, "reader-example-${story.id}-${selected!!.paragraph}-${word.word}",
+                                    "contoh ${word.word}")
+                            }
                         }
-                        Text(word.exampleTranslation, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(word.exampleTranslation, Modifier.padding(horizontal = 4.dp), style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 item {
-                    VocabularyStatusSelector(state.wordStatus(story.id, word.word)) {
+                    VocabularyStatusSelector(state.wordStatus(story.id, word.word), scrollable = true) {
                         viewModel.status(story, word, prefs, it)
                     }
                 }
-                item {
-                    val saved = state.courseWords.any { it.storyId == story.id && it.word == Words.key(word.word) }
-                    Button(onClick = { viewModel.save(story, word, prefs) }, enabled = !saved, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Outlined.BookmarkAdd, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp))
-                        Text(if (saved) "Tersimpan di kosakata" else "Simpan kata")
-                    }
+            }
+            if (word != null) item {
+                val saved = state.courseWords.any { it.storyId == story.id && it.word == Words.key(word.word) }
+                Button(onClick = { viewModel.save(story, word, prefs) }, enabled = !saved,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                    Icon(Icons.Outlined.BookmarkAdd, null, Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (saved) "Tersimpan di kosakata" else "Simpan kata")
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SheetSection(title: String, text: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -258,4 +294,15 @@ fun DetailSection(title: String, text: String) {
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+/** Keep word links readable across line breaks without painting every token as a box. */
+private fun readerWordStyle(status: VocabularyStatus, textColor: Color): SpanStyle {
+    val tint = vocabularyStyle(status, textColor).background
+    return SpanStyle(
+        color = textColor,
+        background = if (status == VocabularyStatus.NEW || status == VocabularyStatus.KNOWN)
+            Color.Transparent else tint.copy(alpha = 0.32f),
+        textDecoration = if (status == VocabularyStatus.NEW) TextDecoration.Underline else null,
+    )
 }

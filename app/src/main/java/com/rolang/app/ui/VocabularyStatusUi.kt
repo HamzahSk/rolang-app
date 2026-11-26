@@ -1,8 +1,11 @@
 package com.rolang.app.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
@@ -25,20 +28,19 @@ fun VocabularyStatusLabel(status: VocabularyStatus) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun VocabularyLegend() {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+fun VocabularyLegend(modifier: Modifier = Modifier) {
+    Row(modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         VocabularyStatus.entries.forEach { VocabularyStatusLabel(it) }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun VocabularyStatusSelector(status: VocabularyStatus, onChange: (VocabularyStatus) -> Unit) {
+fun VocabularyStatusSelector(status: VocabularyStatus, scrollable: Boolean = false, onChange: (VocabularyStatus) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Status belajar: ${status.label}", style = MaterialTheme.typography.titleMedium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val chips: @Composable () -> Unit = {
             VocabularyStatus.entries.forEach { value ->
                 val style = vocabularyStyle(value, MaterialTheme.colorScheme.onSurface)
                 FilterChip(selected = status == value, onClick = { onChange(value) }, label = { Text(value.label) },
@@ -46,6 +48,8 @@ fun VocabularyStatusSelector(status: VocabularyStatus, onChange: (VocabularyStat
                         selectedContainerColor = style.background, selectedLabelColor = style.color))
             }
         }
+        if (scrollable) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { chips() }
+        else FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { chips() }
         Text(if (status == VocabularyStatus.KNOWN) "Kata yang dikuasai tidak disorot dan dijeda dari tinjauan."
             else "Tersimpan di perangkat ini. Latihan akan menyesuaikan status dan jadwal tinjauan.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
