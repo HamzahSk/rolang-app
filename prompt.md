@@ -1,85 +1,97 @@
-Task: Build the RoLang Stories Section
+Task: Build RoLang Stories from 4000 Essential English Words - Book 1
 
-Use the EPUB file:
+Use this EPUB as the correct source:
 
-"English Short Stories for Intermediate Learners 100 English Short Stories.epub"
+"4000 Essential English Words - Book 1.epub"
 
-Create a complete Stories section in RoLang, using the book to understand its learning level, themes, vocabulary, and story structure.
+IMPORTANT: This replaces the previously used English Short Stories EPUB. Do not use the previous book or its 100-story inventory.
 
-1. Inspect and Extract the EPUB
+1. Inspect the EPUB
 
 - Open and inspect the entire EPUB.
-- Analyze all 100 stories, their themes, difficulty, vocabulary, and structure.
-- Extract relevant illustrations and images if available.
-- Organize the story metadata and learning topics.
-- Do not reproduce or translate the book's complete copyrighted stories. Use it only as a reference to create original learning content.
+- Identify every actual story, fable, or narrative passage in the book.
+- There should be approximately 30 stories, but determine the exact number from the EPUB itself.
+- Extract each story's original title, order, characters, setting, theme, and main events.
+- Distinguish stories from vocabulary lists, exercises, introductions, and other textbook sections.
+- Inspect available illustrations and extract relevant images.
 
-2. Create Original Stories
+2. Create Stories Content
 
-- Create original short stories inspired by broad themes and learning objectives found in the book.
-- Do not copy the original wording, characters, distinctive plots, or dialogue.
-- Write each story in two versions:
-  - Tagalog: Natural and grammatically correct Tagalog.
-  - Indonesian: A complete, natural Indonesian translation of the original Tagalog story.
-- Keep both versions equivalent in meaning, events, and dialogue.
-- Use clear language suitable for Indonesian beginners learning Tagalog.
-- Give every story a title, description, difficulty level, and category.
-- Ensure stories are complete, not shortened summaries or unfinished fragments.
+Create one RoLang story entry for every identified story.
 
-3. Learning Features
+For each entry:
 
-Each story should support:
+- Preserve the original title and story order.
+- Write a concise but informative summary based on the actual source.
+- Create a readable Tagalog retelling that preserves the original story's main events, characters, and meaning.
+- Provide a complete Indonesian version of that retelling.
+- Keep both language versions equivalent in meaning and completeness.
+- Use natural, grammatically correct Tagalog suitable for learners.
+- Do not invent unrelated plots or replace the source stories with generic content.
+- Do not reproduce or translate the complete copyrighted story text.
 
-- Tagalog and Indonesian reading modes.
-- Paragraph-by-paragraph navigation.
-- Vocabulary lists with Indonesian meanings.
-- Important expressions and grammar notes.
-- Reading comprehension questions.
-- Interactive exercises where supported by the existing architecture.
-- Audio/TTS support using the existing Android implementation.
-- Relevant illustrations when available or appropriate.
+3. Learning Materials
 
-4. Android Stories UI
+Each story should include:
 
-Build a dedicated Stories section in the Android app.
+- Tagalog reading content.
+- Indonesian translation.
+- Important Tagalog vocabulary with Indonesian meanings.
+- Useful expressions from the story.
+- Relevant grammar notes.
+- Reading comprehension questions based on the actual story.
+- Answers stored separately from the questions.
 
-- Add a story library with categories and difficulty levels.
-- Provide a clean story-reading interface.
-- Allow switching between Tagalog and Indonesian.
-- Add vocabulary and learning notes.
-- Support bookmarking and reading progress.
+Avoid generic or duplicated learning materials.
+
+4. Images and EPUB Assets
+
+- Extract relevant illustrations from the EPUB when available.
+- Save images in the existing "storie/" content directory.
+- Associate each image with its corresponding story.
+- Preserve image quality while optimizing file sizes.
+- Do not reuse unrelated illustrations as if they came from the source.
+
+5. Android Stories Integration
+
+- Inspect the existing Stories implementation.
+- Replace the incorrect previous collection with the correct Book 1 collection, while preserving unrelated stories if they exist.
+- Display all identified stories in their original order.
+- Support Tagalog and Indonesian reading modes.
+- Include vocabulary, grammar notes, exercises, bookmarks, reading progress, TTS, and offline caching.
 - Follow the existing Material 3 design system.
-- Preserve existing lesson functionality and user progress.
-
-5. Repository and Deployment
-
-IMPORTANT: All content changes must go to the "data" branch of "rolang-server".
-
-- Inspect the existing "storie/" directory and follow its naming conventions and JSON schema.
-- Put all new story files in the appropriate "storie/" directories.
-- Update story indexes/manifests so the Android app can discover every story.
-- Ensure GitHub Raw URLs use the "data" branch.
-- Do not push content changes to "main".
-- Before committing, explicitly verify the current branch is "data".
-- Commit and push all intended changes to "origin/data".
-- Never force-push or reset "main".
+- Do not break existing lesson functionality or user progress.
 
 6. Validation
 
-- Validate all story JSON files.
-- Check Tagalog and Indonesian versions for completeness and consistency.
-- Verify vocabulary, exercises, and image references.
-- Test story discovery and loading through actual GitHub Raw URLs.
-- Test the Android Stories interface.
-- Run relevant unit tests, lint, and debug build.
+- Compare every generated entry against the EPUB inventory.
+- Ensure no source story is missing or duplicated.
+- Verify titles, story order, characters, themes, and summaries.
+- Validate all JSON files and image references.
+- Test actual GitHub Raw loading for every story.
+- Test the Android Stories library and reader.
 
-Implement everything directly.
+7. Git Deployment — CRITICAL
 
-At completion, report:
+All "rolang-server" content changes MUST be pushed to "origin/data".
 
-- Number of original stories created.
-- Categories and difficulty levels.
-- Number of images extracted or added.
-- Android files changed.
-- Test and build results.
-- Git commit hash and confirmation that changes were pushed to "origin/data".
+- Explicitly switch to the "data" branch before modifying content.
+- Never commit or push story content to "main".
+- Do not force-push or reset "main".
+- Verify the remote "data" branch after pushing.
+- Keep the Android app changes separate from the server content changes.
+
+Implement everything directly, not just a plan.
+
+Final Report
+
+Report:
+
+- Exact number of stories found in the EPUB.
+- Complete numbered list of extracted story titles.
+- Number of story entries created.
+- Number of images extracted.
+- Files changed.
+- Validation, tests, and build results.
+- Server commit hash and confirmation of push to "origin/data".
+- Any Android changes that remain unpushed.
