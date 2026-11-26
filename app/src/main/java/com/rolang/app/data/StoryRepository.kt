@@ -6,6 +6,8 @@ import com.rolang.app.diagnostics.DiagnosticLogger
 import com.rolang.app.network.ContentHttpException
 import com.rolang.app.network.ContentValidationException
 import com.rolang.app.network.GitHubContentSource
+import com.rolang.app.domain.Language
+import com.rolang.app.domain.Words
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -109,9 +111,61 @@ class StoryRepository(
                     catalog += StoryCatalogEntity(id, metadata.toString())
                 }
             }
-            database.withTransaction { dao.cacheCatalog(catalog) }
+            val storyRef = manifest.getJSONObject("stories")
+            val storyIndexPath = storyRef.getString("index")
+            val storyIndex = remote.json(storyIndexPath, storyRef.getString("sha256")).json
+            require(storyIndex.getInt("schemaVersion") == 1)
+            val storyPair = storyIndex.getJSONObject("languagePair")
+            require(storyPair.getString("reference") == "id" && storyPair.getString("target") == "fil")
+            val storyDir = parent(storyIndexPath)
+            val collectionId = storyIndex.getString("id")
+            val collectionTitle = storyIndex.getJSONObject("title")
+            val collectionDescription = storyIndex.getJSONObject("description")
+            val stories = storyIndex.getJSONArray("stories")
+            for (index in 0 until stories.length()) {
+                val story = stories.getJSONObject(index)
+                val id = story.getString("id")
+                require(id.matches(Regex("[a-z0-9-]{1,100}")) && ids.add(id))
+                val contentPath = join(storyDir, story.getString("path"))
+                val contentHash = story.getString("sha256")
+                val assets = story.optJSONArray("assets") ?: JSONArray()
+                val metadata = JSONObject()
+                    .put("schemaVersion", 1)
+                    .put("id", id)
+                    .put("collectionId", collectionId)
+                    .put("family", story.getString("family"))
+                    .put("category", story.getString("category"))
+                    .put("level", story.getString("level"))
+                    .put("title", story.getJSONObject("title"))
+                    .put("summary", story.getJSONObject("summary"))
+                    .put("objectives", JSONArray())
+                    .put("order", story.getInt("order"))
+                    .put("sourceOrder", story.optInt("sourceOrder", story.getInt("order")))
+                    .put("sentenceCount", story.getInt("sentenceCount"))
+                    .put("kind", UnitKind.STORY.name)
+                    .put("image", story.optString("image", assets.optString(0)))
+                    .put("contentHash", contentHash)
+                    .put("storyHash", contentHash)
+                    .put("contentPath", contentPath)
+                    .put("assetBaseUrl", remote.resolve(parent(contentPath)).toString())
+                    .put("courseTitle", collectionTitle)
+                    .put("courseDescription", collectionDescription)
+                    .put("assets", assets)
+                Corpus.story(StoryEntity(id, story.getString("family"), story.getString("category"),
+                    story.getString("level"), metadata.toString(), remote = true))
+                catalog += StoryCatalogEntity(id, metadata.toString())
+            }
+            database.withTransaction {
+                val obsoleteRemote = dao.allCatalog().filter { item ->
+                    item.id !in ids && runCatching {
+                        JSONObject(item.content).optString("contentPath").isNotBlank()
+                    }.getOrDefault(false)
+                }.map { it.id }
+                if (obsoleteRemote.isNotEmpty()) dao.hideCatalog(obsoleteRemote)
+                dao.cacheCatalog(catalog)
+            }
             _catalogState.value = CatalogState(status = if (catalog.isEmpty()) CatalogStatus.EMPTY else CatalogStatus.READY)
-            DiagnosticLogger.info("GITHUB_CONTENT", "Loaded ${catalog.size} static lesson entries from GitHub Raw.")
+            DiagnosticLogger.info("GITHUB_CONTENT", "Loaded ${catalog.size} static lesson and story entries from GitHub Raw.")
         } catch (cancelled: CancellationException) {
             _catalogState.value = CatalogState()
             throw cancelled
@@ -152,37 +206,69 @@ class StoryRepository(
             return@withLock cached ?: throw IOException("Materi lokal tidak ditemukan")
         }
         val expectedHash = metadata.getString("contentHash")
-        if (cached?.contentHash == expectedHash && cached.lessonSections.isNotEmpty()) return@withLock cached
+        val kind = runCatching { UnitKind.valueOf(metadata.optString("kind", UnitKind.STORY.name)) }
+            .getOrDefault(UnitKind.STORY)
+        if (cached?.contentHash == expectedHash && when (kind) {
+                UnitKind.LESSON -> cached.lessonSections.isNotEmpty()
+                else -> cached.sentences.isNotEmpty()
+            }) return@withLock cached
         try {
-            val document = remote.json(metadata.getString("contentPath"), metadata.getString("lessonHash")).json
+            val documentHash = if (kind == UnitKind.LESSON) metadata.getString("lessonHash") else metadata.getString("storyHash")
+            val document = remote.json(metadata.getString("contentPath"), documentHash).json
             require(document.getInt("schemaVersion") == 1 && document.getString("id") == id)
-            require(document.getJSONArray("sections").length() > 0)
-            val unitPath = metadata.optString("unitIntroductionPath")
-            if (unitPath.isNotBlank()) {
-                val unit = remote.json(unitPath, metadata.getString("unitIntroductionHash")).json
-                require(unit.getInt("schemaVersion") == 1 && unit.getString("courseId") == document.getString("courseId"))
-                val mergedSections = JSONArray()
-                unit.getJSONArray("sections").let { sections ->
-                    (0 until sections.length()).forEach { mergedSections.put(sections.get(it)) }
+            if (kind == UnitKind.LESSON) {
+                require(document.getJSONArray("sections").length() > 0)
+                val unitPath = metadata.optString("unitIntroductionPath")
+                if (unitPath.isNotBlank()) {
+                    val unit = remote.json(unitPath, metadata.getString("unitIntroductionHash")).json
+                    require(unit.getInt("schemaVersion") == 1 && unit.getString("courseId") == document.getString("courseId"))
+                    val mergedSections = JSONArray()
+                    unit.getJSONArray("sections").let { sections ->
+                        (0 until sections.length()).forEach { mergedSections.put(sections.get(it)) }
+                    }
+                    document.getJSONArray("sections").let { sections ->
+                        (0 until sections.length()).forEach { mergedSections.put(sections.get(it)) }
+                    }
+                    document.put("sections", mergedSections)
+                    val assets = linkedSetOf<String>()
+                    for (source in listOf(unit.optJSONArray("assets"), document.optJSONArray("assets"))) {
+                        if (source != null) (0 until source.length()).forEach { assets += source.getString(it) }
+                    }
+                    document.put("assets", JSONArray(assets.toList()))
                 }
-                document.getJSONArray("sections").let { sections ->
-                    (0 until sections.length()).forEach { mergedSections.put(sections.get(it)) }
-                }
-                document.put("sections", mergedSections)
-                val assets = linkedSetOf<String>()
-                for (source in listOf(unit.optJSONArray("assets"), document.optJSONArray("assets"))) {
-                    if (source != null) (0 until source.length()).forEach { assets += source.getString(it) }
-                }
-                document.put("assets", JSONArray(assets.toList()))
+            } else {
+                require(document.getJSONArray("sentences").length() > 0)
+                require(((document.optJSONArray("questions") ?: document.optJSONArray("exercises"))?.length() ?: 0) > 0)
             }
             listOf("family", "category", "kind", "contentHash", "contentPath", "assetBaseUrl",
-                "courseTitle", "courseDescription", "unitTitle").forEach { field -> document.put(field, metadata.get(field)) }
+                "courseTitle", "courseDescription", "unitTitle", "collectionId").forEach { field ->
+                if (metadata.has(field)) document.put(field, metadata.get(field))
+            }
             document.put("image", metadata.optString("image"))
             val entity = StoryEntity(id, metadata.getString("family"), metadata.getString("category"),
                 metadata.getString("level"), document.toString(), remote = true, available = true)
             val parsed = Corpus.story(entity)
-            require(parsed.lessonSections.isNotEmpty())
-            dao.seedStories(listOf(entity))
+            if (kind == UnitKind.LESSON) require(parsed.lessonSections.isNotEmpty())
+            else require(parsed.sentences.isNotEmpty() && parsed.exercises.isNotEmpty())
+            val storyLexicon = if (kind == UnitKind.LESSON) emptyList() else document.optJSONArray("vocabulary")?.let { words ->
+                (0 until words.length()).map { index ->
+                    val word = words.getJSONObject(index)
+                    val language = Language.from(word.getString("language"))
+                    require(language == Language.FILIPINO)
+                    listOf("translations", "meanings", "notes").forEach { field ->
+                        val values = word.getJSONObject(field)
+                        require(values.getString("id").isNotBlank() && values.getString("fil").isNotBlank())
+                    }
+                    StoryLexemeEntity(id, language.code, Words.key(word.getString("word")), word.toString())
+                }
+            }.orEmpty()
+            database.withTransaction {
+                dao.seedStories(listOf(entity))
+                if (kind != UnitKind.LESSON) {
+                    dao.removeStoryLexicon(id)
+                    dao.cacheStoryLexicon(storyLexicon)
+                }
+            }
             parsed
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: Exception) { cached ?: throw error }

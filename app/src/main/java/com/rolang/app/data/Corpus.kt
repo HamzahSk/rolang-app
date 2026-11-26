@@ -88,7 +88,7 @@ data class Story(
     val lessonSections: List<LessonSection> = emptyList(), val assets: List<String> = emptyList(),
     val contentHash: String = "", val contentPath: String = "", val assetBaseUrl: String = "",
     val courseTitle: Map<String, String> = emptyMap(), val courseDescription: Map<String, String> = emptyMap(),
-    val unitTitle: Map<String, String> = emptyMap(),
+    val unitTitle: Map<String, String> = emptyMap(), val collectionId: String = "",
 ) {
     fun title(language: Language) = titles.getValue(language.code)
     fun summary(language: Language) = summaries.getValue(language.code)
@@ -149,23 +149,31 @@ object Corpus {
                 }.orEmpty()
             }
         }.orEmpty()
-        fun exercises() = json.optJSONArray("exercises")?.let { array -> (0 until array.length()).map { index ->
+        val answerKey = json.optJSONArray("answers")?.let { array -> (0 until array.length()).associate { index ->
             val item = array.getJSONObject(index)
-            val prompt = item.optJSONObject("prompt") ?: item.getJSONObject("question")
-            Exercise(
-                id = item.optString("id", "${entity.id}_exercise_${index + 1}"),
-                type = runCatching { ExerciseType.valueOf(item.optString("type", "COMPREHENSION")) }
-                    .getOrDefault(ExerciseType.COMPREHENSION),
-                prompt = translations(prompt),
-                answer = translations(item.getJSONObject("answer")),
-                explanation = item.optJSONObject("explanation")?.let(::translations)
-                    ?: Language.entries.associate { language -> language.code to "Tinjau kembali teks pembelajaran untuk jawaban ini." },
-                choices = localizedStrings(item, "choices"),
-                tokens = localizedStrings(item, "tokens"),
-                speech = item.optJSONObject("speech")?.let(::availableTranslations)
-                    ?: availableTranslations(item.getJSONObject("answer")),
-            )
+            item.getString("questionId") to item
         } }.orEmpty()
+        fun exercises() = (json.optJSONArray("exercises") ?: json.optJSONArray("questions"))?.let { array ->
+            (0 until array.length()).map { index ->
+                val item = array.getJSONObject(index)
+                val prompt = item.optJSONObject("prompt") ?: item.getJSONObject("question")
+                val keyedAnswer = answerKey[item.optString("id")]
+                val answer = item.optJSONObject("answer") ?: keyedAnswer?.getJSONObject("answer")
+                    ?: error("Exercise answer is missing")
+                Exercise(
+                    id = item.optString("id", "${entity.id}_exercise_${index + 1}"),
+                    type = runCatching { ExerciseType.valueOf(item.optString("type", "COMPREHENSION")) }
+                        .getOrDefault(ExerciseType.COMPREHENSION),
+                    prompt = translations(prompt),
+                    answer = translations(answer),
+                    explanation = (item.optJSONObject("explanation") ?: keyedAnswer?.optJSONObject("explanation"))?.let(::translations)
+                        ?: Language.entries.associate { language -> language.code to "Tinjau kembali teks pembelajaran untuk jawaban ini." },
+                    choices = localizedStrings(item, "choices"),
+                    tokens = localizedStrings(item, "tokens"),
+                    speech = item.optJSONObject("speech")?.let(::availableTranslations) ?: availableTranslations(answer),
+                )
+            }
+        }.orEmpty()
         val focus = json.optJSONObject("focus")?.let { obj -> Language.entries.associate { language ->
             val array = obj.optJSONArray(language.code)
                 ?: if (language == Language.FILIPINO) obj.optJSONArray("tl") else null
@@ -247,7 +255,8 @@ object Corpus {
             assets = json.optJSONArray("assets")?.let { values -> (0 until values.length()).map(values::getString) }.orEmpty(),
             contentHash = json.optString("contentHash"), contentPath = json.optString("contentPath"),
             assetBaseUrl = json.optString("assetBaseUrl"), courseTitle = optionalLocalized("courseTitle"),
-            courseDescription = optionalLocalized("courseDescription"), unitTitle = optionalLocalized("unitTitle"))
+            courseDescription = optionalLocalized("courseDescription"), unitTitle = optionalLocalized("unitTitle"),
+            collectionId = json.optString("collectionId"))
     }
 
     fun parse(root: JSONObject): Pair<List<StoryEntity>, List<LexemeEntity>> {

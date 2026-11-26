@@ -108,7 +108,8 @@ class OfflineLearningTest {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val store = PreferenceDataStoreFactory.create(scope = scope) { file }
         val preferences = PreferencesRepository(store)
-        preferences.restore(LearningPreferences(Language.INDONESIAN, Language.FILIPINO, Level.ADVANCED, 26f, true))
+        preferences.restore(LearningPreferences(Language.INDONESIAN, Language.FILIPINO, Level.ADVANCED, 26f, true,
+            setOf("book1-story-01-the-lion-and-the-rabbit")))
         scope.coroutineContext.job.cancelAndJoin()
         val secondScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         try {
@@ -118,6 +119,7 @@ class OfflineLearningTest {
             assertEquals(Level.BEGINNER, restored.level)
             assertEquals(26f, restored.fontSize)
             assertTrue(restored.dark)
+            assertEquals(setOf("book1-story-01-the-lion-and-the-rabbit"), restored.bookmarkedStories)
         } finally { secondScope.coroutineContext.job.cancelAndJoin(); file.delete() }
     }
 

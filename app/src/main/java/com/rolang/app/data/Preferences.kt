@@ -19,6 +19,7 @@ data class LearningPreferences(
     val level: Level = Level.BEGINNER,
     val fontSize: Float = 20f,
     val dark: Boolean = false,
+    val bookmarkedStories: Set<String> = emptySet(),
 )
 
 class PreferencesRepository(private val store: DataStore<Preferences>, @Suppress("UNUSED_PARAMETER") database: LearningDatabase? = null) {
@@ -27,10 +28,11 @@ class PreferencesRepository(private val store: DataStore<Preferences>, @Suppress
     private val level = stringPreferencesKey("level")
     private val font = floatPreferencesKey("font")
     private val dark = booleanPreferencesKey("dark")
+    private val bookmarks = stringSetPreferencesKey("bookmarked_stories")
     val preferences = store.data.catch { if (it is IOException) emit(emptyPreferences()) else throw it }.map {
         LearningPreferences(Courses.INDONESIAN_TO_FILIPINO.target, Courses.INDONESIAN_TO_FILIPINO.reference,
             Level.BEGINNER,
-            (it[font] ?: 20f).coerceIn(16f, 28f), it[dark] ?: false)
+            (it[font] ?: 20f).coerceIn(16f, 28f), it[dark] ?: false, it[bookmarks].orEmpty())
     }
     private suspend fun change(update: (MutablePreferences) -> Unit) {
         store.edit { update(it) }
@@ -46,10 +48,15 @@ class PreferencesRepository(private val store: DataStore<Preferences>, @Suppress
     }
     suspend fun font(value: Float) = change { it[font] = value.coerceIn(16f, 28f) }
     suspend fun dark(value: Boolean) = change { it[dark] = value }
+    suspend fun bookmark(storyId: String, bookmarked: Boolean) = change {
+        val current = it[bookmarks].orEmpty()
+        it[bookmarks] = if (bookmarked) current + storyId else current - storyId
+    }
     suspend fun restore(value: LearningPreferences) = store.edit {
         it[target] = Courses.INDONESIAN_TO_FILIPINO.target.code
         it[native] = Courses.INDONESIAN_TO_FILIPINO.reference.code
         it[level] = Level.BEGINNER.name
         it[font] = value.fontSize; it[dark] = value.dark
+        it[bookmarks] = value.bookmarkedStories
     }
 }

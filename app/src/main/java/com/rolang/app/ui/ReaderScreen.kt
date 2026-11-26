@@ -1,14 +1,15 @@
 package com.rolang.app.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.*
@@ -18,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -27,6 +27,7 @@ import com.rolang.app.LearningState
 import com.rolang.app.LearningViewModel
 import com.rolang.app.data.Story
 import com.rolang.app.data.WordDetail
+import com.rolang.app.domain.Language
 import com.rolang.app.domain.Words
 import com.rolang.app.domain.VocabularyStatus
 import kotlinx.coroutines.launch
@@ -40,8 +41,11 @@ private data class SelectedWord(val text: String, val paragraph: Int)
 fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewModel, onBack: () -> Unit) {
     val chapterScope = rememberCoroutineScope()
     val prefs = state.preferences
-    val savedReading = state.courseReadings.firstOrNull { it.storyId == story.id }
-    val listState = rememberSaveable(story.id, prefs.target.code, saver = LazyListState.Saver) {
+    var readingCode by rememberSaveable(story.id) { mutableStateOf(Language.FILIPINO.code) }
+    val readingLanguage = Language.from(readingCode)
+    val translationLanguage = if (readingLanguage == Language.FILIPINO) Language.INDONESIAN else Language.FILIPINO
+    val savedReading = state.readings.firstOrNull { it.storyId == story.id && it.language == readingLanguage.code }
+    val listState = rememberSaveable(story.id, readingLanguage.code, saver = LazyListState.Saver) {
         val paragraph = (savedReading?.sentence ?: 0).coerceIn(story.sentences.indices)
         LazyListState(if (paragraph == 0) 0 else paragraph + 1)
     }
@@ -51,20 +55,20 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                 ?: listState.firstVisibleItemIndex) - 1).coerceIn(story.sentences.indices)
         }
     }
-    var translated by rememberSaveable(story.id, prefs.target.code) { mutableStateOf(false) }
-    var selected by remember(story.id, prefs.target, prefs.native) { mutableStateOf<SelectedWord?>(null) }
+    var translated by rememberSaveable(story.id, readingLanguage.code) { mutableStateOf(false) }
+    var selected by remember(story.id, readingLanguage, prefs.target, prefs.native) { mutableStateOf<SelectedWord?>(null) }
     var detail by remember(selected) { mutableStateOf<WordDetail?>(null) }
     var lookupError by remember(selected) { mutableStateOf(false) }
     val textColor = MaterialTheme.colorScheme.onSurface
     val statuses = state.courseWords.filter { it.storyId == story.id }.associate { it.word to it.learningStatus() }
-    LaunchedEffect(story.id, prefs.target, story.sentences.size, listState) {
+    LaunchedEffect(story.id, readingLanguage, story.sentences.size, listState) {
         // Clamp restored positions when a downloaded story has been shortened.
         if (listState.firstVisibleItemIndex > story.sentences.size) {
             listState.scrollToItem(story.sentences.size)
         }
         snapshotFlow { (listState.firstVisibleItemIndex - 1).coerceIn(story.sentences.indices) }
             .distinctUntilChanged().collect { paragraph ->
-                viewModel.reading(story, prefs.target, paragraph, savedReading?.completed == true)
+                viewModel.reading(story, readingLanguage, paragraph, savedReading?.completed == true)
             }
     }
     LaunchedEffect(selected, prefs.target, prefs.native) {
@@ -76,7 +80,13 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
     }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("Ruang baca", style = MaterialTheme.typography.titleMedium) },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Kembali ke daftar cerita") } })
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Kembali ke daftar cerita") } },
+            actions = {
+                IconButton(onClick = { viewModel.toggleBookmark(story.id) }) {
+                    Icon(if (story.id in prefs.bookmarkedStories) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
+                        if (story.id in prefs.bookmarkedStories) "Hapus tanda cerita" else "Tandai cerita")
+                }
+            })
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Paragraf ${index + 1} dari ${story.sentences.size}", style = MaterialTheme.typography.labelLarge)
             LinearProgressIndicator(progress = { (index + 1f) / story.sentences.size }, modifier = Modifier.fillMaxWidth())
@@ -86,16 +96,23 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
             verticalArrangement = Arrangement.spacedBy(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             item(key = "heading") {
                 Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Image(painterResource(illustrationResource(story.image)), null,
-                        Modifier.fillMaxWidth().height(96.dp), contentScale = ContentScale.Fit)
+                    StoryIllustration(story, viewModel, Modifier.fillMaxWidth().height(180.dp), ContentScale.Fit)
                     SectionTitle(story.title(prefs.native), "${story.kind.label} · ${story.category} · ${story.level.label}")
                     Text(story.summary(prefs.native), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Ketuk kata apa pun untuk melihat artinya.", style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    PronunciationAvailabilityNotice()
-                    PronunciationSequenceControls("story-${story.id}",
-                        story.sentences.indices.map { story.sentence(it, prefs.target) },
-                        { "story-sentence-${story.id}-$it" }, "Putar seluruh cerita")
+                    Text("Mode baca", style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(readingLanguage == Language.FILIPINO, { readingCode = Language.FILIPINO.code }, label = { Text("Tagalog") })
+                        FilterChip(readingLanguage == Language.INDONESIAN, { readingCode = Language.INDONESIAN.code }, label = { Text("Indonesia") })
+                    }
+                    Text(if (readingLanguage == Language.FILIPINO) "Ketuk kata Tagalog untuk melihat artinya."
+                        else "Gunakan mode Tagalog untuk membuka rincian kosakata.",
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (readingLanguage == Language.FILIPINO) {
+                        PronunciationAvailabilityNotice()
+                        PronunciationSequenceControls("story-${story.id}",
+                            story.sentences.indices.map { story.sentence(it, Language.FILIPINO) },
+                            { "story-sentence-${story.id}-$it" }, "Putar seluruh cerita")
+                    }
                     DownloadControls(story, state, viewModel)
                     if (story.chapters.size > 1) {
                         Text("Bab", style = MaterialTheme.typography.titleMedium)
@@ -112,17 +129,18 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                 }
             }
             itemsIndexed(story.sentences, key = { paragraph, _ -> "paragraph:$paragraph" }) { paragraph, _ ->
-                val text = story.sentence(paragraph, prefs.target)
-                val annotated = remember(story.id, paragraph, prefs.target, prefs.native, text, textColor, statuses) {
-                    buildAnnotatedString {
-                        append(text)
-                        Words.tokens(text).forEach { token ->
-                            addLink(LinkAnnotation.Clickable(token.text,
-                                styles = TextLinkStyles(style = vocabularyStyle(
-                                    statuses[Words.key(token.text)] ?: VocabularyStatus.NEW, textColor)),
-                                linkInteractionListener = { selected = SelectedWord(token.text, paragraph) }), token.start, token.end)
+                val text = story.sentence(paragraph, readingLanguage)
+                val annotated = remember(story.id, paragraph, readingLanguage, text, textColor, statuses) {
+                    if (readingLanguage == Language.INDONESIAN) AnnotatedString(text)
+                    else buildAnnotatedString {
+                            append(text)
+                            Words.tokens(text).forEach { token ->
+                                addLink(LinkAnnotation.Clickable(token.text,
+                                    styles = TextLinkStyles(style = vocabularyStyle(
+                                        statuses[Words.key(token.text)] ?: VocabularyStatus.NEW, textColor)),
+                                    linkInteractionListener = { selected = SelectedWord(token.text, paragraph) }), token.start, token.end)
+                            }
                         }
-                    }
                 }
                 Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     story.speakers.getOrNull(paragraph)?.let { speaker ->
@@ -132,11 +150,11 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
                         Text(annotated, Modifier.weight(1f).testTag("story-paragraph-$paragraph"),
                             style = TextStyle(fontFamily = FontFamily.Serif, fontSize = prefs.fontSize.sp,
                                 lineHeight = (prefs.fontSize * 1.8).sp))
-                        PronunciationButton(text, "story-sentence-${story.id}-$paragraph",
-                            "${story.kind.label.lowercase()} ${paragraph + 1}")
+                        if (readingLanguage == Language.FILIPINO) PronunciationButton(text,
+                            "story-sentence-${story.id}-$paragraph", "${story.kind.label.lowercase()} ${paragraph + 1}")
                     }
                     AnimatedVisibility(translated) {
-                        Text(story.sentence(paragraph, prefs.native), color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Text(story.sentence(paragraph, translationLanguage), color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge)
                     }
                 }

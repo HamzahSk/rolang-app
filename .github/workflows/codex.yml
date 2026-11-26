@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 240
 
     env:
-      AGENTROUTER_API_KEY: ${{ secrets.AGENTROUTER_API_KEY }}
+      XINGCHIAPI_API_KEY: ${{ secrets.XINGCHIAPI_API_KEY }}
       CODEX_BASE_SHA: ${{ github.sha }}
 
     steps:
@@ -127,8 +127,8 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          if [[ -z "${AGENTROUTER_API_KEY:-}" ]]; then
-            echo "::error::Repository secret AGENTROUTER_API_KEY is required"
+          if [[ -z "${XINGCHIAPI_API_KEY:-}" ]]; then
+            echo "::error::Repository secret XINGCHIAPI_API_KEY is required"
             exit 1
           fi
 
@@ -140,9 +140,9 @@ jobs:
 
           [model_providers.agentrouter]
           name = "AgentRouter"
-          base_url = "https://rocckyai.rockyyrec.workers.dev/v1"
+          base_url = "https://api.xingchiapi.com/v1"
           wire_api = "responses"
-          env_key = "AGENTROUTER_API_KEY"
+          env_key = "XINGCHIAPI_API_KEY"
           request_max_retries = 6
           stream_max_retries = 10
           stream_idle_timeout_ms = 300000

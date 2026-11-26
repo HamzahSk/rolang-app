@@ -18,16 +18,17 @@ Lesson content is fetched directly from GitHub Raw:
 https://raw.githubusercontent.com/HamzahSk/rolang-server/data/
 ```
 
-The app discovers `manifest.json`, `lesson/index.json`, a course index, and then
-individual lesson JSON files. The indexes carry SHA-256 hashes. OkHttp supplies an
-HTTP disk cache, Room keeps validated lesson snapshots, and failed/malformed
-updates never replace the last readable copy. Cached content is rendered before a
-refresh. Saving a lesson for offline use also persists all referenced images.
+The app discovers `manifest.json`, the lesson and story indexes, course indexes,
+and then individual content JSON files. The indexes carry SHA-256 hashes. OkHttp
+supplies an HTTP disk cache, Room keeps validated lesson/story snapshots, and
+failed or malformed updates never replace the last readable copy. Cached content
+is rendered before a refresh. Saving an entry for offline use also persists all
+referenced images.
 
-The adjacent `rolang-server/` checkout is now a static repository containing the
-complete 24-lesson *Elementary Tagalog 1* curriculum, eight unit overviews, and
-152 extracted EPUB images. Stories are intentionally not part of this migration;
-the app's existing bundled stories continue to work locally.
+The adjacent `rolang-server/` checkout is a static repository containing two
+courses with 44 lessons plus all 30 narrative units from *4000 Essential English
+Words - Book 1*. The Book 1 stories retain their source order and illustrations;
+unrelated bundled stories continue to work locally.
 
 ## Learning experience
 
@@ -38,7 +39,9 @@ the app's existing bundled stories continue to work locally.
   Tagalog examples/dialogues.
 - Filipino pronunciation controls throughout textbook content using the existing
   lifecycle-owned `fil-PH` TextToSpeech implementation.
-- Local vocabulary, spaced repetition, reviews, story reading, and diagnostics.
+- Tagalog/Indonesian story reading modes, source illustrations, bookmarks,
+  reading progress, offline downloads, comprehension exercises, and TTS.
+- Local vocabulary, spaced repetition, reviews, and diagnostics.
 
 ## Build
 
@@ -60,9 +63,9 @@ python3 rolang-server/tools/validate_content.py rolang-server
 ```
 
 The static-content validator parses every JSON file, checks manifest/index hashes,
-requires all 24 textbook lessons, and verifies every relative image path. Android
-tests cover Room migrations/local learning plus GitHub catalog parsing, content
-hash validation, malformed JSON, HTTP failure, and cached fallback.
+requires all 30 Book 1 stories in source order, and verifies every relative image
+path. Android tests cover Room migrations/local learning plus lesson and story
+catalog parsing, content hashes, malformed JSON, HTTP failure, and cached fallback.
 
 The GitHub Actions Android workflow runs the same content checks, unit tests, lint,
 and debug builds. The static repository has its own validation workflow.

@@ -1,7 +1,6 @@
 package com.rolang.app.ui
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.rolang.app.LearningViewModel
@@ -202,19 +200,30 @@ fun StoriesScreen(state: LearningState, viewModel: LearningViewModel? = null, re
     var level by rememberSaveable { mutableStateOf("Semua tingkat") }
     var query by rememberSaveable { mutableStateOf("") }
     val stories = state.readingStories
+    val bookOne = stories.filter { it.collectionId == "4000-essential-english-words-book-1" }
     val formats = listOf("Semua format") + stories.map { it.kind.label }.distinct()
     val topics = listOf("Semua topik") + stories.map { it.category }.distinct()
     val levels = listOf("Semua tingkat") + stories.map { it.level.label }.distinct()
     val filtered = stories.filter { story ->
-        (!savedOnly || story.sentences.isNotEmpty()) &&
+        (!savedOnly || story.id in state.preferences.bookmarkedStories) &&
         (format == "Semua format" || story.kind.label == format) &&
         (topic == "Semua topik" || story.category == topic) &&
         (level == "Semua tingkat" || story.level.label == level) &&
         (story.title(state.preferences.native).contains(query, true) || story.summary(state.preferences.native).contains(query, true)) }
     LazyColumn(Modifier.testTag("stories-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { LibraryStatus(state, viewModel) }
-        item { FilterChip(savedOnly, { savedOnly = !savedOnly }, label = { Text("Tersimpan luring") }) }
+        item { FilterChip(savedOnly, { savedOnly = !savedOnly }, label = { Text("Ditandai") },
+            leadingIcon = { Icon(if (savedOnly) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder, null) }) }
         item { SectionTitle("Cerita", "Latihan membaca mandiri berdasarkan tingkat dan topik.") }
+        bookOne.firstOrNull()?.let { collection -> item {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(collection.courseTitle(state.preferences.native), style = MaterialTheme.typography.titleLarge)
+                    Text(collection.courseDescription(state.preferences.native), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("${bookOne.size} cerita · urutan asli Buku 1", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        } }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), singleLine = true,
             label = { Text("Cari cerita") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }) }
         item { FilterGroup("Tingkat", levels, level) { level = it } }
@@ -244,11 +253,19 @@ fun StoryCard(story: Story, state: LearningState, viewModel: LearningViewModel? 
     Card(onClick = { read(story.id) }, modifier = Modifier.fillMaxWidth().animateContentSize(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Image(painterResource(illustrationResource(story.image)), null, Modifier.fillMaxWidth().height(150.dp).padding(top = 12.dp), contentScale = ContentScale.Fit)
+            StoryIllustration(story, viewModel, Modifier.fillMaxWidth().height(150.dp).padding(top = 12.dp), ContentScale.Fit)
             Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 20.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("${story.kind.label.uppercase()} · ${story.category.uppercase()}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-                    DifficultyBadge(story.level)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        DifficultyBadge(story.level)
+                        viewModel?.let {
+                            IconButton(onClick = { it.toggleBookmark(story.id) }) {
+                                Icon(if (story.id in state.preferences.bookmarkedStories) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
+                                    if (story.id in state.preferences.bookmarkedStories) "Hapus tanda cerita" else "Tandai cerita")
+                            }
+                        }
+                    }
                 }
                 Text(story.title(state.preferences.native), style = MaterialTheme.typography.titleLarge)
                 Text(story.summary(state.preferences.native), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -259,6 +276,7 @@ fun StoryCard(story: Story, state: LearningState, viewModel: LearningViewModel? 
                     state.contentCompleted(story.id) -> "Selesai · latihan tersedia"
                     reading != null -> "Lanjut membaca"; else -> "Mulai cerita" },
                     color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                viewModel?.let { DownloadControls(story, state, it) }
             }
         }
     }

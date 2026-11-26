@@ -94,7 +94,13 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
                     }.onFailure {
                         DiagnosticLogger.error("LOCAL_DATA", "Catalog item ${item.id} is invalid and was skipped.", it)
                     }.getOrNull()
-                }.sortedBy { it.order }
+                }.sortedWith(compareBy<Story> {
+                    when {
+                        it.kind == UnitKind.LESSON -> 0
+                        it.collectionId == "4000-essential-english-words-book-1" -> 1
+                        else -> 2
+                    }
+                }.thenBy { it.order }.thenBy { it.id })
             }
         },
         repository.dao.vocabulary(), repository.dao.readings(), repository.dao.reviews()) { prefs, stories, words, reading, reviews ->
@@ -171,6 +177,11 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     }
     fun font(size: Float) { work { preferences.font(size) } }
     fun dark(value: Boolean) { work { preferences.dark(value) } }
+    fun toggleBookmark(storyId: String) { work {
+        val bookmarked = storyId !in state.value.preferences.bookmarkedStories
+        preferences.bookmark(storyId, bookmarked)
+        _message.value = if (bookmarked) "Cerita ditandai" else "Tanda cerita dihapus"
+    } }
     suspend fun lookup(story: Story, index: Int, word: String, prefs: LearningPreferences) = try {
         repository.lookup(story, index, word, prefs.target, prefs.native)
     } catch (cancelled: CancellationException) { throw cancelled }
