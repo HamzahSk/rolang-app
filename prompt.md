@@ -1,27 +1,23 @@
-Upgrade the UI and UX of the **Ruang baca** (story reader) screen and its vocabulary bottom sheet in the Ro-Lang Android app (Kotlin, Jetpack Compose, Material 3) so the reading flow is cleaner, calmer, better structured, and much easier to scan and read without visual clutter.
+Inspect the repository first (`settings.gradle.kts`, root `build.gradle.kts`, `gradle/libs.versions.toml` if present, `app/build.gradle.kts`, `README.md`, `tools/build_corpus.py`, `rolang-server/tools/validate_content.py`, and `.github/workflows/`), then complete the following two tasks cleanly and verify everything locally:
 
-### Context & Current Pain Points
-In the current `Ruang baca` screen and vocabulary sheet:
-1. **Top & Control Clutter**: The progress indicator ("Paragraf X dari 7"), helper hint ("Ketuk kata Tagalog untuk melihat artinya"), full-story audio/reset controls, offline save action ("Simpan untuk luring"), mastery legend pills ("Baru", "Dipelajari", "Hampir dikuasai", "Dikuasai"), and "Tampilkan terjemahan" button stack vertically with inconsistent hierarchy and spacing, pushing the actual story paragraphs down too far.
-2. **Paragraph & Highlight Readability**: Multi-line paragraphs use dense light-blue word/phrase highlight boxes that look blocky/fragmented across wrapped lines, paired with a detached speaker icon on the right that feels loosely aligned to the paragraph block.
-3. **Vocabulary Bottom Sheet Density**: In the word sheet (e.g., "maraming"), sections ("Makna", "Pelafalan dan konteks", "Contoh", "Status belajar") and status chips ("Dikuasai" wrapping onto a second line awkwardly) feel cramped and flat, with long explanatory text competing with the primary word, meaning, and example sentence.
+### 1. Add Spotless (`spotlessCheck` and `spotlessApply`)
+- Configure `com.diffplug.spotless` so `./gradlew spotlessCheck` and `./gradlew spotlessApply` work across the project (matching the existing Gradle / version-catalog style in the repo).
+- Format Kotlin sources (`src/**/*.kt`), Kotlin Gradle scripts (`*.gradle.kts`), and keep whitespace/newline rules clean while excluding generated/build directories (`**/build/**`).
+- Run `./gradlew spotlessApply` so existing code conforms to the configured formatting rules, and make sure `./gradlew spotlessCheck` passes without errors.
+- If `.github/workflows/android-build.yml` exists, ensure it runs `spotlessCheck` cleanly (and supports `spotlessApply` on `workflow_dispatch` if needed) without breaking ABI-split APK builds or artifact uploads.
 
-### Design & UX Goals
-- **Reading-First Hierarchy**: Prioritize comfortable reading typography, generous line height, and clear visual grouping so the story content takes center stage while secondary controls stay neat and unobtrusive.
-- **Cohesive Material 3 Styling**: Use refined Material 3 surfaces, subtle tonal containers, clean borders, consistent horizontal/vertical spacing, and clear typographic hierarchy (title, metadata, body copy, caption/helper text). Keep existing Indonesian labels/copy intact unless a more compact layout is needed, without losing any functionality.
-- **Clean Interactive Controls**:
-  - Group reader controls logically (e.g., a compact top control bar/card for reading mode `Tagalog` / `Indonesia`, translation toggle, and story audio/reset; and a clean offline/status row without awkward wrapping).
-  - Fix the mastery status legend chips so they align cleanly (e.g., single scrollable row or balanced 2x2 grid/flow with consistent chip sizing—no orphaned single chip wrapping awkwardly).
-  - Refine paragraph blocks so text wraps naturally with clean line spacing, clear paragraph separation, subtle/harmonious highlight styling, and a well-aligned per-paragraph TTS button.
-  - Upgrade the vocabulary bottom sheet with clear section rhythm, a clean horizontal/wrap chip group for mastery statuses, distinct styling for the Tagalog example and Indonesian translation + inline audio button, and a prominent bottom primary action ("Simpan kata").
+### 2. Create `AGENT.md` at the Repository Root
+Write a clear, concise, practical `AGENT.md` tailored specifically to the **Ro-Lang** codebase based on the actual files and architecture in the repository:
+- **Project Overview**: Indonesian → Tagalog learning app (`com.rolang.app`), Kotlin, Jetpack Compose, Material 3, Room (schema version 6 with explicit non-destructive migrations, no backend/account/sync), DataStore, OkHttp cache, Android `fil-PH` TextToSpeech, and `rolang-server/` static content pipeline.
+- **Key Directories & Responsibilities**: `app/src/main/java/com/rolang/app/{data,network,ui}`, `app/src/main/assets/corpus.json`, `tools/build_corpus.py`, `rolang-server/`, and `.github/workflows/`.
+- **Build, Formatting & Verification Commands**:
+  - JDK 17, Android SDK `platforms;android-35`, Build Tools `35.0.0` (API 26+ `minSdk`).
+  - Corpus & content validation commands (`python3 tools/build_corpus.py`, `python3 rolang-server/tools/validate_content.py rolang-server`).
+  - Formatting (`./gradlew spotlessApply`, `./gradlew spotlessCheck`) and Gradle verification (`./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest`).
+- **Important Guardrails & Conventions for Agents**:
+  - Keep Room schema at version 6 with explicit non-destructive migrations and preserve legacy sync tables for safe upgrades.
+  - Never replace cached/last-readable content with failed, malformed, or unverified updates; keep SHA-256 index/content validation intact.
+  - Respect ABI splits (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`) and avoid committing secrets or `keystore.properties` / `keystore.jks`.
 
-### Technical Constraints & Guardrails
-- Preserve all existing state, Room persistence, reading progress tracking, bookmarks, offline saving, `fil-PH` TextToSpeech playback/reset, reading mode switching, translation toggle, and word tap/save/status update behaviors.
-- Do not change Room schema, network/cache logic, or unrelated screens/features.
-- Ensure layouts adapt cleanly on small/standard phone screens (such as 360dp width) without text clipping, overlapping, or awkward single-item wrapping.
-- Keep existing unit tests, lint checks, and debug build passing (`./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`).
-
-### Expected Output
-1. Inspect the `Ruang baca` screen, story paragraph/control components, and vocabulary bottom sheet under `app/src/main/java/com/rolang/app/ui`.
-2. Refactor the layout, spacing, typography, color/surface hierarchy, and chip/control alignment to make the screen clean and effortless to read.
-3. Summarize the UI/UX improvements made and list the modified files.
+### Final Check
+- Run the relevant validation, Spotless, unit test, lint, and build commands and report exact results along with any remaining caveats.
