@@ -419,14 +419,17 @@ fun ReaderScreen(
             }
         }
     }
+    // Observe lookup completion in the reader before passing it into the sheet's subcomposition.
+    val word = detail
     if (selected != null)
         ModalBottomSheet(
             onDismissRequest = { selected = null },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            val word = detail
             LazyColumn(
-                modifier = Modifier.fillMaxWidth().testTag("word-details"),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .testTag(if (word == null) "word-details-loading" else "word-details"),
                 contentPadding =
                     PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp),

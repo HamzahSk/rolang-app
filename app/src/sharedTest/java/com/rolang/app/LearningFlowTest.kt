@@ -46,6 +46,8 @@ class LearningFlowTest {
         val layouts = mutableListOf<TextLayoutResult>()
         text.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         text.performTouchInput { click(layouts.single().getBoundingBox(1).center) }
+        // The sheet opens before the Room lookup completes. Wait for the loaded container,
+        // since Compose idleness does not guarantee completion of the database lookup.
         compose.waitUntil(10_000) {
             compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isNotEmpty()
         }
