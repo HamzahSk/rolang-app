@@ -1,97 +1,126 @@
-Task: Build RoLang Stories from 4000 Essential English Words - Book 2
+Task: Resynchronize and Reorganize RoLang Stories
 
-Use this EPUB as the correct source:
+The Stories content from Book 1 and Book 2 has already been added to "rolang-server", but the Android app's Stories section is not properly synchronized with the server.
 
-"4000 Essential English Words - Book 2.epub"
+Previously, adding Book 2 accidentally replaced Book 1. This MUST NOT happen again.
 
-IMPORTANT: This replaces the previously used English Short Stories EPUB. Do not use the previous book or its 100-story inventory.
+1. Server as the Source of Truth
 
-1. Inspect the EPUB
+Inspect the current Stories content in "rolang-server" on the "data" branch.
 
-- Open and inspect the entire EPUB.
-- Identify every actual story, fable, or narrative passage in the book.
-- There should be approximately 30 stories, but determine the exact number from the EPUB itself.
-- Extract each story's original title, order, characters, setting, theme, and main events.
-- Distinguish stories from vocabulary lists, exercises, introductions, and other textbook sections.
-- Inspect available illustrations and extract relevant images.
+- Audit all existing story files, indexes, and manifests.
+- Identify stories belonging to Book 1 and Book 2.
+- Treat the current server content as the source of truth.
+- Synchronize the Android app with the complete server collection.
+- Preserve all existing stories from both books.
+- Never replace the entire collection when adding or updating a book.
+- Do not regenerate, rewrite, or delete existing story content unnecessarily.
+- Detect duplicate IDs and filename conflicts without accidentally deleting valid stories.
 
-2. Create Stories Content
+2. Fix Story Synchronization
 
-Create one RoLang story entry for every identified story.
+Inspect the complete content-loading flow:
 
-For each entry:
+- GitHub Raw URLs and branch configuration.
+- Story index and manifest loading.
+- Remote story discovery.
+- JSON parsing and data mapping.
+- Local caching and offline storage.
+- Update detection and cache invalidation.
+- Course/book grouping and story ordering.
 
-- Preserve the original title and story order.
-- Write a concise but informative summary based on the actual source.
-- Create a readable Tagalog retelling that preserves the original story's main events, characters, and meaning.
-- Provide a complete Indonesian version of that retelling.
-- Keep both language versions equivalent in meaning and completeness.
-- Use natural, grammatically correct Tagalog suitable for learners.
-- Do not invent unrelated plots or replace the source stories with generic content.
-- Do not reproduce or translate the complete copyrighted story text.
+Make sure the app can discover and load every story from both books.
 
-3. Learning Materials
+Important requirements:
 
-Each story should include:
+- Remote updates must merge or reconcile with existing local data instead of replacing unrelated stories.
+- Adding Book 2 must never remove Book 1.
+- Updating Book 1 must never remove Book 2.
+- Preserve bookmarks, reading progress, and other user data.
+- Handle missing, deleted, and updated remote entries safely.
+- Avoid stale indexes and outdated cached content.
+- Ensure offline stories remain accessible.
 
-- Tagalog reading content.
-- Indonesian translation.
-- Important Tagalog vocabulary with Indonesian meanings.
-- Useful expressions from the story.
-- Relevant grammar notes.
-- Reading comprehension questions based on the actual story.
-- Answers stored separately from the questions.
+3. Reorganize Story Categories
 
-Avoid generic or duplicated learning materials.
+The current category structure should be redesigned.
 
-4. Images and EPUB Assets
+Categories must represent broad themes, NOT individual story titles.
 
-- Extract relevant illustrations from the EPUB when available.
-- Save images in the existing "storie/" content directory.
-- Associate each image with its corresponding story.
-- Preserve image quality while optimizing file sizes.
-- Do not reuse unrelated illustrations as if they came from the source.
+For example:
 
-5. Android Stories Integration
+- Adventure
+- Animals
+- Daily Life
+- Family and Friendship
+- Nature and Environment
+- Folktales and Fables
+- History and Culture
+- Mystery and Discovery
 
-- Inspect the existing Stories implementation.
-- Replace the incorrect previous collection with the correct Book 1 collection, while preserving unrelated stories if they exist.
-- Display all identified stories in their original order.
-- Support Tagalog and Indonesian reading modes.
-- Include vocabulary, grammar notes, exercises, bookmarks, reading progress, TTS, and offline caching.
-- Follow the existing Material 3 design system.
-- Do not break existing lesson functionality or user progress.
+These are examples only. Determine the final categories based on the actual stories from both books.
 
-6. Validation
+Requirements:
 
-- Compare every generated entry against the EPUB inventory.
-- Ensure no source story is missing or duplicated.
-- Verify titles, story order, characters, themes, and summaries.
+- Each category should contain multiple relevant stories whenever possible.
+- Stories from Book 1 and Book 2 can belong to the same category.
+- A story may have multiple relevant tags if the existing architecture supports it.
+- Keep book/source information separate from categories.
+- Preserve each story's original title and numbering.
+- Do not create a separate category for every story.
+- Do not use Book 1 and Book 2 as story categories; display them as source/book filters instead.
+
+4. Improve Stories UI
+
+Update the Stories library to support:
+
+- Broad thematic categories.
+- Book/source filters (Book 1 and Book 2).
+- Difficulty filters.
+- Search by story title.
+- Story counts for each category.
+- Clear story grouping and navigation.
+- A clean Material 3 layout.
+
+Avoid excessive category cards or unnecessary nested navigation.
+
+5. Data Integrity and Validation
+
+Before finishing:
+
+- Compare server and Android story inventories.
+- Verify that every server story is discoverable in the app.
+- Verify that both books are present.
+- Check for missing, duplicated, or incorrectly grouped stories.
 - Validate all JSON files and image references.
-- Test actual GitHub Raw loading for every story.
-- Test the Android Stories library and reader.
+- Test remote loading, caching, offline access, and update synchronization.
+- Confirm that existing bookmarks and reading progress remain intact.
 
-7. Git Deployment — CRITICAL
+Do not simply report the number of stories in the local database. Test actual remote discovery and loading.
 
-All "rolang-server" content changes MUST be pushed to "origin/data".
+6. Git Rules — CRITICAL
 
-- Explicitly switch to the "data" branch before modifying content.
-- Never commit or push story content to "main".
-- Do not force-push or reset "main".
-- Verify the remote "data" branch after pushing.
-- Keep the Android app changes separate from the server content changes.
+For "rolang-server":
 
-Implement everything directly, not just a plan.
+- Work exclusively on the "data" branch.
+- Commit and push all intended server changes to "origin/data".
+- Never push story content to "main".
+- Never force-push or reset "main".
+- Verify the remote branch after pushing.
+
+Keep Android app changes separate and report their commit status.
 
 Final Report
 
-Report:
+Provide:
 
-- Exact number of stories found in the EPUB.
-- Complete numbered list of extracted story titles.
-- Number of story entries created.
-- Number of images extracted.
-- Files changed.
-- Validation, tests, and build results.
+- Total stories found on the server.
+- Number of stories from Book 1 and Book 2.
+- Final category list and story counts per category.
+- Any synchronization bugs found and fixed.
+- Confirmation that no existing stories were lost.
+- Test and build results.
 - Server commit hash and confirmation of push to "origin/data".
-- Any Android changes that remain unpushed.
+- Android commit and push status.
+
+Implement the fixes directly. Do not just provide recommendations.
